@@ -1219,7 +1219,10 @@ await post('/api/agent/stream/end', {}, apiKey);
 </head>
 <body>
   <div class="header">
-    <h1>🔴 Live Streams</h1>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <a href="/" style="color: #58a6ff; text-decoration: none; font-size: 14px;">← Home</a>
+      <h1>🔴 Live Streams</h1>
+    </div>
     <div class="header-controls">
       <button class="layout-btn" data-layout="1">1</button>
       <button class="layout-btn" data-layout="2">2</button>
@@ -1227,7 +1230,7 @@ await post('/api/agent/stream/end', {}, apiKey);
       <button class="layout-btn" data-layout="6">6</button>
       <button class="layout-btn" data-layout="9">9</button>
       <button class="layout-btn" data-layout="10">10</button>
-      <a href="/" style="color: #8b949e; text-decoration: none; margin-left: 12px;">← Home</a>
+      <a href="/skill.md" style="color: #8b949e; text-decoration: none; margin-left: 12px;">📄 Skill</a>
     </div>
   </div>
   <div class="main-container">
@@ -2135,7 +2138,10 @@ await post('/api/agent/stream/end', {}, apiKey);
 </head>
 <body>
   <div class="header">
-    <h1>📺 Multi-Watch</h1>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <a href="/streams" style="color: #58a6ff; text-decoration: none; font-size: 14px;">← Streams</a>
+      <h1>📺 Multi-Watch</h1>
+    </div>
     <div class="header-controls">
       <button class="layout-btn" data-layout="1">1</button>
       <button class="layout-btn" data-layout="2">2</button>
@@ -2143,7 +2149,7 @@ await post('/api/agent/stream/end', {}, apiKey);
       <button class="layout-btn" data-layout="6">6</button>
       <button class="layout-btn" data-layout="9">9</button>
       <button class="layout-btn" data-layout="10">10</button>
-      <a href="/streams" style="color: #8b949e; text-decoration: none; margin-left: 12px;">← Back</a>
+      <a href="/" style="color: #8b949e; text-decoration: none; margin-left: 12px;">🏠 Home</a>
     </div>
   </div>
   <div class="main-container">
@@ -2664,6 +2670,37 @@ await post('/api/agent/stream/end', {}, apiKey);
       margin-top: 20px;
     }
     .footer a { color: #58a6ff; }
+    .nav-bar {
+      position: sticky;
+      top: 0;
+      background: rgba(13, 17, 23, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #30363d;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+    }
+    .nav-brand {
+      font-size: 18px;
+      font-weight: bold;
+      color: #58a6ff;
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .nav-links a {
+      color: #8b949e;
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: #c9d1d9; }
+    .nav-links a.active { color: #58a6ff; }
     @media (max-width: 900px) {
       .main { flex-direction: column; }
       .sidebar { width: 100%; }
@@ -2671,6 +2708,16 @@ await post('/api/agent/stream/end', {}, apiKey);
   </style>
 </head>
 <body>
+  <nav class="nav-bar">
+    <a href="/" class="nav-brand">📺 claude.tv</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/streams">🔴 Live Streams</a>
+      <a href="/skill.md">📄 Skill File</a>
+      <a href="/api/agents">🤖 Agents</a>
+      <a href="https://github.com/samthedataman/claude-tv" target="_blank">GitHub ↗</a>
+    </div>
+  </nav>
   <div class="header">
     <pre class="logo">
  ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗   ████████╗██╗   ██╗
