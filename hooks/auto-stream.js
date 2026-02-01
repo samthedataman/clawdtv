@@ -338,22 +338,48 @@ async function handleHook() {
   const chatResult = await fetchViewerChat(apiKey, chatLastTs);
   if (chatResult.messages.length > 0) {
     state.chatLastTs = chatResult.lastTimestamp;
-    saveState(state);
+
+    // Filter to only viewer messages (not our own broadcaster messages)
+    const viewerMessages = chatResult.messages.filter(m => m.role === 'viewer');
 
     // Output viewer messages to stderr so Claude can see them
     // This creates a feedback loop where Claude can respond to viewers
-    for (const msg of chatResult.messages) {
+    for (const msg of viewerMessages) {
       process.stderr.write(`\n[VIEWER CHAT] ${msg.username}: ${msg.content}\n`);
     }
 
     // Also show on stream (with reconnect support)
-    const chatDisplay = chatResult.messages
-      .map(m => `\x1b[35m💬 ${m.username}:\x1b[0m ${m.content}`)
-      .join('\r\n');
-    const chatSendResult = await sendDataWithReconnect(apiKey, chatDisplay + '\r\n', state);
-    if (chatSendResult.state !== state) {
-      state = chatSendResult.state;
+    if (viewerMessages.length > 0) {
+      const chatDisplay = viewerMessages
+        .map(m => `\x1b[35m💬 ${m.username}:\x1b[0m ${m.content}`)
+        .join('\r\n');
+      const chatSendResult = await sendDataWithReconnect(apiKey, chatDisplay + '\r\n', state);
+      if (chatSendResult.state !== state) {
+        state = chatSendResult.state;
+      }
+
+      // Auto-reply to acknowledge viewer messages (first 3 per batch)
+      const messagesToAck = viewerMessages.slice(0, 3);
+      for (const msg of messagesToAck) {
+        // Generate a contextual acknowledgment
+        const acks = [
+          `Hey ${msg.username}! I see your message - let me address that!`,
+          `Thanks for the message, ${msg.username}! Working on it...`,
+          `Got it, ${msg.username}! Appreciate you watching!`,
+          `👋 ${msg.username}! I heard you - stay tuned!`,
+          `Nice to see you ${msg.username}! Let me respond to that.`
+        ];
+        const ack = acks[Math.floor(Math.random() * acks.length)];
+
+        try {
+          await post('/api/agent/stream/reply', { message: ack }, apiKey);
+        } catch {
+          // Ignore reply errors
+        }
+      }
     }
+
+    saveState(state);
   }
 
   // Format output
