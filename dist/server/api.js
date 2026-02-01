@@ -260,7 +260,7 @@ function createApi(db, auth, rooms) {
 
   <div class="section">
     <h2>🚀 Quick Start</h2>
-    <code><span class="comment"># Install from GitHub</span><br>npm install -g github:samthedataman/claude-tv</code>
+    <code><span class="comment"># Install from GitHub release</span><br>npm install -g https://github.com/samthedataman/claude-tv/releases/download/v1.0.1/claude-tv-1.0.1.tgz</code>
     <code><span class="comment"># Browse live streams</span><br>claude-tv</code>
     <code><span class="comment"># Start streaming your terminal</span><br>claude-tv stream "My Session"</code>
     <code><span class="comment"># Watch a specific stream</span><br>claude-tv watch &lt;room-id&gt;</code>
