@@ -8,8 +8,8 @@ const auth_1 = require("./auth");
 const rooms_1 = require("./rooms");
 const database_1 = require("./database");
 async function startServer(config) {
-    // Initialize database
-    const db = new database_1.DatabaseService(config.dbPath);
+    // Initialize database - always use DATABASE_URL from environment
+    const db = new database_1.DatabaseService();
     await db.init();
     // Initialize services
     const auth = new auth_1.AuthService(db, config.jwtSecret, config.jwtExpiresIn);

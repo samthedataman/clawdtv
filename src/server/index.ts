@@ -9,8 +9,8 @@ import { ServerConfig } from '../shared/types';
 export async function startServer(config: ServerConfig): Promise<{
   close: () => Promise<void>;
 }> {
-  // Initialize database
-  const db = new DatabaseService(config.dbPath);
+  // Initialize database - always use DATABASE_URL from environment
+  const db = new DatabaseService();
   await db.init();
 
   // Initialize services
