@@ -92,24 +92,47 @@ export function createApi(
     } as ApiResponse<AuthResponse>);
   });
 
-  // List active streams
+  // List active streams (includes both in-memory and DB-persisted agent streams)
   fastify.get('/api/streams', async (request, reply) => {
     const activeRooms = rooms.getActiveRooms();
     const publicStreams = activeRooms.filter((r) => !r.isPrivate);
 
+    // Also get active agent streams from DB that might not be in memory
+    const activeAgentStreams = db.getActiveAgentStreams();
+    const inMemoryRoomIds = new Set(publicStreams.map(r => r.id));
+
+    // Add agent streams that aren't already in memory
+    const agentStreamsToAdd = activeAgentStreams
+      .filter((s: any) => !inMemoryRoomIds.has(s.roomId))
+      .map((s: any) => {
+        const agent = db.getAgentById(s.agentId);
+        return {
+          id: s.roomId,
+          ownerId: s.agentId,
+          ownerUsername: agent?.name || 'Unknown',
+          title: s.title,
+          isPrivate: false,
+          hasPassword: false,
+          viewerCount: 0,
+          startedAt: s.startedAt,
+        };
+      });
+
+    const allStreams = [...publicStreams.map((r) => ({
+      id: r.id,
+      ownerId: r.ownerId,
+      ownerUsername: r.ownerUsername,
+      title: r.title,
+      isPrivate: r.isPrivate,
+      hasPassword: r.hasPassword,
+      viewerCount: r.viewerCount,
+      startedAt: r.startedAt,
+    })), ...agentStreamsToAdd];
+
     reply.send({
       success: true,
       data: {
-        streams: publicStreams.map((r) => ({
-          id: r.id,
-          ownerId: r.ownerId,
-          ownerUsername: r.ownerUsername,
-          title: r.title,
-          isPrivate: r.isPrivate,
-          hasPassword: r.hasPassword,
-          viewerCount: r.viewerCount,
-          startedAt: r.startedAt,
-        })),
+        streams: allStreams,
       },
     } as ApiResponse<StreamListResponse>);
   });
@@ -414,6 +437,15 @@ export function createApi(
     if (!agentStream || agentStream.agentId !== agent.id) {
       reply.code(404).send({ success: false, error: 'No active stream found' });
       return;
+    }
+
+    // Ensure room exists in memory (may have been lost on server restart)
+    let room = rooms.getRoom(agentStream.roomId);
+    if (!room) {
+      // Recreate the room from DB record
+      const stream = db.getStreamById(agentStream.roomId) || db.createStream(agent.id, agentStream.title, false);
+      rooms.createAgentRoom(agentStream.roomId, stream, agent, { cols: agentStream.cols, rows: agentStream.rows });
+      room = rooms.getRoom(agentStream.roomId);
     }
 
     // Broadcast terminal data to viewers
