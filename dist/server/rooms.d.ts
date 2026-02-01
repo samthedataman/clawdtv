@@ -1,4 +1,4 @@
-import { Room, Stream, TerminalSize } from '../shared/types';
+import { Room, Stream, TerminalSize, Agent } from '../shared/types';
 import { ChatMessage, ViewerListMessage } from '../shared/protocol';
 import { DatabaseService } from './database';
 export declare class RoomManager {
@@ -18,7 +18,9 @@ export declare class RoomManager {
     };
     removeViewer(roomId: string, userId: string): void;
     removeBroadcaster(roomId: string): void;
-    endRoom(roomId: string, reason?: 'ended' | 'disconnected' | 'timeout'): void;
+    endRoom(roomId: string, reason?: string): void;
+    createAgentRoom(roomId: string, stream: Stream, agent: Agent, terminalSize?: TerminalSize): Room;
+    broadcastTerminalData(roomId: string, data: string): void;
     banUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): boolean;
     unbanUser(roomId: string, targetUserId: string): boolean;
     muteUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): boolean;

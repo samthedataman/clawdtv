@@ -6,6 +6,7 @@ import {
   ViewerConnection,
   TerminalSize,
   UserRole,
+  Agent,
 } from '../shared/types';
 import {
   ChatMessage,
@@ -180,18 +181,23 @@ export class RoomManager {
     }));
   }
 
-  endRoom(roomId: string, reason: 'ended' | 'disconnected' | 'timeout' = 'ended'): void {
+  endRoom(roomId: string, reason: string = 'ended'): void {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
     // End stream in database
     this.db.endStream(room.stream.id);
 
+    // Map custom reasons to valid protocol reasons
+    const protocolReason = (reason === 'ended' || reason === 'disconnected' || reason === 'timeout')
+      ? reason
+      : 'ended';
+
     // Broadcast end event
     this.broadcastToRoom(roomId, createMessage<StreamEndEvent>({
       type: 'stream_end',
       streamId: room.stream.id,
-      reason,
+      reason: protocolReason,
     }));
 
     // Close all connections
@@ -208,6 +214,51 @@ export class RoomManager {
     }
 
     this.rooms.delete(roomId);
+  }
+
+  // Create a room for an agent stream (no WebSocket broadcaster required)
+  createAgentRoom(
+    roomId: string,
+    stream: Stream,
+    agent: Agent,
+    terminalSize: TerminalSize = { cols: 80, rows: 24 }
+  ): Room {
+    const room: Room = {
+      id: roomId,
+      stream,
+      broadcaster: {
+        userId: agent.id,
+        username: agent.name,
+        ws: null, // Agent streams use HTTP API, not persistent WebSocket
+        terminalSize,
+      },
+      viewers: new Map(),
+      mods: new Set(),
+      mutes: new Map(),
+      bans: new Map(),
+      slowMode: 0,
+      lastMessages: new Map(),
+    };
+
+    this.rooms.set(roomId, room);
+    return room;
+  }
+
+  // Broadcast terminal data to all viewers in a room (for agent streams)
+  broadcastTerminalData(roomId: string, data: string): void {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    const message = JSON.stringify({
+      type: 'terminal',
+      data,
+    });
+
+    room.viewers.forEach((viewer) => {
+      try {
+        viewer.ws.send(message);
+      } catch {}
+    });
   }
 
   // Moderation

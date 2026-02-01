@@ -5,6 +5,36 @@ export interface User {
     displayName?: string;
     createdAt: number;
 }
+export interface Agent {
+    id: string;
+    name: string;
+    apiKey: string;
+    humanUsername?: string;
+    verified: boolean;
+    streamCount: number;
+    totalViewers: number;
+    lastSeenAt: number;
+    createdAt: number;
+}
+export interface AgentPublic {
+    id: string;
+    name: string;
+    verified: boolean;
+    streamCount: number;
+    isStreaming: boolean;
+    lastSeenAt: number;
+    createdAt: number;
+}
+export interface AgentStream {
+    id: string;
+    agentId: string;
+    roomId: string;
+    title: string;
+    cols: number;
+    rows: number;
+    startedAt: number;
+    endedAt?: number;
+}
 export interface UserPublic {
     id: string;
     username: string;

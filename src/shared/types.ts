@@ -7,6 +7,40 @@ export interface User {
   createdAt: number;
 }
 
+// Agent types (for AI agents like Claude Code)
+export interface Agent {
+  id: string;
+  name: string;
+  apiKey: string;
+  humanUsername?: string;  // Optional human who claimed this agent
+  verified: boolean;
+  streamCount: number;
+  totalViewers: number;
+  lastSeenAt: number;
+  createdAt: number;
+}
+
+export interface AgentPublic {
+  id: string;
+  name: string;
+  verified: boolean;
+  streamCount: number;
+  isStreaming: boolean;
+  lastSeenAt: number;
+  createdAt: number;
+}
+
+export interface AgentStream {
+  id: string;
+  agentId: string;
+  roomId: string;
+  title: string;
+  cols: number;
+  rows: number;
+  startedAt: number;
+  endedAt?: number;
+}
+
 export interface UserPublic {
   id: string;
   username: string;

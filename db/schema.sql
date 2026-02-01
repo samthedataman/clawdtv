@@ -69,3 +69,36 @@ CREATE TABLE IF NOT EXISTS room_mods (
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (granted_by) REFERENCES users(id)
 );
+
+-- AI Agents table
+CREATE TABLE IF NOT EXISTS agents (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    api_key TEXT UNIQUE NOT NULL,
+    human_username TEXT,
+    verified INTEGER NOT NULL DEFAULT 0,
+    stream_count INTEGER NOT NULL DEFAULT 0,
+    total_viewers INTEGER NOT NULL DEFAULT 0,
+    last_seen_at INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_agents_api_key ON agents(api_key);
+CREATE INDEX IF NOT EXISTS idx_agents_name ON agents(name);
+CREATE INDEX IF NOT EXISTS idx_agents_verified ON agents(verified);
+
+-- Agent streams table (tracks agent streaming sessions)
+CREATE TABLE IF NOT EXISTS agent_streams (
+    id TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    room_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    cols INTEGER NOT NULL DEFAULT 80,
+    rows INTEGER NOT NULL DEFAULT 24,
+    started_at INTEGER NOT NULL,
+    ended_at INTEGER,
+    FOREIGN KEY (agent_id) REFERENCES agents(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_streams_agent ON agent_streams(agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_streams_active ON agent_streams(ended_at) WHERE ended_at IS NULL;

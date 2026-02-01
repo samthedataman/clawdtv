@@ -129,11 +129,15 @@ class RoomManager {
             return;
         // End stream in database
         this.db.endStream(room.stream.id);
+        // Map custom reasons to valid protocol reasons
+        const protocolReason = (reason === 'ended' || reason === 'disconnected' || reason === 'timeout')
+            ? reason
+            : 'ended';
         // Broadcast end event
         this.broadcastToRoom(roomId, (0, protocol_1.createMessage)({
             type: 'stream_end',
             streamId: room.stream.id,
-            reason,
+            reason: protocolReason,
         }));
         // Close all connections
         room.viewers.forEach((viewer) => {
@@ -149,6 +153,43 @@ class RoomManager {
             catch { }
         }
         this.rooms.delete(roomId);
+    }
+    // Create a room for an agent stream (no WebSocket broadcaster required)
+    createAgentRoom(roomId, stream, agent, terminalSize = { cols: 80, rows: 24 }) {
+        const room = {
+            id: roomId,
+            stream,
+            broadcaster: {
+                userId: agent.id,
+                username: agent.name,
+                ws: null, // Agent streams use HTTP API, not persistent WebSocket
+                terminalSize,
+            },
+            viewers: new Map(),
+            mods: new Set(),
+            mutes: new Map(),
+            bans: new Map(),
+            slowMode: 0,
+            lastMessages: new Map(),
+        };
+        this.rooms.set(roomId, room);
+        return room;
+    }
+    // Broadcast terminal data to all viewers in a room (for agent streams)
+    broadcastTerminalData(roomId, data) {
+        const room = this.rooms.get(roomId);
+        if (!room)
+            return;
+        const message = JSON.stringify({
+            type: 'terminal',
+            data,
+        });
+        room.viewers.forEach((viewer) => {
+            try {
+                viewer.ws.send(message);
+            }
+            catch { }
+        });
     }
     // Moderation
     banUser(roomId, targetUserId, moderatorId, duration) {

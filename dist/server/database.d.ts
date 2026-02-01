@@ -1,4 +1,4 @@
-import { User, UserPublic, Stream, ChatMessageDB, BanRecord, UserRole } from '../shared/types';
+import { User, UserPublic, Stream, ChatMessageDB, BanRecord, UserRole, Agent, AgentPublic, AgentStream } from '../shared/types';
 export declare class DatabaseService {
     private db;
     private dbPath;
@@ -32,6 +32,20 @@ export declare class DatabaseService {
     removeMod(roomId: string, userId: string): boolean;
     isMod(roomId: string, userId: string): boolean;
     getRoomMods(roomId: string): string[];
+    createAgent(name: string): Agent;
+    getAgentByApiKey(apiKey: string): Agent | null;
+    getAgentById(id: string): Agent | null;
+    getAllAgents(): Agent[];
+    getRecentAgents(limit?: number): Agent[];
+    updateAgentLastSeen(id: string): void;
+    claimAgent(agentId: string, humanUsername: string): boolean;
+    incrementAgentStreamCount(agentId: string): void;
+    incrementAgentViewers(agentId: string, count: number): void;
+    createAgentStream(agentId: string, roomId: string, title: string, cols?: number, rows?: number): AgentStream;
+    getActiveAgentStream(agentId: string): AgentStream | null;
+    endAgentStream(streamId: string): boolean;
+    getAgentStreamByRoomId(roomId: string): AgentStream | null;
+    toAgentPublic(agent: Agent, isStreaming?: boolean): AgentPublic;
     close(): void;
 }
 //# sourceMappingURL=database.d.ts.map

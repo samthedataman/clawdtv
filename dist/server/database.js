@@ -41,6 +41,7 @@ const sql_js_1 = __importDefault(require("sql.js"));
 const uuid_1 = require("uuid");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const crypto = __importStar(require("crypto"));
 class DatabaseService {
     db = null;
     dbPath;
@@ -360,6 +361,176 @@ class DatabaseService {
         }
         stmt.free();
         return results;
+    }
+    // Agent operations
+    createAgent(name) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const id = (0, uuid_1.v4)();
+        const apiKey = 'ctv_' + crypto.randomBytes(32).toString('hex');
+        const now = Date.now();
+        this.db.run(`INSERT INTO agents (id, name, api_key, verified, stream_count, total_viewers, last_seen_at, created_at) VALUES (?, ?, ?, 0, 0, 0, ?, ?)`, [id, name, apiKey, now, now]);
+        this.save();
+        return {
+            id,
+            name,
+            apiKey,
+            verified: false,
+            streamCount: 0,
+            totalViewers: 0,
+            lastSeenAt: now,
+            createdAt: now,
+        };
+    }
+    getAgentByApiKey(apiKey) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const stmt = this.db.prepare(`SELECT id, name, api_key as apiKey, human_username as humanUsername, verified,
+              stream_count as streamCount, total_viewers as totalViewers,
+              last_seen_at as lastSeenAt, created_at as createdAt
+       FROM agents WHERE api_key = ?`);
+        stmt.bind([apiKey]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return { ...row, verified: !!row.verified };
+        }
+        stmt.free();
+        return null;
+    }
+    getAgentById(id) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const stmt = this.db.prepare(`SELECT id, name, api_key as apiKey, human_username as humanUsername, verified,
+              stream_count as streamCount, total_viewers as totalViewers,
+              last_seen_at as lastSeenAt, created_at as createdAt
+       FROM agents WHERE id = ?`);
+        stmt.bind([id]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return { ...row, verified: !!row.verified };
+        }
+        stmt.free();
+        return null;
+    }
+    getAllAgents() {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const results = [];
+        const stmt = this.db.prepare(`SELECT id, name, api_key as apiKey, human_username as humanUsername, verified,
+              stream_count as streamCount, total_viewers as totalViewers,
+              last_seen_at as lastSeenAt, created_at as createdAt
+       FROM agents ORDER BY last_seen_at DESC`);
+        while (stmt.step()) {
+            const row = stmt.getAsObject();
+            results.push({ ...row, verified: !!row.verified });
+        }
+        stmt.free();
+        return results;
+    }
+    getRecentAgents(limit = 20) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const results = [];
+        const stmt = this.db.prepare(`SELECT id, name, api_key as apiKey, human_username as humanUsername, verified,
+              stream_count as streamCount, total_viewers as totalViewers,
+              last_seen_at as lastSeenAt, created_at as createdAt
+       FROM agents ORDER BY last_seen_at DESC LIMIT ?`);
+        stmt.bind([limit]);
+        while (stmt.step()) {
+            const row = stmt.getAsObject();
+            results.push({ ...row, verified: !!row.verified });
+        }
+        stmt.free();
+        return results;
+    }
+    updateAgentLastSeen(id) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        this.db.run(`UPDATE agents SET last_seen_at = ? WHERE id = ?`, [Date.now(), id]);
+        this.save();
+    }
+    claimAgent(agentId, humanUsername) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        this.db.run(`UPDATE agents SET human_username = ?, verified = 1 WHERE id = ?`, [humanUsername, agentId]);
+        const changes = this.db.getRowsModified();
+        if (changes > 0)
+            this.save();
+        return changes > 0;
+    }
+    incrementAgentStreamCount(agentId) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        this.db.run(`UPDATE agents SET stream_count = stream_count + 1 WHERE id = ?`, [agentId]);
+        this.save();
+    }
+    incrementAgentViewers(agentId, count) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        this.db.run(`UPDATE agents SET total_viewers = total_viewers + ? WHERE id = ?`, [count, agentId]);
+        this.save();
+    }
+    // Agent stream operations
+    createAgentStream(agentId, roomId, title, cols = 80, rows = 24) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const id = (0, uuid_1.v4)();
+        const startedAt = Date.now();
+        this.db.run(`INSERT INTO agent_streams (id, agent_id, room_id, title, cols, rows, started_at) VALUES (?, ?, ?, ?, ?, ?, ?)`, [id, agentId, roomId, title, cols, rows, startedAt]);
+        this.save();
+        return { id, agentId, roomId, title, cols, rows, startedAt };
+    }
+    getActiveAgentStream(agentId) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const stmt = this.db.prepare(`SELECT id, agent_id as agentId, room_id as roomId, title, cols, rows,
+              started_at as startedAt, ended_at as endedAt
+       FROM agent_streams WHERE agent_id = ? AND ended_at IS NULL`);
+        stmt.bind([agentId]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return row;
+        }
+        stmt.free();
+        return null;
+    }
+    endAgentStream(streamId) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        this.db.run(`UPDATE agent_streams SET ended_at = ? WHERE id = ?`, [Date.now(), streamId]);
+        const changes = this.db.getRowsModified();
+        if (changes > 0)
+            this.save();
+        return changes > 0;
+    }
+    getAgentStreamByRoomId(roomId) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const stmt = this.db.prepare(`SELECT id, agent_id as agentId, room_id as roomId, title, cols, rows,
+              started_at as startedAt, ended_at as endedAt
+       FROM agent_streams WHERE room_id = ?`);
+        stmt.bind([roomId]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return row;
+        }
+        stmt.free();
+        return null;
+    }
+    toAgentPublic(agent, isStreaming = false) {
+        return {
+            id: agent.id,
+            name: agent.name,
+            verified: agent.verified,
+            streamCount: agent.streamCount,
+            isStreaming,
+            lastSeenAt: agent.lastSeenAt,
+            createdAt: agent.createdAt,
+        };
     }
     // Cleanup
     close() {
