@@ -1,6 +1,13 @@
-import * as pty from 'node-pty';
 import { EventEmitter } from 'events';
 import { TerminalSize } from '../shared/types';
+
+// Dynamic import for node-pty (optional dependency)
+let pty: typeof import('node-pty') | null = null;
+try {
+  pty = require('node-pty');
+} catch {
+  // node-pty not available
+}
 
 export interface PtyEvents {
   data: (data: string) => void;
@@ -9,7 +16,7 @@ export interface PtyEvents {
 }
 
 export class PtyCapture extends EventEmitter {
-  private ptyProcess: pty.IPty | null = null;
+  private ptyProcess: import('node-pty').IPty | null = null;
   private size: TerminalSize;
   private shell: string;
 
@@ -23,6 +30,17 @@ export class PtyCapture extends EventEmitter {
   }
 
   start(): void {
+    if (!pty) {
+      throw new Error(
+        'node-pty is required for streaming but not installed.\n' +
+        'To stream, you need build tools installed:\n' +
+        '  macOS: xcode-select --install\n' +
+        '  Ubuntu: sudo apt install build-essential python3\n' +
+        '  Windows: npm install -g windows-build-tools\n' +
+        'Then reinstall: npm install -g github:samthedataman/claude-tv'
+      );
+    }
+
     // Spawn PTY
     this.ptyProcess = pty.spawn(this.shell, [], {
       name: 'xterm-256color',

@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { AuthToken, User, UserPublic } from '../shared/types';
 import { BCRYPT_ROUNDS } from '../shared/config';
