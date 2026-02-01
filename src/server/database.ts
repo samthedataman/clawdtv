@@ -1,4 +1,4 @@
-import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
+import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -16,114 +16,65 @@ import {
 import * as crypto from 'crypto';
 
 export class DatabaseService {
-  private db: SqlJsDatabase | null = null;
-  private dbPath: string;
-  private saveInterval: NodeJS.Timeout | null = null;
+  private pool: Pool;
 
-  constructor(dbPath: string) {
-    this.dbPath = dbPath;
+  constructor(connectionString?: string) {
+    // Use DATABASE_URL from environment (Render provides this)
+    const dbUrl = connectionString || process.env.DATABASE_URL;
+
+    if (!dbUrl) {
+      throw new Error('DATABASE_URL environment variable is required');
+    }
+
+    this.pool = new Pool({
+      connectionString: dbUrl,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    });
   }
 
   async init(): Promise<void> {
-    const SQL = await initSqlJs();
-
-    // Load existing database or create new one
-    if (fs.existsSync(this.dbPath)) {
-      const buffer = fs.readFileSync(this.dbPath);
-      this.db = new SQL.Database(buffer);
-    } else {
-      this.db = new SQL.Database();
-    }
-
-    this.initSchema();
-
-    // Auto-save every 30 seconds
-    this.saveInterval = setInterval(() => this.save(), 30000);
-  }
-
-  private initSchema(): void {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const schemaPath = path.join(__dirname, '../../db/schema.sql');
+    // Run schema
+    const schemaPath = path.join(__dirname, '../../db/schema-pg.sql');
     const schema = fs.readFileSync(schemaPath, 'utf-8');
-    this.db.run(schema);
-  }
-
-  private save(): void {
-    if (!this.db) return;
-    const data = this.db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(this.dbPath, buffer);
+    await this.pool.query(schema);
+    console.log('PostgreSQL database initialized');
   }
 
   // User operations
-  createUser(username: string, passwordHash: string, displayName?: string): User {
-    if (!this.db) throw new Error('Database not initialized');
-
+  async createUser(username: string, passwordHash: string, displayName?: string): Promise<User> {
     const id = uuidv4();
     const createdAt = Date.now();
 
-    this.db.run(
-      `INSERT INTO users (id, username, password_hash, display_name, created_at) VALUES (?, ?, ?, ?, ?)`,
+    await this.pool.query(
+      `INSERT INTO users (id, username, password_hash, display_name, created_at) VALUES ($1, $2, $3, $4, $5)`,
       [id, username, passwordHash, displayName || null, createdAt]
     );
 
-    this.save();
-
-    return {
-      id,
-      username,
-      passwordHash,
-      displayName,
-      createdAt,
-    };
+    return { id, username, passwordHash, displayName, createdAt };
   }
 
-  getUserById(id: string): User | null {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare(
-      `SELECT id, username, password_hash as passwordHash, display_name as displayName, created_at as createdAt FROM users WHERE id = ?`
+  async getUserById(id: string): Promise<User | null> {
+    const result = await this.pool.query(
+      `SELECT id, username, password_hash as "passwordHash", display_name as "displayName", created_at as "createdAt" FROM users WHERE id = $1`,
+      [id]
     );
-    stmt.bind([id]);
-
-    if (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      stmt.free();
-      return row;
-    }
-    stmt.free();
-    return null;
+    return result.rows[0] || null;
   }
 
-  getUserByUsername(username: string): User | null {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare(
-      `SELECT id, username, password_hash as passwordHash, display_name as displayName, created_at as createdAt FROM users WHERE username = ?`
+  async getUserByUsername(username: string): Promise<User | null> {
+    const result = await this.pool.query(
+      `SELECT id, username, password_hash as "passwordHash", display_name as "displayName", created_at as "createdAt" FROM users WHERE username = $1`,
+      [username]
     );
-    stmt.bind([username]);
-
-    if (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      stmt.free();
-      return row;
-    }
-    stmt.free();
-    return null;
+    return result.rows[0] || null;
   }
 
-  updateUser(id: string, updates: { displayName?: string }): boolean {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(
-      `UPDATE users SET display_name = COALESCE(?, display_name) WHERE id = ?`,
+  async updateUser(id: string, updates: { displayName?: string }): Promise<boolean> {
+    const result = await this.pool.query(
+      `UPDATE users SET display_name = COALESCE($1, display_name) WHERE id = $2`,
       [updates.displayName || null, id]
     );
-
-    const changes = this.db.getRowsModified();
-    if (changes > 0) this.save();
-    return changes > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   toUserPublic(user: User): UserPublic {
@@ -136,338 +87,198 @@ export class DatabaseService {
   }
 
   // Stream operations
-  createStream(
+  async createStream(
     ownerId: string,
     title: string,
     isPrivate: boolean,
     password?: string,
     maxViewers?: number
-  ): Stream {
-    if (!this.db) throw new Error('Database not initialized');
-
+  ): Promise<Stream> {
     const id = uuidv4();
     const startedAt = Date.now();
 
-    this.db.run(
-      `INSERT INTO streams (id, owner_id, title, is_private, password, max_viewers, started_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, ownerId, title, isPrivate ? 1 : 0, password || null, maxViewers || null, startedAt]
+    await this.pool.query(
+      `INSERT INTO streams (id, owner_id, title, is_private, password, max_viewers, started_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [id, ownerId, title, isPrivate, password || null, maxViewers || null, startedAt]
     );
 
-    this.save();
-
-    return {
-      id,
-      ownerId,
-      title,
-      isPrivate,
-      password,
-      maxViewers,
-      startedAt,
-    };
+    return { id, ownerId, title, isPrivate, password, maxViewers, startedAt };
   }
 
-  getStreamById(id: string): Stream | null {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare(
-      `SELECT id, owner_id as ownerId, title, is_private as isPrivate, password,
-              max_viewers as maxViewers, started_at as startedAt, ended_at as endedAt
-       FROM streams WHERE id = ?`
+  async getStreamById(id: string): Promise<Stream | null> {
+    const result = await this.pool.query(
+      `SELECT id, owner_id as "ownerId", title, is_private as "isPrivate", password,
+              max_viewers as "maxViewers", started_at as "startedAt", ended_at as "endedAt"
+       FROM streams WHERE id = $1`,
+      [id]
     );
-    stmt.bind([id]);
-
-    if (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      stmt.free();
-      return {
-        ...row,
-        isPrivate: !!row.isPrivate,
-      };
-    }
-    stmt.free();
-    return null;
+    return result.rows[0] || null;
   }
 
-  getActiveStreams(): Stream[] {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const results: Stream[] = [];
-    const stmt = this.db.prepare(
-      `SELECT id, owner_id as ownerId, title, is_private as isPrivate, password,
-              max_viewers as maxViewers, started_at as startedAt, ended_at as endedAt
+  async getActiveStreams(): Promise<Stream[]> {
+    const result = await this.pool.query(
+      `SELECT id, owner_id as "ownerId", title, is_private as "isPrivate", password,
+              max_viewers as "maxViewers", started_at as "startedAt", ended_at as "endedAt"
        FROM streams WHERE ended_at IS NULL ORDER BY started_at DESC`
     );
-
-    while (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      results.push({
-        ...row,
-        isPrivate: !!row.isPrivate,
-      });
-    }
-    stmt.free();
-    return results;
+    return result.rows;
   }
 
-  getPublicActiveStreams(): Stream[] {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const results: Stream[] = [];
-    const stmt = this.db.prepare(
-      `SELECT id, owner_id as ownerId, title, is_private as isPrivate, password,
-              max_viewers as maxViewers, started_at as startedAt, ended_at as endedAt
-       FROM streams WHERE ended_at IS NULL AND is_private = 0 ORDER BY started_at DESC`
+  async getPublicActiveStreams(): Promise<Stream[]> {
+    const result = await this.pool.query(
+      `SELECT id, owner_id as "ownerId", title, is_private as "isPrivate", password,
+              max_viewers as "maxViewers", started_at as "startedAt", ended_at as "endedAt"
+       FROM streams WHERE ended_at IS NULL AND is_private = false ORDER BY started_at DESC`
     );
-
-    while (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      results.push({
-        ...row,
-        isPrivate: !!row.isPrivate,
-      });
-    }
-    stmt.free();
-    return results;
+    return result.rows;
   }
 
-  endStream(id: string): boolean {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(
-      `UPDATE streams SET ended_at = ? WHERE id = ? AND ended_at IS NULL`,
+  async endStream(id: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `UPDATE streams SET ended_at = $1 WHERE id = $2 AND ended_at IS NULL`,
       [Date.now(), id]
     );
-
-    const changes = this.db.getRowsModified();
-    if (changes > 0) this.save();
-    return changes > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Chat message operations
-  saveMessage(
+  async saveMessage(
     roomId: string,
     userId: string,
     username: string,
     content: string,
     role: UserRole
-  ): ChatMessageDB {
-    if (!this.db) throw new Error('Database not initialized');
-
+  ): Promise<ChatMessageDB> {
     const id = uuidv4();
     const timestamp = Date.now();
 
-    this.db.run(
-      `INSERT INTO chat_messages (id, room_id, user_id, username, content, role, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    await this.pool.query(
+      `INSERT INTO chat_messages (id, room_id, user_id, username, content, role, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [id, roomId, userId, username, content, role, timestamp]
     );
 
-    this.save();
-
-    return {
-      id,
-      roomId,
-      userId,
-      username,
-      content,
-      role,
-      timestamp,
-    };
+    return { id, roomId, userId, username, content, role, timestamp };
   }
 
-  getRecentMessages(roomId: string, limit: number = 50): ChatMessageDB[] {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const results: ChatMessageDB[] = [];
-    const stmt = this.db.prepare(
-      `SELECT id, room_id as roomId, user_id as userId, username, content, role, timestamp
-       FROM chat_messages WHERE room_id = ? ORDER BY timestamp DESC LIMIT ?`
+  async getRecentMessages(roomId: string, limit: number = 50): Promise<ChatMessageDB[]> {
+    const result = await this.pool.query(
+      `SELECT id, room_id as "roomId", user_id as "userId", username, content, role, timestamp
+       FROM chat_messages WHERE room_id = $1 ORDER BY timestamp DESC LIMIT $2`,
+      [roomId, limit]
     );
-    stmt.bind([roomId, limit]);
-
-    while (stmt.step()) {
-      results.push(stmt.getAsObject() as any);
-    }
-    stmt.free();
-    return results.reverse();
+    return result.rows.reverse();
   }
 
-  clearRoomMessages(roomId: string): number {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(`DELETE FROM chat_messages WHERE room_id = ?`, [roomId]);
-    const changes = this.db.getRowsModified();
-    if (changes > 0) this.save();
-    return changes;
+  async clearRoomMessages(roomId: string): Promise<number> {
+    const result = await this.pool.query(`DELETE FROM chat_messages WHERE room_id = $1`, [roomId]);
+    return result.rowCount || 0;
   }
 
   // Moderation operations
-  addBan(
+  async addBan(
     roomId: string,
     userId: string,
     type: 'ban' | 'mute',
     createdBy: string,
     duration?: number
-  ): BanRecord {
-    if (!this.db) throw new Error('Database not initialized');
-
+  ): Promise<BanRecord> {
     const id = uuidv4();
     const createdAt = Date.now();
     const expiresAt = duration ? createdAt + duration * 1000 : undefined;
 
-    this.db.run(
-      `INSERT INTO moderation (id, room_id, user_id, type, expires_at, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    await this.pool.query(
+      `INSERT INTO moderation (id, room_id, user_id, type, expires_at, created_at, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [id, roomId, userId, type, expiresAt || null, createdAt, createdBy]
     );
 
-    this.save();
-
-    return {
-      id,
-      roomId,
-      userId,
-      type,
-      expiresAt,
-      createdAt,
-      createdBy,
-    };
+    return { id, roomId, userId, type, expiresAt, createdAt, createdBy };
   }
 
-  removeBan(roomId: string, userId: string, type: 'ban' | 'mute'): boolean {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(
-      `DELETE FROM moderation WHERE room_id = ? AND user_id = ? AND type = ?`,
+  async removeBan(roomId: string, userId: string, type: 'ban' | 'mute'): Promise<boolean> {
+    const result = await this.pool.query(
+      `DELETE FROM moderation WHERE room_id = $1 AND user_id = $2 AND type = $3`,
       [roomId, userId, type]
     );
-
-    const changes = this.db.getRowsModified();
-    if (changes > 0) this.save();
-    return changes > 0;
+    return (result.rowCount || 0) > 0;
   }
 
-  isUserBanned(roomId: string, userId: string): boolean {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare(
-      `SELECT 1 FROM moderation WHERE room_id = ? AND user_id = ? AND type = 'ban' AND (expires_at IS NULL OR expires_at > ?)`
+  async isUserBanned(roomId: string, userId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `SELECT 1 FROM moderation WHERE room_id = $1 AND user_id = $2 AND type = 'ban' AND (expires_at IS NULL OR expires_at > $3)`,
+      [roomId, userId, Date.now()]
     );
-    stmt.bind([roomId, userId, Date.now()]);
-
-    const result = stmt.step();
-    stmt.free();
-    return result;
+    return result.rows.length > 0;
   }
 
-  isUserMuted(roomId: string, userId: string): boolean {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare(
-      `SELECT 1 FROM moderation WHERE room_id = ? AND user_id = ? AND type = 'mute' AND (expires_at IS NULL OR expires_at > ?)`
+  async isUserMuted(roomId: string, userId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `SELECT 1 FROM moderation WHERE room_id = $1 AND user_id = $2 AND type = 'mute' AND (expires_at IS NULL OR expires_at > $3)`,
+      [roomId, userId, Date.now()]
     );
-    stmt.bind([roomId, userId, Date.now()]);
-
-    const result = stmt.step();
-    stmt.free();
-    return result;
+    return result.rows.length > 0;
   }
 
-  getActiveBans(roomId: string): BanRecord[] {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const results: BanRecord[] = [];
-    const stmt = this.db.prepare(
-      `SELECT id, room_id as roomId, user_id as userId, type, expires_at as expiresAt,
-              created_at as createdAt, created_by as createdBy
-       FROM moderation WHERE room_id = ? AND (expires_at IS NULL OR expires_at > ?)`
+  async getActiveBans(roomId: string): Promise<BanRecord[]> {
+    const result = await this.pool.query(
+      `SELECT id, room_id as "roomId", user_id as "userId", type, expires_at as "expiresAt",
+              created_at as "createdAt", created_by as "createdBy"
+       FROM moderation WHERE room_id = $1 AND (expires_at IS NULL OR expires_at > $2)`,
+      [roomId, Date.now()]
     );
-    stmt.bind([roomId, Date.now()]);
-
-    while (stmt.step()) {
-      results.push(stmt.getAsObject() as any);
-    }
-    stmt.free();
-    return results;
+    return result.rows;
   }
 
-  cleanExpiredBans(): number {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(
-      `DELETE FROM moderation WHERE expires_at IS NOT NULL AND expires_at < ?`,
+  async cleanExpiredBans(): Promise<number> {
+    const result = await this.pool.query(
+      `DELETE FROM moderation WHERE expires_at IS NOT NULL AND expires_at < $1`,
       [Date.now()]
     );
-
-    const changes = this.db.getRowsModified();
-    if (changes > 0) this.save();
-    return changes;
+    return result.rowCount || 0;
   }
 
   // Room moderator operations
-  addMod(roomId: string, userId: string, grantedBy: string): void {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(
-      `INSERT OR REPLACE INTO room_mods (room_id, user_id, granted_at, granted_by) VALUES (?, ?, ?, ?)`,
+  async addMod(roomId: string, userId: string, grantedBy: string): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO room_mods (room_id, user_id, granted_at, granted_by) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (room_id, user_id) DO UPDATE SET granted_at = $3, granted_by = $4`,
       [roomId, userId, Date.now(), grantedBy]
     );
-    this.save();
   }
 
-  removeMod(roomId: string, userId: string): boolean {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(
-      `DELETE FROM room_mods WHERE room_id = ? AND user_id = ?`,
+  async removeMod(roomId: string, userId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `DELETE FROM room_mods WHERE room_id = $1 AND user_id = $2`,
       [roomId, userId]
     );
-
-    const changes = this.db.getRowsModified();
-    if (changes > 0) this.save();
-    return changes > 0;
+    return (result.rowCount || 0) > 0;
   }
 
-  isMod(roomId: string, userId: string): boolean {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare(
-      `SELECT 1 FROM room_mods WHERE room_id = ? AND user_id = ?`
+  async isMod(roomId: string, userId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `SELECT 1 FROM room_mods WHERE room_id = $1 AND user_id = $2`,
+      [roomId, userId]
     );
-    stmt.bind([roomId, userId]);
-
-    const result = stmt.step();
-    stmt.free();
-    return result;
+    return result.rows.length > 0;
   }
 
-  getRoomMods(roomId: string): string[] {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const results: string[] = [];
-    const stmt = this.db.prepare(`SELECT user_id FROM room_mods WHERE room_id = ?`);
-    stmt.bind([roomId]);
-
-    while (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      results.push(row.user_id);
-    }
-    stmt.free();
-    return results;
+  async getRoomMods(roomId: string): Promise<string[]> {
+    const result = await this.pool.query(
+      `SELECT user_id FROM room_mods WHERE room_id = $1`,
+      [roomId]
+    );
+    return result.rows.map(row => row.user_id);
   }
 
   // Agent operations
-  createAgent(name: string): Agent {
-    if (!this.db) throw new Error('Database not initialized');
-
+  async createAgent(name: string): Promise<Agent> {
     const id = uuidv4();
     const apiKey = 'ctv_' + crypto.randomBytes(32).toString('hex');
     const now = Date.now();
 
-    this.db.run(
-      `INSERT INTO agents (id, name, api_key, verified, stream_count, total_viewers, last_seen_at, created_at) VALUES (?, ?, ?, 0, 0, 0, ?, ?)`,
+    await this.pool.query(
+      `INSERT INTO agents (id, name, api_key, verified, stream_count, total_viewers, last_seen_at, created_at) VALUES ($1, $2, $3, false, 0, 0, $4, $5)`,
       [id, name, apiKey, now, now]
     );
-
-    this.save();
 
     return {
       id,
@@ -481,200 +292,117 @@ export class DatabaseService {
     };
   }
 
-  getAgentByApiKey(apiKey: string): Agent | null {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare(
-      `SELECT id, name, api_key as apiKey, human_username as humanUsername, verified,
-              stream_count as streamCount, total_viewers as totalViewers,
-              last_seen_at as lastSeenAt, created_at as createdAt
-       FROM agents WHERE api_key = ?`
+  async getAgentByApiKey(apiKey: string): Promise<Agent | null> {
+    const result = await this.pool.query(
+      `SELECT id, name, api_key as "apiKey", human_username as "humanUsername", verified,
+              stream_count as "streamCount", total_viewers as "totalViewers",
+              last_seen_at as "lastSeenAt", created_at as "createdAt"
+       FROM agents WHERE api_key = $1`,
+      [apiKey]
     );
-    stmt.bind([apiKey]);
-
-    if (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      stmt.free();
-      return { ...row, verified: !!row.verified };
-    }
-    stmt.free();
-    return null;
+    return result.rows[0] || null;
   }
 
-  getAgentById(id: string): Agent | null {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare(
-      `SELECT id, name, api_key as apiKey, human_username as humanUsername, verified,
-              stream_count as streamCount, total_viewers as totalViewers,
-              last_seen_at as lastSeenAt, created_at as createdAt
-       FROM agents WHERE id = ?`
+  async getAgentById(id: string): Promise<Agent | null> {
+    const result = await this.pool.query(
+      `SELECT id, name, api_key as "apiKey", human_username as "humanUsername", verified,
+              stream_count as "streamCount", total_viewers as "totalViewers",
+              last_seen_at as "lastSeenAt", created_at as "createdAt"
+       FROM agents WHERE id = $1`,
+      [id]
     );
-    stmt.bind([id]);
-
-    if (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      stmt.free();
-      return { ...row, verified: !!row.verified };
-    }
-    stmt.free();
-    return null;
+    return result.rows[0] || null;
   }
 
-  getAllAgents(): Agent[] {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const results: Agent[] = [];
-    const stmt = this.db.prepare(
-      `SELECT id, name, api_key as apiKey, human_username as humanUsername, verified,
-              stream_count as streamCount, total_viewers as totalViewers,
-              last_seen_at as lastSeenAt, created_at as createdAt
+  async getAllAgents(): Promise<Agent[]> {
+    const result = await this.pool.query(
+      `SELECT id, name, api_key as "apiKey", human_username as "humanUsername", verified,
+              stream_count as "streamCount", total_viewers as "totalViewers",
+              last_seen_at as "lastSeenAt", created_at as "createdAt"
        FROM agents ORDER BY last_seen_at DESC`
     );
-
-    while (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      results.push({ ...row, verified: !!row.verified });
-    }
-    stmt.free();
-    return results;
+    return result.rows;
   }
 
-  getRecentAgents(limit: number = 20): Agent[] {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const results: Agent[] = [];
-    const stmt = this.db.prepare(
-      `SELECT id, name, api_key as apiKey, human_username as humanUsername, verified,
-              stream_count as streamCount, total_viewers as totalViewers,
-              last_seen_at as lastSeenAt, created_at as createdAt
-       FROM agents ORDER BY last_seen_at DESC LIMIT ?`
+  async getRecentAgents(limit: number = 20): Promise<Agent[]> {
+    const result = await this.pool.query(
+      `SELECT id, name, api_key as "apiKey", human_username as "humanUsername", verified,
+              stream_count as "streamCount", total_viewers as "totalViewers",
+              last_seen_at as "lastSeenAt", created_at as "createdAt"
+       FROM agents ORDER BY last_seen_at DESC LIMIT $1`,
+      [limit]
     );
-    stmt.bind([limit]);
-
-    while (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      results.push({ ...row, verified: !!row.verified });
-    }
-    stmt.free();
-    return results;
+    return result.rows;
   }
 
-  updateAgentLastSeen(id: string): void {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(`UPDATE agents SET last_seen_at = ? WHERE id = ?`, [Date.now(), id]);
-    this.save();
+  async updateAgentLastSeen(id: string): Promise<void> {
+    await this.pool.query(`UPDATE agents SET last_seen_at = $1 WHERE id = $2`, [Date.now(), id]);
   }
 
-  claimAgent(agentId: string, humanUsername: string): boolean {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(
-      `UPDATE agents SET human_username = ?, verified = 1 WHERE id = ?`,
+  async claimAgent(agentId: string, humanUsername: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `UPDATE agents SET human_username = $1, verified = true WHERE id = $2`,
       [humanUsername, agentId]
     );
-
-    const changes = this.db.getRowsModified();
-    if (changes > 0) this.save();
-    return changes > 0;
+    return (result.rowCount || 0) > 0;
   }
 
-  incrementAgentStreamCount(agentId: string): void {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(`UPDATE agents SET stream_count = stream_count + 1 WHERE id = ?`, [agentId]);
-    this.save();
+  async incrementAgentStreamCount(agentId: string): Promise<void> {
+    await this.pool.query(`UPDATE agents SET stream_count = stream_count + 1 WHERE id = $1`, [agentId]);
   }
 
-  incrementAgentViewers(agentId: string, count: number): void {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(`UPDATE agents SET total_viewers = total_viewers + ? WHERE id = ?`, [count, agentId]);
-    this.save();
+  async incrementAgentViewers(agentId: string, count: number): Promise<void> {
+    await this.pool.query(`UPDATE agents SET total_viewers = total_viewers + $1 WHERE id = $2`, [count, agentId]);
   }
 
   // Agent stream operations
-  createAgentStream(agentId: string, roomId: string, title: string, cols: number = 80, rows: number = 24): AgentStream {
-    if (!this.db) throw new Error('Database not initialized');
-
+  async createAgentStream(agentId: string, roomId: string, title: string, cols: number = 80, rows: number = 24): Promise<AgentStream> {
     const id = uuidv4();
     const startedAt = Date.now();
 
-    this.db.run(
-      `INSERT INTO agent_streams (id, agent_id, room_id, title, cols, rows, started_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    await this.pool.query(
+      `INSERT INTO agent_streams (id, agent_id, room_id, title, cols, rows, started_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [id, agentId, roomId, title, cols, rows, startedAt]
     );
-
-    this.save();
 
     return { id, agentId, roomId, title, cols, rows, startedAt };
   }
 
-  getActiveAgentStream(agentId: string): AgentStream | null {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare(
-      `SELECT id, agent_id as agentId, room_id as roomId, title, cols, rows,
-              started_at as startedAt, ended_at as endedAt
-       FROM agent_streams WHERE agent_id = ? AND ended_at IS NULL`
+  async getActiveAgentStream(agentId: string): Promise<AgentStream | null> {
+    const result = await this.pool.query(
+      `SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
+              started_at as "startedAt", ended_at as "endedAt"
+       FROM agent_streams WHERE agent_id = $1 AND ended_at IS NULL`,
+      [agentId]
     );
-    stmt.bind([agentId]);
-
-    if (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      stmt.free();
-      return row;
-    }
-    stmt.free();
-    return null;
+    return result.rows[0] || null;
   }
 
-  // Get ALL active agent streams (not just for one agent)
-  getActiveAgentStreams(): AgentStream[] {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const results: AgentStream[] = [];
-    const stmt = this.db.prepare(
-      `SELECT id, agent_id as agentId, room_id as roomId, title, cols, rows,
-              started_at as startedAt, ended_at as endedAt
+  async getActiveAgentStreams(): Promise<AgentStream[]> {
+    const result = await this.pool.query(
+      `SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
+              started_at as "startedAt", ended_at as "endedAt"
        FROM agent_streams WHERE ended_at IS NULL`
     );
-
-    while (stmt.step()) {
-      results.push(stmt.getAsObject() as any);
-    }
-    stmt.free();
-    return results;
+    return result.rows;
   }
 
-  endAgentStream(streamId: string): boolean {
-    if (!this.db) throw new Error('Database not initialized');
-
-    this.db.run(`UPDATE agent_streams SET ended_at = ? WHERE id = ?`, [Date.now(), streamId]);
-
-    const changes = this.db.getRowsModified();
-    if (changes > 0) this.save();
-    return changes > 0;
-  }
-
-  getAgentStreamByRoomId(roomId: string): AgentStream | null {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const stmt = this.db.prepare(
-      `SELECT id, agent_id as agentId, room_id as roomId, title, cols, rows,
-              started_at as startedAt, ended_at as endedAt
-       FROM agent_streams WHERE room_id = ?`
+  async endAgentStream(streamId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `UPDATE agent_streams SET ended_at = $1 WHERE id = $2`,
+      [Date.now(), streamId]
     );
-    stmt.bind([roomId]);
+    return (result.rowCount || 0) > 0;
+  }
 
-    if (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-      stmt.free();
-      return row;
-    }
-    stmt.free();
-    return null;
+  async getAgentStreamByRoomId(roomId: string): Promise<AgentStream | null> {
+    const result = await this.pool.query(
+      `SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
+              started_at as "startedAt", ended_at as "endedAt"
+       FROM agent_streams WHERE room_id = $1`,
+      [roomId]
+    );
+    return result.rows[0] || null;
   }
 
   toAgentPublic(agent: Agent, isStreaming: boolean = false): AgentPublic {
@@ -690,14 +418,7 @@ export class DatabaseService {
   }
 
   // Cleanup
-  close(): void {
-    if (this.saveInterval) {
-      clearInterval(this.saveInterval);
-    }
-    if (this.db) {
-      this.save();
-      this.db.close();
-      this.db = null;
-    }
+  async close(): Promise<void> {
+    await this.pool.end();
   }
 }

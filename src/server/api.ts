@@ -98,14 +98,14 @@ export function createApi(
     const publicStreams = activeRooms.filter((r) => !r.isPrivate);
 
     // Also get active agent streams from DB that might not be in memory
-    const activeAgentStreams = db.getActiveAgentStreams();
+    const activeAgentStreams = await db.getActiveAgentStreams();
     const inMemoryRoomIds = new Set(publicStreams.map(r => r.id));
 
     // Add agent streams that aren't already in memory
-    const agentStreamsToAdd = activeAgentStreams
+    const agentStreamsToAdd = await Promise.all(activeAgentStreams
       .filter((s: any) => !inMemoryRoomIds.has(s.roomId))
-      .map((s: any) => {
-        const agent = db.getAgentById(s.agentId);
+      .map(async (s: any) => {
+        const agent = await await db.getAgentById(s.agentId);
         return {
           id: s.roomId,
           ownerId: s.agentId,
@@ -116,7 +116,7 @@ export function createApi(
           viewerCount: 0,
           startedAt: s.startedAt,
         };
-      });
+      }));
 
     const allStreams = [...publicStreams.map((r) => ({
       id: r.id,
@@ -185,7 +185,7 @@ export function createApi(
         return;
       }
 
-      rooms.endRoom(id, 'ended');
+      await rooms.endRoom(id, 'ended');
       reply.send({ success: true } as ApiResponse);
     }
   );
@@ -195,7 +195,7 @@ export function createApi(
     Params: { id: string };
   }>('/api/users/:id', async (request, reply) => {
     const { id } = request.params;
-    const user = db.getUserById(id);
+    const user = await db.getUserById(id);
 
     if (!user) {
       reply.code(404).send({ success: false, error: 'User not found' } as ApiResponse);
@@ -225,14 +225,14 @@ export function createApi(
       }
 
       const { displayName } = req.body;
-      const updated = db.updateUser(id, { displayName });
+      const updated = await db.updateUser(id, { displayName });
 
       if (!updated) {
         reply.code(404).send({ success: false, error: 'User not found' } as ApiResponse);
         return;
       }
 
-      const user = db.getUserById(id);
+      const user = await db.getUserById(id);
       reply.send({
         success: true,
         data: user ? db.toUserPublic(user) : null,
@@ -342,7 +342,7 @@ export function createApi(
       return;
     }
 
-    const agent = db.createAgent(name);
+    const agent = await db.createAgent(name);
 
     reply.send({
       success: true,
@@ -357,10 +357,10 @@ export function createApi(
   });
 
   // Helper to validate agent API key
-  const getAgentFromRequest = (request: any) => {
+  const getAgentFromRequest = async (request: any) => {
     const apiKey = request.headers['x-api-key'] as string;
     if (!apiKey) return null;
-    return db.getAgentByApiKey(apiKey);
+    return await db.getAgentByApiKey(apiKey);
   };
 
   // In-memory storage for room rules and pending join requests
@@ -394,14 +394,14 @@ export function createApi(
       guidelines?: string[];   // Rules for participants
     };
   }>('/api/agent/stream/start', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
     }
 
     // Check if agent already has an active stream
-    const existingStream = db.getActiveAgentStream(agent.id);
+    const existingStream = await db.getActiveAgentStream(agent.id);
     if (existingStream) {
       reply.code(400).send({
         success: false,
@@ -428,10 +428,10 @@ export function createApi(
 
     // Create a room for the stream
     const roomId = require('uuid').v4();
-    const stream = db.createStream(agent.id, title || `${agent.name}'s Stream`, false);
+    const stream = await db.createStream(agent.id, title || `${agent.name}'s Stream`, false);
 
     // Create agent stream record
-    const agentStream = db.createAgentStream(agent.id, roomId, title || `${agent.name}'s Stream`, cols, rows);
+    const agentStream = await db.createAgentStream(agent.id, roomId, title || `${agent.name}'s Stream`, cols, rows);
 
     // Create room in memory
     rooms.createAgentRoom(roomId, stream, agent, { cols, rows });
@@ -447,8 +447,8 @@ export function createApi(
       guidelines,
     });
 
-    db.updateAgentLastSeen(agent.id);
-    db.incrementAgentStreamCount(agent.id);
+    await db.updateAgentLastSeen(agent.id);
+    await db.incrementAgentStreamCount(agent.id);
 
     // Auto-post welcome message with room info
     const welcomeParts: string[] = [];
@@ -484,7 +484,7 @@ export function createApi(
       role: 'broadcaster' as const,
       timestamp: Date.now(),
     };
-    db.saveMessage(roomId, agent.id, agent.name, welcomeMessage, 'broadcaster');
+    await db.saveMessage(roomId, agent.id, agent.name, welcomeMessage, 'broadcaster');
     rooms.broadcastToRoom(roomId, welcomeChatMsg);
 
     reply.send({
@@ -512,7 +512,7 @@ export function createApi(
   fastify.post<{
     Body: { streamId?: string; roomId?: string; data: string };
   }>('/api/agent/stream/data', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
@@ -522,10 +522,10 @@ export function createApi(
 
     // Find the active stream
     const agentStream = streamId
-      ? db.getActiveAgentStream(agent.id)
+      ? await db.getActiveAgentStream(agent.id)
       : roomId
-        ? db.getAgentStreamByRoomId(roomId)
-        : db.getActiveAgentStream(agent.id);
+        ? await await db.getAgentStreamByRoomId(roomId)
+        : await db.getActiveAgentStream(agent.id);
 
     if (!agentStream || agentStream.agentId !== agent.id) {
       reply.code(404).send({ success: false, error: 'No active stream found' });
@@ -536,14 +536,14 @@ export function createApi(
     let room = rooms.getRoom(agentStream.roomId);
     if (!room) {
       // Recreate the room from DB record
-      const stream = db.getStreamById(agentStream.roomId) || db.createStream(agent.id, agentStream.title, false);
+      const stream = await db.getStreamById(agentStream.roomId) || await await db.createStream(agent.id, agentStream.title, false);
       rooms.createAgentRoom(agentStream.roomId, stream, agent, { cols: agentStream.cols, rows: agentStream.rows });
       room = rooms.getRoom(agentStream.roomId);
     }
 
     // Broadcast terminal data to viewers
     rooms.broadcastTerminalData(agentStream.roomId, data);
-    db.updateAgentLastSeen(agent.id);
+    await db.updateAgentLastSeen(agent.id);
 
     reply.send({ success: true });
   });
@@ -552,7 +552,7 @@ export function createApi(
   fastify.post<{
     Body: { streamId?: string; roomId?: string };
   }>('/api/agent/stream/end', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
@@ -561,24 +561,24 @@ export function createApi(
     const { streamId, roomId } = request.body;
 
     const agentStream = streamId
-      ? db.getActiveAgentStream(agent.id)
+      ? await db.getActiveAgentStream(agent.id)
       : roomId
-        ? db.getAgentStreamByRoomId(roomId)
-        : db.getActiveAgentStream(agent.id);
+        ? await db.getAgentStreamByRoomId(roomId)
+        : await db.getActiveAgentStream(agent.id);
 
     if (!agentStream || agentStream.agentId !== agent.id) {
       reply.code(404).send({ success: false, error: 'No active stream found' });
       return;
     }
 
-    db.endAgentStream(agentStream.id);
-    rooms.endRoom(agentStream.roomId, 'ended');
+    await await db.endAgentStream(agentStream.id);
+    await rooms.endRoom(agentStream.roomId, 'ended');
 
     // Clean up room rules
     roomRules.delete(agentStream.roomId);
     pendingJoinRequests.delete(agentStream.roomId);
 
-    db.updateAgentLastSeen(agent.id);
+    await await db.updateAgentLastSeen(agent.id);
 
     reply.send({ success: true, message: 'Stream ended' });
   });
@@ -589,13 +589,13 @@ export function createApi(
   fastify.post<{
     Body: { objective?: string; context?: string; guidelines?: string[] };
   }>('/api/agent/stream/context', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
     }
 
-    const agentStream = db.getActiveAgentStream(agent.id);
+    const agentStream = await db.getActiveAgentStream(agent.id);
     if (!agentStream) {
       reply.code(404).send({ success: false, error: 'No active stream' });
       return;
@@ -638,13 +638,13 @@ export function createApi(
   fastify.post<{
     Body: { maxAgents?: number; requireApproval?: boolean };
   }>('/api/agent/stream/rules', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
     }
 
-    const agentStream = db.getActiveAgentStream(agent.id);
+    const agentStream = await db.getActiveAgentStream(agent.id);
     if (!agentStream) {
       reply.code(404).send({ success: false, error: 'No active stream' });
       return;
@@ -677,7 +677,7 @@ export function createApi(
   fastify.post<{
     Body: { roomId: string; message?: string };
   }>('/api/agent/stream/request-join', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
@@ -705,8 +705,13 @@ export function createApi(
 
     // Check if already allowed or no approval needed
     if (!rules?.requireApproval || rules.allowedAgents.has(agent.id)) {
-      // Check max agents
-      const agentViewers = Array.from(room.viewers.values()).filter(v => v.userId.startsWith('agent_') || db.getAgentById(v.userId));
+      // Check max agents - filter viewers that are agents
+      const viewerList = Array.from(room.viewers.values());
+      const agentChecks = await Promise.all(viewerList.map(async v => ({
+        viewer: v,
+        isAgent: v.userId.startsWith('agent_') || !!(await db.getAgentById(v.userId))
+      })));
+      const agentViewers = agentChecks.filter(c => c.isAgent).map(c => c.viewer);
       if (rules?.maxAgents && agentViewers.length >= rules.maxAgents) {
         reply.code(403).send({ success: false, error: `Room is full (max ${rules.maxAgents} agents)` });
         return;
@@ -751,13 +756,13 @@ export function createApi(
 
   // View pending join requests (broadcaster only)
   fastify.get('/api/agent/stream/requests', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
     }
 
-    const agentStream = db.getActiveAgentStream(agent.id);
+    const agentStream = await db.getActiveAgentStream(agent.id);
     if (!agentStream) {
       reply.code(404).send({ success: false, error: 'No active stream' });
       return;
@@ -779,13 +784,13 @@ export function createApi(
   fastify.post<{
     Body: { agentId: string; message?: string };
   }>('/api/agent/stream/approve', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
     }
 
-    const agentStream = db.getActiveAgentStream(agent.id);
+    const agentStream = await db.getActiveAgentStream(agent.id);
     if (!agentStream) {
       reply.code(404).send({ success: false, error: 'No active stream' });
       return;
@@ -811,7 +816,7 @@ export function createApi(
     pendingJoinRequests.set(agentStream.roomId, pending.filter(p => p.agentId !== agentId));
 
     // Auto-add them as viewer
-    const targetAgent = db.getAgentById(agentId);
+    const targetAgent = await db.getAgentById(agentId);
     if (targetAgent) {
       rooms.addAgentViewer(agentStream.roomId, agentId, targetAgent.name);
 
@@ -832,13 +837,13 @@ export function createApi(
   fastify.post<{
     Body: { agentId: string; reason?: string; block?: boolean };
   }>('/api/agent/stream/reject', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
     }
 
-    const agentStream = db.getActiveAgentStream(agent.id);
+    const agentStream = await db.getActiveAgentStream(agent.id);
     if (!agentStream) {
       reply.code(404).send({ success: false, error: 'No active stream' });
       return;
@@ -882,13 +887,13 @@ export function createApi(
   fastify.post<{
     Body: { agentId: string; reason?: string; block?: boolean };
   }>('/api/agent/stream/kick', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
     }
 
-    const agentStream = db.getActiveAgentStream(agent.id);
+    const agentStream = await db.getActiveAgentStream(agent.id);
     if (!agentStream) {
       reply.code(404).send({ success: false, error: 'No active stream' });
       return;
@@ -900,7 +905,7 @@ export function createApi(
       return;
     }
 
-    const targetAgent = db.getAgentById(agentId);
+    const targetAgent = await db.getAgentById(agentId);
 
     // Remove from viewers
     rooms.removeAgentViewer(agentStream.roomId, agentId);
@@ -929,13 +934,13 @@ export function createApi(
 
   // Get agent's current stream status
   fastify.get('/api/agent/stream/status', async (request, reply) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
     }
 
-    const agentStream = db.getActiveAgentStream(agent.id);
+    const agentStream = await db.getActiveAgentStream(agent.id);
     if (!agentStream) {
       reply.send({
         success: true,
@@ -947,11 +952,15 @@ export function createApi(
     const room = rooms.getRoom(agentStream.roomId);
 
     // Count agent viewers (excluding the broadcaster)
-    const agentViewers = room
-      ? Array.from(room.viewers.values()).filter(
-          v => (v.userId.startsWith('agent_') || db.getAgentById(v.userId)) && v.userId !== `agent_${agent.id}`
-        )
-      : [];
+    let agentViewers: any[] = [];
+    if (room) {
+      const viewerList = Array.from(room.viewers.values());
+      const agentChecks = await Promise.all(viewerList.map(async v => ({
+        viewer: v,
+        isAgent: (v.userId.startsWith('agent_') || !!(await db.getAgentById(v.userId))) && v.userId !== `agent_${agent.id}`
+      })));
+      agentViewers = agentChecks.filter(c => c.isAgent).map(c => c.viewer);
+    }
     const agentCount = agentViewers.length;
     const viewerCount = room?.viewers.size || 0;
     const humanViewerCount = viewerCount - agentCount;
@@ -989,12 +998,12 @@ export function createApi(
 
   // List all registered agents
   fastify.get('/api/agents', async (request, reply) => {
-    const agents = db.getRecentAgents(50);
+    const agents = await db.getRecentAgents(50);
     const activeStreams = new Set<string>();
 
     // Check which agents are currently streaming
     for (const agent of agents) {
-      const stream = db.getActiveAgentStream(agent.id);
+      const stream = await db.getActiveAgentStream(agent.id);
       if (stream) activeStreams.add(agent.id);
     }
 
@@ -1011,7 +1020,7 @@ export function createApi(
   fastify.post<{
     Body: { roomId: string; message?: string };
   }>('/api/agent/watch/join', async (request: any, reply: any) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
@@ -1072,9 +1081,12 @@ export function createApi(
 
     // Check max agents
     if (rules?.maxAgents) {
-      const agentViewerCount = Array.from(room.viewers.values()).filter(v =>
-        v.userId !== agent.id && (v.userId.includes('agent') || db.getAgentById(v.userId))
-      ).length;
+      const viewerList = Array.from(room.viewers.values());
+      const agentChecks = await Promise.all(viewerList.map(async v => ({
+        viewer: v,
+        isAgent: v.userId !== agent.id && (v.userId.includes('agent') || !!(await db.getAgentById(v.userId)))
+      })));
+      const agentViewerCount = agentChecks.filter(c => c.isAgent).length;
 
       if (agentViewerCount >= rules.maxAgents) {
         reply.code(403).send({
@@ -1088,7 +1100,7 @@ export function createApi(
 
     // Track agent as viewer (using their agent ID as a virtual connection)
     rooms.addAgentViewer(roomId, agent.id, agent.name);
-    db.updateAgentLastSeen(agent.id);
+    await db.updateAgentLastSeen(agent.id);
 
     // Get room context for the joining agent
     const roomContext = rules ? {
@@ -1123,7 +1135,7 @@ export function createApi(
   fastify.post<{
     Body: { roomId: string; message: string };
   }>('/api/agent/watch/chat', async (request: any, reply: any) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
@@ -1158,11 +1170,11 @@ export function createApi(
     };
 
     // Save to database for persistence
-    db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
+    await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
 
     // Broadcast to all viewers in the room
     rooms.broadcastToRoom(roomId, chatMsg);
-    db.updateAgentLastSeen(agent.id);
+    await db.updateAgentLastSeen(agent.id);
 
     reply.send({
       success: true,
@@ -1178,7 +1190,7 @@ export function createApi(
   fastify.post<{
     Body: { roomId: string; message: string };
   }>('/api/comment', async (request: any, reply: any) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid API key. Get one at POST /api/agent/register' });
       return;
@@ -1212,9 +1224,9 @@ export function createApi(
       timestamp: Date.now(),
     };
 
-    db.saveMessage(roomId, agent.id, agent.name, message.slice(0, 500), 'agent');
+    await db.saveMessage(roomId, agent.id, agent.name, message.slice(0, 500), 'agent');
     rooms.broadcastToRoom(roomId, chatMsg);
-    db.updateAgentLastSeen(agent.id);
+    await db.updateAgentLastSeen(agent.id);
 
     reply.send({ success: true, message: 'Comment sent!', data: { messageId: chatMsg.id } });
   });
@@ -1284,13 +1296,13 @@ export function createApi(
   fastify.post<{
     Body: { gifUrl: string; caption?: string };
   }>('/api/agent/stream/gif', async (request: any, reply: any) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
     }
 
-    const agentStream = db.getActiveAgentStream(agent.id);
+    const agentStream = await db.getActiveAgentStream(agent.id);
     if (!agentStream) {
       reply.code(400).send({ success: false, error: 'You are not streaming' });
       return;
@@ -1314,9 +1326,9 @@ export function createApi(
       timestamp: Date.now(),
     };
 
-    db.saveMessage(agentStream.roomId, agent.id, agent.name, chatMsg.content, 'broadcaster');
+    await db.saveMessage(agentStream.roomId, agent.id, agent.name, chatMsg.content, 'broadcaster');
     rooms.broadcastToRoom(agentStream.roomId, chatMsg);
-    db.updateAgentLastSeen(agent.id);
+    await db.updateAgentLastSeen(agent.id);
 
     reply.send({
       success: true,
@@ -1331,7 +1343,7 @@ export function createApi(
   fastify.post<{
     Body: { roomId: string; gifUrl: string; caption?: string };
   }>('/api/agent/watch/gif', async (request: any, reply: any) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
@@ -1366,9 +1378,9 @@ export function createApi(
       timestamp: Date.now(),
     };
 
-    db.saveMessage(roomId, agent.id, agent.name, chatMsg.content, 'agent');
+    await db.saveMessage(roomId, agent.id, agent.name, chatMsg.content, 'agent');
     rooms.broadcastToRoom(roomId, chatMsg);
-    db.updateAgentLastSeen(agent.id);
+    await db.updateAgentLastSeen(agent.id);
 
     reply.send({
       success: true,
@@ -1383,7 +1395,7 @@ export function createApi(
   fastify.post<{
     Body: { roomId: string };
   }>('/api/agent/watch/leave', async (request: any, reply: any) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
@@ -1396,7 +1408,7 @@ export function createApi(
     }
 
     rooms.removeAgentViewer(roomId, agent.id);
-    db.updateAgentLastSeen(agent.id);
+    await db.updateAgentLastSeen(agent.id);
 
     reply.send({
       success: true,
@@ -1406,13 +1418,13 @@ export function createApi(
 
   // Agent fetches chat messages from their own stream (for context injection)
   fastify.get('/api/agent/stream/chat', async (request: any, reply: any) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
     }
 
-    const agentStream = db.getActiveAgentStream(agent.id);
+    const agentStream = await db.getActiveAgentStream(agent.id);
     if (!agentStream) {
       reply.send({
         success: true,
@@ -1426,7 +1438,7 @@ export function createApi(
     const limit = Math.min(parseInt((request.query as any).limit) || 20, 100);
 
     // Get recent chat messages from the room
-    const messages = rooms.getRecentMessages(agentStream.roomId)
+    const messages = (await rooms.getRecentMessages(agentStream.roomId))
       .filter(msg => msg.timestamp > since)
       .slice(-limit)
       .map(msg => ({
@@ -1437,7 +1449,7 @@ export function createApi(
         role: msg.role,
       }));
 
-    db.updateAgentLastSeen(agent.id);
+    await db.updateAgentLastSeen(agent.id);
 
     reply.send({
       success: true,
@@ -1454,7 +1466,7 @@ export function createApi(
   fastify.post<{
     Body: { message: string };
   }>('/api/agent/stream/reply', async (request: any, reply: any) => {
-    const agent = getAgentFromRequest(request);
+    const agent = await getAgentFromRequest(request);
     if (!agent) {
       reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
       return;
@@ -1471,7 +1483,7 @@ export function createApi(
       return;
     }
 
-    const agentStream = db.getActiveAgentStream(agent.id);
+    const agentStream = await db.getActiveAgentStream(agent.id);
     if (!agentStream) {
       reply.code(400).send({ success: false, error: 'You are not streaming' });
       return;
@@ -1489,11 +1501,11 @@ export function createApi(
     };
 
     // Save to database for persistence
-    db.saveMessage(agentStream.roomId, agent.id, agent.name, message, 'broadcaster');
+    await db.saveMessage(agentStream.roomId, agent.id, agent.name, message, 'broadcaster');
 
     // Broadcast to all viewers
     rooms.broadcastToRoom(agentStream.roomId, chatMsg);
-    db.updateAgentLastSeen(agent.id);
+    await db.updateAgentLastSeen(agent.id);
 
     reply.send({
       success: true,
@@ -4012,13 +4024,13 @@ const collaborateWithAgent = async (apiKey, roomId) => {
     const publicStreams = activeRooms.filter(r => !r.isPrivate);
 
     // Get recent agents
-    const recentAgents = db.getRecentAgents(10);
-    const totalAgents = db.getAllAgents().length;
+    const recentAgents = await db.getRecentAgents(10);
+    const totalAgents = (await db.getAllAgents()).length;
 
     // Check which agents are streaming
     const streamingAgentIds = new Set<string>();
     for (const agent of recentAgents) {
-      const stream = db.getActiveAgentStream(agent.id);
+      const stream = await db.getActiveAgentStream(agent.id);
       if (stream) streamingAgentIds.add(agent.id);
     }
 

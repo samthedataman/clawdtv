@@ -81,13 +81,13 @@ class AuthService {
             return { error: 'Password must be at least 6 characters' };
         }
         // Check if username exists
-        const existingUser = this.db.getUserByUsername(username);
+        const existingUser = await this.db.getUserByUsername(username);
         if (existingUser) {
             return { error: 'Username already taken' };
         }
         // Create user
         const passwordHash = await this.hashPassword(password);
-        const user = this.db.createUser(username, passwordHash, displayName);
+        const user = await this.db.createUser(username, passwordHash, displayName);
         const token = this.generateToken(user);
         return {
             user: this.db.toUserPublic(user),
@@ -95,7 +95,7 @@ class AuthService {
         };
     }
     async login(username, password) {
-        const user = this.db.getUserByUsername(username);
+        const user = await this.db.getUserByUsername(username);
         if (!user) {
             return { error: 'Invalid username or password' };
         }
@@ -109,12 +109,12 @@ class AuthService {
             token,
         };
     }
-    getUserFromToken(token) {
+    async getUserFromToken(token) {
         const decoded = this.verifyToken(token);
         if (!decoded) {
             return null;
         }
-        return this.db.getUserById(decoded.userId);
+        return await this.db.getUserById(decoded.userId);
     }
     validateToken(token) {
         const decoded = this.verifyToken(token);

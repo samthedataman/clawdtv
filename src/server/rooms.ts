@@ -29,7 +29,7 @@ export class RoomManager {
     this.db = db;
   }
 
-  createRoom(
+  async createRoom(
     ownerId: string,
     ownerUsername: string,
     title: string,
@@ -37,9 +37,9 @@ export class RoomManager {
     password?: string,
     maxViewers?: number,
     terminalSize: TerminalSize = { cols: 80, rows: 24 }
-  ): { room: Room; stream: Stream } {
+  ): Promise<{ room: Room; stream: Stream }> {
     // Create stream in database
-    const stream = this.db.createStream(ownerId, title, isPrivate, password, maxViewers);
+    const stream = await this.db.createStream(ownerId, title, isPrivate, password, maxViewers);
 
     // Create room
     const room: Room = {
@@ -58,10 +58,10 @@ export class RoomManager {
     this.rooms.set(room.id, room);
 
     // Load existing mods and bans from DB
-    const dbMods = this.db.getRoomMods(room.id);
+    const dbMods = await this.db.getRoomMods(room.id);
     dbMods.forEach((modId) => room.mods.add(modId));
 
-    const dbBans = this.db.getActiveBans(room.id);
+    const dbBans = await this.db.getActiveBans(room.id);
     dbBans.forEach((ban) => {
       if (ban.type === 'ban') {
         room.bans.set(ban.userId, ban.expiresAt || Infinity);
@@ -182,12 +182,12 @@ export class RoomManager {
     }));
   }
 
-  endRoom(roomId: string, reason: string = 'ended'): void {
+  async endRoom(roomId: string, reason: string = 'ended'): Promise<void> {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
     // End stream in database
-    this.db.endStream(room.stream.id);
+    await this.db.endStream(room.stream.id);
 
     // Map custom reasons to valid protocol reasons
     const protocolReason = (reason === 'ended' || reason === 'disconnected' || reason === 'timeout')
@@ -278,13 +278,13 @@ export class RoomManager {
   }
 
   // Moderation
-  banUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): boolean {
+  async banUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): Promise<boolean> {
     const room = this.rooms.get(roomId);
     if (!room) return false;
 
     const expiry = duration ? Date.now() + duration * 1000 : Infinity;
     room.bans.set(targetUserId, expiry);
-    this.db.addBan(roomId, targetUserId, 'ban', moderatorId, duration);
+    await this.db.addBan(roomId, targetUserId, 'ban', moderatorId, duration);
 
     // Kick the user if they're viewing
     const viewer = room.viewers.get(targetUserId);
@@ -298,40 +298,40 @@ export class RoomManager {
     return true;
   }
 
-  unbanUser(roomId: string, targetUserId: string): boolean {
+  async unbanUser(roomId: string, targetUserId: string): Promise<boolean> {
     const room = this.rooms.get(roomId);
     if (!room) return false;
 
     room.bans.delete(targetUserId);
-    this.db.removeBan(roomId, targetUserId, 'ban');
+    await this.db.removeBan(roomId, targetUserId, 'ban');
     return true;
   }
 
-  muteUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): boolean {
+  async muteUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): Promise<boolean> {
     const room = this.rooms.get(roomId);
     if (!room) return false;
 
     const expiry = duration ? Date.now() + duration * 1000 : Infinity;
     room.mutes.set(targetUserId, expiry);
-    this.db.addBan(roomId, targetUserId, 'mute', moderatorId, duration);
+    await this.db.addBan(roomId, targetUserId, 'mute', moderatorId, duration);
     return true;
   }
 
-  unmuteUser(roomId: string, targetUserId: string): boolean {
+  async unmuteUser(roomId: string, targetUserId: string): Promise<boolean> {
     const room = this.rooms.get(roomId);
     if (!room) return false;
 
     room.mutes.delete(targetUserId);
-    this.db.removeBan(roomId, targetUserId, 'mute');
+    await this.db.removeBan(roomId, targetUserId, 'mute');
     return true;
   }
 
-  addMod(roomId: string, targetUserId: string, grantedBy: string): boolean {
+  async addMod(roomId: string, targetUserId: string, grantedBy: string): Promise<boolean> {
     const room = this.rooms.get(roomId);
     if (!room) return false;
 
     room.mods.add(targetUserId);
-    this.db.addMod(roomId, targetUserId, grantedBy);
+    await this.db.addMod(roomId, targetUserId, grantedBy);
 
     // Update viewer role if present
     const viewer = room.viewers.get(targetUserId);
@@ -342,12 +342,12 @@ export class RoomManager {
     return true;
   }
 
-  removeMod(roomId: string, targetUserId: string): boolean {
+  async removeMod(roomId: string, targetUserId: string): Promise<boolean> {
     const room = this.rooms.get(roomId);
     if (!room) return false;
 
     room.mods.delete(targetUserId);
-    this.db.removeMod(roomId, targetUserId);
+    await this.db.removeMod(roomId, targetUserId);
 
     // Update viewer role if present
     const viewer = room.viewers.get(targetUserId);
@@ -366,11 +366,11 @@ export class RoomManager {
     return true;
   }
 
-  clearChat(roomId: string): boolean {
+  async clearChat(roomId: string): Promise<boolean> {
     const room = this.rooms.get(roomId);
     if (!room) return false;
 
-    this.db.clearRoomMessages(roomId);
+    await this.db.clearRoomMessages(roomId);
     return true;
   }
 
@@ -514,8 +514,8 @@ export class RoomManager {
   }
 
   // Get recent messages for a room
-  getRecentMessages(roomId: string): ChatMessage[] {
-    const dbMessages = this.db.getRecentMessages(roomId, MAX_RECENT_MESSAGES);
+  async getRecentMessages(roomId: string): Promise<ChatMessage[]> {
+    const dbMessages = await this.db.getRecentMessages(roomId, MAX_RECENT_MESSAGES);
     return dbMessages.map((msg) => ({
       type: 'chat' as const,
       id: msg.id,

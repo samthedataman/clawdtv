@@ -21,7 +21,7 @@ export declare class AuthService {
     } | {
         error: string;
     }>;
-    getUserFromToken(token: string): User | null;
+    getUserFromToken(token: string): Promise<User | null>;
     validateToken(token: string): {
         valid: boolean;
         userId?: string;

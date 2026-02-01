@@ -49,7 +49,7 @@ class WebSocketHandler {
         ws.on('close', () => this.handleDisconnect(ws));
         ws.on('error', () => this.handleDisconnect(ws));
     }
-    handleMessage(ws, data) {
+    async handleMessage(ws, data) {
         const state = this.clients.get(ws);
         if (!state)
             return;
@@ -78,10 +78,10 @@ class WebSocketHandler {
             this.handleCreateStream(ws, state, message);
         }
         else if ((0, protocol_1.isJoinStream)(message)) {
-            this.handleJoinStream(ws, state, message);
+            await this.handleJoinStream(ws, state, message);
         }
         else if ((0, protocol_1.isSendChat)(message)) {
-            this.handleSendChat(ws, state, message);
+            await this.handleSendChat(ws, state, message);
         }
         else if ((0, protocol_1.isTerminalData)(message)) {
             this.handleTerminalData(ws, state, message);
@@ -132,7 +132,7 @@ class WebSocketHandler {
         // This prevents random UI users from creating streams
         this.sendError(ws, 'AGENTS_ONLY', 'Stream creation is only available for AI agents. Visit /skill.md to learn how to stream as an agent.');
     }
-    handleJoinStream(ws, state, message) {
+    async handleJoinStream(ws, state, message) {
         const room = this.rooms.getRoom(message.roomId);
         if (!room) {
             this.send(ws, (0, protocol_1.createMessage)({
@@ -163,7 +163,7 @@ class WebSocketHandler {
         }
         state.roomId = message.roomId;
         // Get recent messages
-        const recentMessages = this.rooms.getRecentMessages(message.roomId);
+        const recentMessages = await this.rooms.getRecentMessages(message.roomId);
         // Get terminal buffer for replay
         const terminalBuffer = this.rooms.getTerminalBuffer(message.roomId);
         this.send(ws, (0, protocol_1.createMessage)({
@@ -180,7 +180,7 @@ class WebSocketHandler {
             terminalBuffer,
         }));
     }
-    handleSendChat(ws, state, message) {
+    async handleSendChat(ws, state, message) {
         if (!state.roomId) {
             this.sendError(ws, 'NOT_IN_ROOM', 'You are not in a room');
             return;
@@ -190,7 +190,7 @@ class WebSocketHandler {
             return;
         // Handle commands
         if (content.startsWith('/')) {
-            this.handleChatCommand(ws, state, content);
+            await this.handleChatCommand(ws, state, content);
             return;
         }
         // Check if user can send
@@ -220,7 +220,7 @@ class WebSocketHandler {
             }
         }
         // Save and broadcast message
-        const dbMsg = this.db.saveMessage(state.roomId, state.userId, state.username, content, role);
+        const dbMsg = await this.db.saveMessage(state.roomId, state.userId, state.username, content, role);
         const chatMsg = (0, protocol_1.createMessage)({
             type: 'chat',
             id: dbMsg.id,
@@ -233,7 +233,7 @@ class WebSocketHandler {
         this.rooms.broadcastToRoom(state.roomId, chatMsg);
         this.rooms.broadcastToBroadcaster(state.roomId, chatMsg);
     }
-    handleChatCommand(ws, state, content) {
+    async handleChatCommand(ws, state, content) {
         const parts = content.slice(1).split(' ');
         const command = parts[0].toLowerCase();
         const args = parts.slice(1);
@@ -290,13 +290,13 @@ class WebSocketHandler {
             case 'unmod':
             case 'slow':
             case 'clear':
-                this.handleModCommand(ws, state, command, args);
+                await this.handleModCommand(ws, state, command, args);
                 break;
             default:
                 this.sendError(ws, 'UNKNOWN_COMMAND', `Unknown command: /${command}`);
         }
     }
-    handleModCommand(ws, state, command, args) {
+    async handleModCommand(ws, state, command, args) {
         if (!this.rooms.canModerate(state.roomId, state.userId)) {
             this.sendError(ws, 'FORBIDDEN', 'You do not have permission to use this command');
             return;
@@ -313,19 +313,19 @@ class WebSocketHandler {
                     this.sendError(ws, 'USER_NOT_FOUND', 'User not found');
                     return;
                 }
-                this.rooms.banUser(state.roomId, target.userId, state.userId, duration);
+                await this.rooms.banUser(state.roomId, target.userId, state.userId, duration);
                 this.broadcastModAction(state.roomId, 'ban', target.userId, target.username, state.username, duration);
                 break;
             }
             case 'unban': {
                 const targetUsername = args[0];
                 // For unban, we need to look up the user differently since they might not be in room
-                const user = this.db.getUserByUsername(targetUsername);
+                const user = await this.db.getUserByUsername(targetUsername);
                 if (!user) {
                     this.sendError(ws, 'USER_NOT_FOUND', 'User not found');
                     return;
                 }
-                this.rooms.unbanUser(state.roomId, user.id);
+                await this.rooms.unbanUser(state.roomId, user.id);
                 this.broadcastModAction(state.roomId, 'unban', user.id, targetUsername, state.username);
                 break;
             }
@@ -337,7 +337,7 @@ class WebSocketHandler {
                     this.sendError(ws, 'USER_NOT_FOUND', 'User not found in room');
                     return;
                 }
-                this.rooms.muteUser(state.roomId, target.userId, state.userId, duration);
+                await this.rooms.muteUser(state.roomId, target.userId, state.userId, duration);
                 this.broadcastModAction(state.roomId, 'mute', target.userId, target.username, state.username, duration);
                 break;
             }
@@ -348,7 +348,7 @@ class WebSocketHandler {
                     this.sendError(ws, 'USER_NOT_FOUND', 'User not found');
                     return;
                 }
-                this.rooms.unmuteUser(state.roomId, target.userId);
+                await this.rooms.unmuteUser(state.roomId, target.userId);
                 this.broadcastModAction(state.roomId, 'unmute', target.userId, target.username, state.username);
                 break;
             }
@@ -363,7 +363,7 @@ class WebSocketHandler {
                     this.sendError(ws, 'USER_NOT_FOUND', 'User not found in room');
                     return;
                 }
-                this.rooms.addMod(state.roomId, target.userId, state.userId);
+                await this.rooms.addMod(state.roomId, target.userId, state.userId);
                 this.broadcastModAction(state.roomId, 'mod', target.userId, target.username, state.username);
                 break;
             }
@@ -378,7 +378,7 @@ class WebSocketHandler {
                     this.sendError(ws, 'USER_NOT_FOUND', 'User not found');
                     return;
                 }
-                this.rooms.removeMod(state.roomId, target.userId);
+                await this.rooms.removeMod(state.roomId, target.userId);
                 this.broadcastModAction(state.roomId, 'unmod', target.userId, target.username, state.username);
                 break;
             }
@@ -389,7 +389,7 @@ class WebSocketHandler {
                 break;
             }
             case 'clear': {
-                this.rooms.clearChat(state.roomId);
+                await this.rooms.clearChat(state.roomId);
                 this.broadcastModAction(state.roomId, 'clear', undefined, undefined, state.username);
                 break;
             }
@@ -413,13 +413,13 @@ class WebSocketHandler {
         // Forward resize event to all viewers
         this.rooms.broadcastToRoom(state.roomId, message);
     }
-    handleDisconnect(ws) {
+    async handleDisconnect(ws) {
         const state = this.clients.get(ws);
         if (!state)
             return;
         if (state.roomId) {
             if (state.role === 'broadcaster') {
-                this.rooms.endRoom(state.roomId, 'disconnected');
+                await this.rooms.endRoom(state.roomId, 'disconnected');
             }
             else {
                 this.rooms.removeViewer(state.roomId, state.userId);

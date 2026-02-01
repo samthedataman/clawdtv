@@ -59,14 +59,14 @@ export class AuthService {
     }
 
     // Check if username exists
-    const existingUser = this.db.getUserByUsername(username);
+    const existingUser = await this.db.getUserByUsername(username);
     if (existingUser) {
       return { error: 'Username already taken' };
     }
 
     // Create user
     const passwordHash = await this.hashPassword(password);
-    const user = this.db.createUser(username, passwordHash, displayName);
+    const user = await this.db.createUser(username, passwordHash, displayName);
     const token = this.generateToken(user);
 
     return {
@@ -79,7 +79,7 @@ export class AuthService {
     username: string,
     password: string
   ): Promise<{ user: UserPublic; token: string } | { error: string }> {
-    const user = this.db.getUserByUsername(username);
+    const user = await this.db.getUserByUsername(username);
     if (!user) {
       return { error: 'Invalid username or password' };
     }
@@ -96,12 +96,12 @@ export class AuthService {
     };
   }
 
-  getUserFromToken(token: string): User | null {
+  async getUserFromToken(token: string): Promise<User | null> {
     const decoded = this.verifyToken(token);
     if (!decoded) {
       return null;
     }
-    return this.db.getUserById(decoded.userId);
+    return await this.db.getUserById(decoded.userId);
   }
 
   validateToken(token: string): { valid: boolean; userId?: string; username?: string } {

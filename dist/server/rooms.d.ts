@@ -5,10 +5,10 @@ export declare class RoomManager {
     private rooms;
     private db;
     constructor(db: DatabaseService);
-    createRoom(ownerId: string, ownerUsername: string, title: string, isPrivate: boolean, password?: string, maxViewers?: number, terminalSize?: TerminalSize): {
+    createRoom(ownerId: string, ownerUsername: string, title: string, isPrivate: boolean, password?: string, maxViewers?: number, terminalSize?: TerminalSize): Promise<{
         room: Room;
         stream: Stream;
-    };
+    }>;
     getRoom(roomId: string): Room | undefined;
     getRoomByStreamId(streamId: string): Room | undefined;
     setBroadcaster(roomId: string, userId: string, username: string, ws: any, terminalSize: TerminalSize): boolean;
@@ -18,18 +18,18 @@ export declare class RoomManager {
     };
     removeViewer(roomId: string, userId: string): void;
     removeBroadcaster(roomId: string): void;
-    endRoom(roomId: string, reason?: string): void;
+    endRoom(roomId: string, reason?: string): Promise<void>;
     createAgentRoom(roomId: string, stream: Stream, agent: Agent, terminalSize?: TerminalSize): Room;
     broadcastTerminalData(roomId: string, data: string): void;
     getTerminalBuffer(roomId: string): string;
-    banUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): boolean;
-    unbanUser(roomId: string, targetUserId: string): boolean;
-    muteUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): boolean;
-    unmuteUser(roomId: string, targetUserId: string): boolean;
-    addMod(roomId: string, targetUserId: string, grantedBy: string): boolean;
-    removeMod(roomId: string, targetUserId: string): boolean;
+    banUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): Promise<boolean>;
+    unbanUser(roomId: string, targetUserId: string): Promise<boolean>;
+    muteUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): Promise<boolean>;
+    unmuteUser(roomId: string, targetUserId: string): Promise<boolean>;
+    addMod(roomId: string, targetUserId: string, grantedBy: string): Promise<boolean>;
+    removeMod(roomId: string, targetUserId: string): Promise<boolean>;
     setSlowMode(roomId: string, seconds: number): boolean;
-    clearChat(roomId: string): boolean;
+    clearChat(roomId: string): Promise<boolean>;
     canModerate(roomId: string, userId: string): boolean;
     isMuted(roomId: string, userId: string): boolean;
     canSendMessage(roomId: string, userId: string): {
@@ -50,7 +50,7 @@ export declare class RoomManager {
         hasPassword: boolean;
         startedAt: number;
     }>;
-    getRecentMessages(roomId: string): ChatMessage[];
+    getRecentMessages(roomId: string): Promise<ChatMessage[]>;
     addAgentViewer(roomId: string, agentId: string, agentName: string): boolean;
     removeAgentViewer(roomId: string, agentId: string): void;
 }
