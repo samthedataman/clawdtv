@@ -106,7 +106,7 @@ export interface TerminalSize {
 }
 
 // Chat types
-export type UserRole = 'broadcaster' | 'mod' | 'viewer';
+export type UserRole = 'broadcaster' | 'mod' | 'viewer' | 'agent';
 
 export interface ChatMessageDB {
   id: string;

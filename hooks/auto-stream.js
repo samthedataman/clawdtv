@@ -333,35 +333,44 @@ async function handleHook() {
     }
   }
 
-  // Check for viewer chat messages and output them to stderr (for context injection)
+  // Check for chat messages and output them to stderr (for context injection)
   const chatLastTs = state.chatLastTs || 0;
   const chatResult = await fetchViewerChat(apiKey, chatLastTs);
   if (chatResult.messages.length > 0) {
     state.chatLastTs = chatResult.lastTimestamp;
 
-    // Filter to only viewer messages (not our own broadcaster messages)
-    const viewerMessages = chatResult.messages.filter(m => m.role === 'viewer');
+    // Filter out our own broadcaster messages
+    const incomingMessages = chatResult.messages.filter(m => m.role !== 'broadcaster');
+
+    // Separate human viewers from other agents
+    const viewerMessages = incomingMessages.filter(m => m.role === 'viewer');
+    const agentMessages = incomingMessages.filter(m => m.role === 'agent');
 
     // Output viewer messages to stderr so Claude can see them
-    // This creates a feedback loop where Claude can respond to viewers
     for (const msg of viewerMessages) {
       process.stderr.write(`\n[VIEWER CHAT] ${msg.username}: ${msg.content}\n`);
     }
 
-    // Also show on stream (with reconnect support)
-    if (viewerMessages.length > 0) {
-      const chatDisplay = viewerMessages
-        .map(m => `\x1b[35m💬 ${m.username}:\x1b[0m ${m.content}`)
+    // Output agent messages with special formatting (agent-to-agent collaboration)
+    for (const msg of agentMessages) {
+      process.stderr.write(`\n[AGENT COLLAB] 🤖 ${msg.username}: ${msg.content}\n`);
+    }
+
+    // Show messages on stream (with reconnect support)
+    if (incomingMessages.length > 0) {
+      const chatDisplay = incomingMessages
+        .map(m => m.role === 'agent'
+          ? `\x1b[36m🤖 ${m.username}:\x1b[0m ${m.content}`  // Cyan for agents
+          : `\x1b[35m💬 ${m.username}:\x1b[0m ${m.content}`) // Magenta for humans
         .join('\r\n');
       const chatSendResult = await sendDataWithReconnect(apiKey, chatDisplay + '\r\n', state);
       if (chatSendResult.state !== state) {
         state = chatSendResult.state;
       }
 
-      // Auto-reply to acknowledge viewer messages (first 3 per batch)
+      // Auto-reply to human viewer messages (first 3 per batch)
       const messagesToAck = viewerMessages.slice(0, 3);
       for (const msg of messagesToAck) {
-        // Generate a contextual acknowledgment
         const acks = [
           `Hey ${msg.username}! I see your message - let me address that!`,
           `Thanks for the message, ${msg.username}! Working on it...`,
@@ -370,12 +379,24 @@ async function handleHook() {
           `Nice to see you ${msg.username}! Let me respond to that.`
         ];
         const ack = acks[Math.floor(Math.random() * acks.length)];
-
         try {
           await post('/api/agent/stream/reply', { message: ack }, apiKey);
-        } catch {
-          // Ignore reply errors
-        }
+        } catch {}
+      }
+
+      // Auto-reply to agent messages with collaboration acknowledgment
+      const agentsToAck = agentMessages.slice(0, 2);
+      for (const msg of agentsToAck) {
+        const acks = [
+          `🤖 ${msg.username}, thanks for the input! Incorporating your suggestion.`,
+          `Got it ${msg.username}! Good thinking - I'll factor that in.`,
+          `Thanks ${msg.username}! Agent collaboration in action 🤝`,
+          `Acknowledged ${msg.username}! Let's work on this together.`
+        ];
+        const ack = acks[Math.floor(Math.random() * acks.length)];
+        try {
+          await post('/api/agent/stream/reply', { message: ack }, apiKey);
+        } catch {}
       }
     }
 

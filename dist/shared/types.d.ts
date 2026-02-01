@@ -89,7 +89,7 @@ export interface TerminalSize {
     cols: number;
     rows: number;
 }
-export type UserRole = 'broadcaster' | 'mod' | 'viewer';
+export type UserRole = 'broadcaster' | 'mod' | 'viewer' | 'agent';
 export interface ChatMessageDB {
     id: string;
     roomId: string;

@@ -904,18 +904,18 @@ function createApi(db, auth, rooms) {
             reply.code(404).send({ success: false, error: 'Stream not found' });
             return;
         }
-        // Create and save chat message
+        // Create and save chat message (marked as agent, not viewer)
         const chatMsg = {
             type: 'chat',
             id: crypto.randomUUID(),
             userId: agent.id,
             username: agent.name,
             content: message,
-            role: 'viewer',
+            role: 'agent',
             timestamp: Date.now(),
         };
         // Save to database for persistence
-        db.saveMessage(roomId, agent.id, agent.name, message, 'viewer');
+        db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
         // Broadcast to all viewers in the room
         rooms.broadcastToRoom(roomId, chatMsg);
         db.updateAgentLastSeen(agent.id);
@@ -949,17 +949,17 @@ function createApi(db, auth, rooms) {
         if (!room.viewers.has(agent.id)) {
             rooms.addAgentViewer(roomId, agent.id, agent.name);
         }
-        // Send message
+        // Send message (marked as agent)
         const chatMsg = {
             type: 'chat',
             id: crypto.randomUUID(),
             userId: agent.id,
             username: agent.name,
             content: message.slice(0, 500),
-            role: 'viewer',
+            role: 'agent',
             timestamp: Date.now(),
         };
-        db.saveMessage(roomId, agent.id, agent.name, message.slice(0, 500), 'viewer');
+        db.saveMessage(roomId, agent.id, agent.name, message.slice(0, 500), 'agent');
         rooms.broadcastToRoom(roomId, chatMsg);
         db.updateAgentLastSeen(agent.id);
         reply.send({ success: true, message: 'Comment sent!', data: { messageId: chatMsg.id } });
@@ -2547,6 +2547,9 @@ const collaborateWithAgent = async (apiKey, roomId) => {
     .chat-message .broadcaster {
       color: #f85149;
     }
+    .chat-message .agent {
+      color: #56d364;
+    }
     .chat-message .text {
       color: #c9d1d9;
     }
@@ -2798,7 +2801,7 @@ const collaborateWithAgent = async (apiKey, roomId) => {
             // Load chat history
             if (msg.recentMessages) {
               msg.recentMessages.forEach(function(m) {
-                addChatMessage(m.username, m.content, m.role === 'broadcaster');
+                addChatMessage(m.username, m.content, m.role);
               });
             }
           }
@@ -2807,7 +2810,7 @@ const collaborateWithAgent = async (apiKey, roomId) => {
           term.write(msg.data);
           break;
         case 'chat':
-          addChatMessage(msg.username, msg.content, msg.role === 'broadcaster');
+          addChatMessage(msg.username, msg.content, msg.role);
           break;
         case 'viewerCount':
           document.getElementById('viewer-count').textContent = msg.count + ' viewer' + (msg.count === 1 ? '' : 's');
@@ -2834,11 +2837,19 @@ const collaborateWithAgent = async (apiKey, roomId) => {
       }
     }
 
-    function addChatMessage(name, text, isBroadcaster) {
+    function addChatMessage(name, text, role) {
       const container = document.getElementById('chat-messages');
       const div = document.createElement('div');
       div.className = 'chat-message';
-      div.innerHTML = '<span class="username ' + (isBroadcaster ? 'broadcaster' : '') + '">' +
+      let prefix = '';
+      let roleClass = '';
+      if (role === 'broadcaster') {
+        roleClass = 'broadcaster';
+      } else if (role === 'agent') {
+        roleClass = 'agent';
+        prefix = '🤖 ';
+      }
+      div.innerHTML = '<span class="username ' + roleClass + '">' + prefix +
         escapeHtml(name) + '</span>: <span class="text">' + escapeHtml(text) + '</span>';
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
