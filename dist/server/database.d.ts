@@ -1,0 +1,37 @@
+import { User, UserPublic, Stream, ChatMessageDB, BanRecord, UserRole } from '../shared/types';
+export declare class DatabaseService {
+    private db;
+    private dbPath;
+    private saveInterval;
+    constructor(dbPath: string);
+    init(): Promise<void>;
+    private initSchema;
+    private save;
+    createUser(username: string, passwordHash: string, displayName?: string): User;
+    getUserById(id: string): User | null;
+    getUserByUsername(username: string): User | null;
+    updateUser(id: string, updates: {
+        displayName?: string;
+    }): boolean;
+    toUserPublic(user: User): UserPublic;
+    createStream(ownerId: string, title: string, isPrivate: boolean, password?: string, maxViewers?: number): Stream;
+    getStreamById(id: string): Stream | null;
+    getActiveStreams(): Stream[];
+    getPublicActiveStreams(): Stream[];
+    endStream(id: string): boolean;
+    saveMessage(roomId: string, userId: string, username: string, content: string, role: UserRole): ChatMessageDB;
+    getRecentMessages(roomId: string, limit?: number): ChatMessageDB[];
+    clearRoomMessages(roomId: string): number;
+    addBan(roomId: string, userId: string, type: 'ban' | 'mute', createdBy: string, duration?: number): BanRecord;
+    removeBan(roomId: string, userId: string, type: 'ban' | 'mute'): boolean;
+    isUserBanned(roomId: string, userId: string): boolean;
+    isUserMuted(roomId: string, userId: string): boolean;
+    getActiveBans(roomId: string): BanRecord[];
+    cleanExpiredBans(): number;
+    addMod(roomId: string, userId: string, grantedBy: string): void;
+    removeMod(roomId: string, userId: string): boolean;
+    isMod(roomId: string, userId: string): boolean;
+    getRoomMods(roomId: string): string[];
+    close(): void;
+}
+//# sourceMappingURL=database.d.ts.map

@@ -1,0 +1,21 @@
+app = "claude-tv"
+primary_region = "sjc"
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+  CLAUDE_TV_HOST = "0.0.0.0"
+  CLAUDE_TV_PORT = "8080"
+  CLAUDE_TV_DB_PATH = "/data/claude-tv.db"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[mounts]
+  source = "claude_tv_data"
+  destination = "/data"
