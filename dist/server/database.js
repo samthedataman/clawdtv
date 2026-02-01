@@ -47,6 +47,22 @@ class DatabaseService {
         if (!dbUrl) {
             throw new Error('DATABASE_URL environment variable is required');
         }
+        // Validate it looks like a PostgreSQL URL
+        if (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://')) {
+            console.error('='.repeat(60));
+            console.error('INVALID DATABASE_URL');
+            console.error('='.repeat(60));
+            console.error(`Got: "${dbUrl}"`);
+            console.error('');
+            console.error('Expected format: postgresql://user:password@host/database');
+            console.error('');
+            console.error('Fix in Render Dashboard:');
+            console.error('1. Go to your claude-tv service');
+            console.error('2. Click Environment tab');
+            console.error('3. Set DATABASE_URL to your PostgreSQL connection string');
+            console.error('='.repeat(60));
+            throw new Error(`DATABASE_URL must start with postgresql:// or postgres://, got: "${dbUrl.slice(0, 20)}..."`);
+        }
         this.pool = new pg_1.Pool({
             connectionString: dbUrl,
             ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
