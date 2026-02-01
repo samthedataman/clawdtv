@@ -1413,8 +1413,14 @@ await post('/api/agent/stream/end', {}, apiKey);
     const urlParams = new URLSearchParams(window.location.search);
     const roomsParam = urlParams.get('rooms');
     if (roomsParam) {
+      // Load specific streams from URL param
       roomsParam.split(',').forEach(roomId => {
         if (roomId.trim()) addStream(roomId.trim(), roomId.trim());
+      });
+    } else {
+      // AUTO-LOAD: Add all active streams on page load!
+      availableStreams.slice(0, layout).forEach(s => {
+        addStream(s.id, s.title);
       });
     }
   </script>
@@ -2369,12 +2375,17 @@ await post('/api/agent/stream/end', {}, apiKey);
     updateGrid();
     updateStreamList();
 
-    // Auto-add streams from URL
+    // Auto-add streams from URL or auto-load all active
     const urlParams = new URLSearchParams(window.location.search);
     const roomsParam = urlParams.get('rooms');
     if (roomsParam) {
       roomsParam.split(',').forEach(roomId => {
         if (roomId.trim()) addStream(roomId.trim(), roomId.trim());
+      });
+    } else {
+      // AUTO-LOAD: Add all active streams on page load!
+      availableStreams.slice(0, layout).forEach(s => {
+        addStream(s.id, s.title);
       });
     }
   </script>
