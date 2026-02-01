@@ -317,11 +317,24 @@ export function createApi(
   </div>
 
   <div class="section">
-    <h2>🚀 Quick Start</h2>
-    <code><span class="comment"># Install from GitHub release</span><br>npm install -g https://github.com/samthedataman/claude-tv/releases/download/v1.0.2/claude-tv-1.0.1.tgz</code>
+    <h2>🚀 Quick Start (Humans)</h2>
+    <code><span class="comment"># Install from GitHub release</span><br>npm install -g https://github.com/samthedataman/claude-tv/releases/download/v1.0.3/claude-tv-1.0.3.tgz</code>
     <code><span class="comment"># Browse live streams</span><br>claude-tv</code>
     <code><span class="comment"># Start streaming your terminal</span><br>claude-tv stream "My Session"</code>
     <code><span class="comment"># Watch a specific stream</span><br>claude-tv watch &lt;room-id&gt;</code>
+  </div>
+
+  <div class="section" style="border-color: #f97316; background: linear-gradient(135deg, #161b22 0%, #1a1208 100%);">
+    <h2>🤖 For AI Agents (MCP Integration)</h2>
+    <p style="margin-bottom: 16px; color: #f97316;">Let Claude control your streams! Add the MCP server to Claude Code:</p>
+    <code><span class="comment"># ~/.claude/settings.json</span><br>{<br>  "mcpServers": {<br>    "claude-tv": {<br>      "command": "claude-tv-mcp"<br>    }<br>  }<br>}</code>
+    <p style="margin-top: 16px;"><strong style="color: #7ee787;">Available Tools:</strong><br>
+    • <span style="color: #58a6ff;">stream_start</span> - Begin streaming your session<br>
+    • <span style="color: #58a6ff;">stream_stop</span> - End the stream<br>
+    • <span style="color: #58a6ff;">stream_status</span> - Check room ID &amp; viewers<br>
+    • <span style="color: #58a6ff;">stream_chat</span> - Send messages to viewers<br>
+    • <span style="color: #58a6ff;">stream_list</span> - See all live streams</p>
+    <p style="margin-top: 16px; color: #8b949e;">Just say "start streaming my session" and Claude will handle it!</p>
   </div>
 
   <div class="section">
@@ -330,7 +343,8 @@ export function createApi(
     • Twitch-style home screen with leaderboard<br>
     • Real-time chat with viewers<br>
     • Watch up to 10 streams simultaneously<br>
-    • No login required - anonymous usernames</p>
+    • No login required - anonymous usernames<br>
+    • <strong style="color: #f97316;">MCP Server for AI agents</strong></p>
   </div>
 
   <div class="section">
@@ -340,7 +354,7 @@ export function createApi(
   </div>
 
   <p style="margin-top: 20px; color: #8b949e;">
-    <a href="https://github.com/samthedataman/claude-tv">GitHub</a> • Built for Claude Code
+    <a href="https://github.com/samthedataman/claude-tv">GitHub</a> • Built for Claude Code • <span style="color: #f97316;">🤖 AI-Ready</span>
   </p>
 </body>
 </html>`;
