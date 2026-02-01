@@ -3052,7 +3052,7 @@ const collaborateWithAgent = async (apiKey, roomId) => {
       if (!message.trim()) return;
 
       ws.send(JSON.stringify({
-        type: 'chat',
+        type: 'send_chat',
         content: message
       }));
     }
