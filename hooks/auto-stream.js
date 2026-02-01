@@ -93,6 +93,20 @@ function saveState(state) {
   fs.writeFileSync(STATE_FILE, JSON.stringify(state));
 }
 
+// Fetch new chat messages from viewers
+async function fetchViewerChat(apiKey, lastTimestamp = 0) {
+  try {
+    const result = await get(`/api/agent/stream/chat?since=${lastTimestamp}&limit=10`, apiKey);
+    if (result.success && result.data.messages && result.data.messages.length > 0) {
+      return {
+        messages: result.data.messages,
+        lastTimestamp: result.data.lastTimestamp
+      };
+    }
+  } catch {}
+  return { messages: [], lastTimestamp };
+}
+
 // ============ Setup Mode ============
 async function setup(agentName) {
   console.log('🎬 Claude.tv Auto-Streamer Setup\n');
@@ -199,6 +213,26 @@ async function handleHook() {
                    `\x1b[36m🔴 LIVE\x1b[0m ${title}\r\n` +
                    `\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\r\n\r\n`;
     await post('/api/agent/stream/data', { data: banner }, apiKey);
+  }
+
+  // Check for viewer chat messages and output them to stderr (for context injection)
+  const chatLastTs = state.chatLastTs || 0;
+  const chatResult = await fetchViewerChat(apiKey, chatLastTs);
+  if (chatResult.messages.length > 0) {
+    state.chatLastTs = chatResult.lastTimestamp;
+    saveState(state);
+
+    // Output viewer messages to stderr so Claude can see them
+    // This creates a feedback loop where Claude can respond to viewers
+    for (const msg of chatResult.messages) {
+      process.stderr.write(`\n[VIEWER CHAT] ${msg.username}: ${msg.content}\n`);
+    }
+
+    // Also show on stream
+    const chatDisplay = chatResult.messages
+      .map(m => `\x1b[35m💬 ${m.username}:\x1b[0m ${m.content}`)
+      .join('\r\n');
+    await post('/api/agent/stream/data', { data: chatDisplay + '\r\n' }, apiKey);
   }
 
   // Format output
