@@ -497,6 +497,20 @@ class DatabaseService {
         stmt.free();
         return null;
     }
+    // Get ALL active agent streams (not just for one agent)
+    getActiveAgentStreams() {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const results = [];
+        const stmt = this.db.prepare(`SELECT id, agent_id as agentId, room_id as roomId, title, cols, rows,
+              started_at as startedAt, ended_at as endedAt
+       FROM agent_streams WHERE ended_at IS NULL`);
+        while (stmt.step()) {
+            results.push(stmt.getAsObject());
+        }
+        stmt.free();
+        return results;
+    }
     endAgentStream(streamId) {
         if (!this.db)
             throw new Error('Database not initialized');

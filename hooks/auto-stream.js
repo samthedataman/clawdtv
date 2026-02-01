@@ -93,6 +93,109 @@ function saveState(state) {
   fs.writeFileSync(STATE_FILE, JSON.stringify(state));
 }
 
+function clearState() {
+  try { fs.unlinkSync(STATE_FILE); } catch {}
+}
+
+// Retry wrapper with exponential backoff
+async function withRetry(fn, maxRetries = 3, baseDelay = 1000) {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (i < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i)));
+      }
+    }
+  }
+  throw lastError;
+}
+
+// Verify stream is still active on server
+async function verifyStream(apiKey, roomId) {
+  try {
+    const result = await get('/api/agent/stream/status', apiKey);
+    return result.success && result.data && result.data.roomId === roomId;
+  } catch {
+    return false;
+  }
+}
+
+// Start a new stream with retry
+async function startNewStream(apiKey, title) {
+  return withRetry(async () => {
+    const result = await post('/api/agent/stream/start', {
+      title,
+      cols: 120,
+      rows: 30
+    }, apiKey);
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to start stream');
+    }
+    return result;
+  });
+}
+
+// Send data with automatic reconnection
+async function sendDataWithReconnect(apiKey, data, state, maxReconnectAttempts = 3) {
+  for (let attempt = 0; attempt <= maxReconnectAttempts; attempt++) {
+    const result = await post('/api/agent/stream/data', { data }, apiKey);
+
+    // Success
+    if (result.success) {
+      return { success: true, state };
+    }
+
+    // Check if stream doesn't exist (need to reconnect)
+    const needsReconnect = result.error && (
+      result.error.includes('not found') ||
+      result.error.includes('No active stream') ||
+      result.error.includes('not streaming') ||
+      result.status === 404
+    );
+
+    if (needsReconnect && attempt < maxReconnectAttempts) {
+      // Clear old state and start new stream
+      clearState();
+
+      try {
+        const title = `Claude Code Live - ${new Date().toLocaleTimeString()} (reconnected)`;
+        const newStream = await startNewStream(apiKey, title);
+
+        // Update state
+        state = {
+          roomId: newStream.data.roomId,
+          watchUrl: newStream.data.watchUrl,
+          startedAt: Date.now(),
+          reconnectCount: (state.reconnectCount || 0) + 1
+        };
+        saveState(state);
+
+        // Send reconnection banner
+        const banner = `\x1b[33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\r\n` +
+                       `\x1b[33m🔄 RECONNECTED\x1b[0m Stream restored automatically\r\n` +
+                       `\x1b[33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\r\n\r\n`;
+        await post('/api/agent/stream/data', { data: banner }, apiKey);
+
+        // Retry sending the original data
+        continue;
+      } catch (err) {
+        // Reconnection failed, try again
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+        continue;
+      }
+    }
+
+    // Non-recoverable error or max attempts reached
+    return { success: false, state, error: result.error };
+  }
+
+  return { success: false, state, error: 'Max reconnection attempts reached' };
+}
+
 // Fetch new chat messages from viewers
 async function fetchViewerChat(apiKey, lastTimestamp = 0) {
   try {
@@ -186,33 +289,48 @@ async function handleHook() {
     hookData = { raw: input };
   }
 
-  // Get or create stream
+  // Get or create stream (with automatic recovery)
   let state = getState();
-  if (!state) {
-    // Start new stream
-    const title = `Claude Code Live - ${new Date().toLocaleTimeString()}`;
-    const result = await post('/api/agent/stream/start', {
-      title,
-      cols: 120,
-      rows: 30
-    }, apiKey);
+  let needsNewStream = !state;
 
-    if (!result.success) {
+  // If we have state, verify the stream is still active
+  if (state && state.roomId) {
+    const isActive = await verifyStream(apiKey, state.roomId);
+    if (!isActive) {
+      // Stream died, need to reconnect
+      clearState();
+      needsNewStream = true;
+    }
+  }
+
+  if (needsNewStream) {
+    // Start new stream with retry logic
+    try {
+      const title = `Claude Code Live - ${new Date().toLocaleTimeString()}`;
+      const result = await startNewStream(apiKey, title);
+
+      state = {
+        roomId: result.data.roomId,
+        watchUrl: result.data.watchUrl,
+        startedAt: Date.now(),
+        reconnectCount: state?.reconnectCount || 0
+      };
+      saveState(state);
+
+      // Send welcome banner
+      const isReconnect = state.reconnectCount > 0;
+      const banner = isReconnect
+        ? `\x1b[33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\r\n` +
+          `\x1b[33m🔄 RECONNECTED\x1b[0m ${title}\r\n` +
+          `\x1b[33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\r\n\r\n`
+        : `\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\r\n` +
+          `\x1b[36m🔴 LIVE\x1b[0m ${title}\r\n` +
+          `\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\r\n\r\n`;
+      await post('/api/agent/stream/data', { data: banner }, apiKey);
+    } catch (err) {
+      // Failed to start stream after retries, exit silently
       process.exit(0);
     }
-
-    state = {
-      roomId: result.data.roomId,
-      watchUrl: result.data.watchUrl,
-      startedAt: Date.now()
-    };
-    saveState(state);
-
-    // Send welcome banner
-    const banner = `\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\r\n` +
-                   `\x1b[36m🔴 LIVE\x1b[0m ${title}\r\n` +
-                   `\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\r\n\r\n`;
-    await post('/api/agent/stream/data', { data: banner }, apiKey);
   }
 
   // Check for viewer chat messages and output them to stderr (for context injection)
@@ -228,11 +346,14 @@ async function handleHook() {
       process.stderr.write(`\n[VIEWER CHAT] ${msg.username}: ${msg.content}\n`);
     }
 
-    // Also show on stream
+    // Also show on stream (with reconnect support)
     const chatDisplay = chatResult.messages
       .map(m => `\x1b[35m💬 ${m.username}:\x1b[0m ${m.content}`)
       .join('\r\n');
-    await post('/api/agent/stream/data', { data: chatDisplay + '\r\n' }, apiKey);
+    const chatSendResult = await sendDataWithReconnect(apiKey, chatDisplay + '\r\n', state);
+    if (chatSendResult.state !== state) {
+      state = chatSendResult.state;
+    }
   }
 
   // Format output
@@ -268,9 +389,13 @@ async function handleHook() {
     output = hookData.raw.slice(0, 1000).replace(/\n/g, '\r\n') + '\r\n';
   }
 
-  // Send to stream
+  // Send to stream with automatic reconnection
   if (output) {
-    await post('/api/agent/stream/data', { data: output }, apiKey);
+    const sendResult = await sendDataWithReconnect(apiKey, output, state);
+    if (sendResult.state !== state) {
+      // State was updated during reconnection, save it
+      saveState(sendResult.state);
+    }
   }
 }
 

@@ -43,6 +43,7 @@ export declare class DatabaseService {
     incrementAgentViewers(agentId: string, count: number): void;
     createAgentStream(agentId: string, roomId: string, title: string, cols?: number, rows?: number): AgentStream;
     getActiveAgentStream(agentId: string): AgentStream | null;
+    getActiveAgentStreams(): AgentStream[];
     endAgentStream(streamId: string): boolean;
     getAgentStreamByRoomId(roomId: string): AgentStream | null;
     toAgentPublic(agent: Agent, isStreaming?: boolean): AgentPublic;

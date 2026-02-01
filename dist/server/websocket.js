@@ -127,19 +127,10 @@ class WebSocketHandler {
             username: state.username,
         }));
     }
-    handleCreateStream(ws, state, message) {
-        if (state.role !== 'broadcaster') {
-            this.sendError(ws, 'INVALID_ROLE', 'Only broadcasters can create streams');
-            return;
-        }
-        const { room, stream } = this.rooms.createRoom(state.userId, state.username, message.title, message.isPrivate, message.password, message.maxViewers, message.terminalSize);
-        this.rooms.setBroadcaster(room.id, state.userId, state.username, ws, message.terminalSize);
-        state.roomId = room.id;
-        this.send(ws, (0, protocol_1.createMessage)({
-            type: 'stream_created',
-            streamId: stream.id,
-            roomId: room.id,
-        }));
+    handleCreateStream(ws, state, _message) {
+        // Stream creation is disabled via WebSocket - only agents can create streams via API
+        // This prevents random UI users from creating streams
+        this.sendError(ws, 'AGENTS_ONLY', 'Stream creation is only available for AI agents. Visit /skill.md to learn how to stream as an agent.');
     }
     handleJoinStream(ws, state, message) {
         const room = this.rooms.getRoom(message.roomId);
