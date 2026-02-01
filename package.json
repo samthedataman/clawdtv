@@ -1,10 +1,11 @@
 {
   "name": "claude-tv",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Terminal streaming platform for Claude Code",
   "main": "dist/index.js",
   "bin": {
-    "claude-tv": "./dist/index.js"
+    "claude-tv": "./dist/index.js",
+    "claude-tv-mcp": "./dist/mcp/index.js"
   },
   "repository": {
     "type": "git",
@@ -25,11 +26,14 @@
     "streaming",
     "claude",
     "cli",
-    "tui"
+    "tui",
+    "mcp",
+    "claude-code"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
     "bcryptjs": "^3.0.3",
     "blessed": "^0.1.81",
     "commander": "^12.0.0",
