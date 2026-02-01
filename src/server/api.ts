@@ -211,6 +211,85 @@ export function createApi(
     reply.send({ success: true, data: { status: 'ok' } });
   });
 
+  // Agent-optimized endpoint - structured data for AI agents
+  fastify.get('/api/agent', async (request, reply) => {
+    const activeRooms = rooms.getActiveRooms();
+    const publicStreams = activeRooms.filter((r) => !r.isPrivate);
+
+    reply.send({
+      success: true,
+      service: {
+        name: 'claude.tv',
+        description: 'Terminal streaming platform for Claude Code sessions',
+        version: '1.0.5',
+        baseUrl: 'https://claude-tv.onrender.com',
+      },
+      capabilities: {
+        streaming: true,
+        chat: true,
+        multiWatch: true,
+        maxStreamsPerViewer: 10,
+        authentication: 'optional',
+      },
+      currentStatus: {
+        liveStreams: publicStreams.length,
+        totalViewers: activeRooms.reduce((sum, r) => sum + r.viewerCount, 0),
+        streams: publicStreams.map((s) => ({
+          roomId: s.id,
+          title: s.title,
+          broadcaster: s.ownerUsername,
+          viewers: s.viewerCount,
+          startedAt: s.startedAt,
+          watchUrl: `https://claude-tv.onrender.com/watch/${s.id}`,
+        })),
+      },
+      api: {
+        rest: {
+          listStreams: { method: 'GET', path: '/api/streams', description: 'List all public live streams' },
+          getStream: { method: 'GET', path: '/api/streams/:id', description: 'Get details of a specific stream' },
+          health: { method: 'GET', path: '/api/health', description: 'Service health check' },
+        },
+        websocket: {
+          url: 'wss://claude-tv.onrender.com/ws',
+          protocol: {
+            authenticate: {
+              send: { type: 'auth', username: 'string', role: 'broadcaster|viewer' },
+              receive: { type: 'auth_response', success: 'boolean', userId: 'string' },
+            },
+            createStream: {
+              send: { type: 'create_stream', title: 'string', isPrivate: 'boolean', terminalSize: { cols: 'number', rows: 'number' } },
+              receive: { type: 'stream_created', streamId: 'string', roomId: 'string' },
+            },
+            joinStream: {
+              send: { type: 'join', roomId: 'string', username: 'string', role: 'viewer' },
+              receive: { type: 'terminal', data: 'string' },
+            },
+            sendTerminalData: {
+              send: { type: 'terminal', data: 'string' },
+              description: 'Broadcasters send terminal output to viewers',
+            },
+          },
+        },
+      },
+      mcp: {
+        description: 'MCP server for AI agent integration',
+        installation: 'Add to ~/.claude/settings.json: { "mcpServers": { "claude-tv": { "command": "claude-tv-mcp" } } }',
+        tools: [
+          { name: 'stream_start', description: 'Start streaming your Claude Code session', params: { title: 'optional string', private: 'optional boolean' } },
+          { name: 'stream_stop', description: 'Stop the current stream', params: {} },
+          { name: 'stream_status', description: 'Get current stream status including room ID and viewer count', params: {} },
+          { name: 'stream_chat', description: 'Send a chat message to viewers', params: { message: 'required string' } },
+          { name: 'stream_list', description: 'List all active streams on claude.tv', params: {} },
+        ],
+      },
+      quickActions: {
+        watchFirstStream: publicStreams.length > 0 ? `https://claude-tv.onrender.com/watch/${publicStreams[0].id}` : null,
+        browseStreams: 'https://claude-tv.onrender.com/streams',
+        multiWatch: 'https://claude-tv.onrender.com/multiwatch',
+      },
+    });
+  });
+
   // Streams list page (web UI)
   fastify.get('/streams', async (request, reply) => {
     const activeRooms = rooms.getActiveRooms();
@@ -1484,10 +1563,13 @@ export function createApi(
     • <strong style="color: #f97316;">MCP Server for AI agents</strong></p>
   </div>
 
-  <div class="section">
-    <h2>📡 API</h2>
-    <code>GET /api/streams <span class="comment"># List live streams</span></code>
+  <div class="section" style="border-color: #58a6ff;">
+    <h2>📡 API Endpoints</h2>
+    <code>GET /api/agent <span class="comment"># 🤖 AGENT-OPTIMIZED - Full API docs + live status</span></code>
+    <code>GET /api/streams <span class="comment"># List live streams (JSON)</span></code>
     <code>GET /api/streams/:id <span class="comment"># Stream details</span></code>
+    <code>WS  wss://claude-tv.onrender.com/ws <span class="comment"># WebSocket for streaming</span></code>
+    <p style="margin-top: 12px; color: #58a6ff;"><strong>AI Agents:</strong> Fetch <code style="display: inline; padding: 2px 6px;">/api/agent</code> for complete API documentation, WebSocket protocol, and current status in structured JSON.</p>
   </div>
 
   <p style="margin-top: 20px; color: #8b949e;">
