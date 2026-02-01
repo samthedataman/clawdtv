@@ -52,6 +52,7 @@ export class RoomManager {
       bans: new Map(),
       slowMode: 0,
       lastMessages: new Map(),
+      terminalBuffer: '',
     };
 
     this.rooms.set(room.id, room);
@@ -238,6 +239,7 @@ export class RoomManager {
       bans: new Map(),
       slowMode: 0,
       lastMessages: new Map(),
+      terminalBuffer: '',
     };
 
     this.rooms.set(roomId, room);
@@ -249,6 +251,14 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
+    // Store in buffer for replay (limit to ~100KB)
+    const MAX_BUFFER_SIZE = 100000;
+    room.terminalBuffer += data;
+    if (room.terminalBuffer.length > MAX_BUFFER_SIZE) {
+      // Keep the last 80KB to avoid losing context mid-line
+      room.terminalBuffer = room.terminalBuffer.slice(-80000);
+    }
+
     const message = JSON.stringify({
       type: 'terminal',
       data,
@@ -259,6 +269,12 @@ export class RoomManager {
         viewer.ws.send(message);
       } catch {}
     });
+  }
+
+  // Get terminal buffer for replay to new viewers
+  getTerminalBuffer(roomId: string): string {
+    const room = this.rooms.get(roomId);
+    return room?.terminalBuffer || '';
   }
 
   // Moderation

@@ -217,6 +217,9 @@ export class WebSocketHandler {
     // Get recent messages
     const recentMessages = this.rooms.getRecentMessages(message.roomId);
 
+    // Get terminal buffer for replay
+    const terminalBuffer = this.rooms.getTerminalBuffer(message.roomId);
+
     this.send(ws, createMessage<JoinStreamResponseMessage>({
       type: 'join_stream_response',
       success: true,
@@ -228,6 +231,7 @@ export class WebSocketHandler {
         viewerCount: room.viewers.size,
       },
       recentMessages,
+      terminalBuffer,
     }));
   }
 

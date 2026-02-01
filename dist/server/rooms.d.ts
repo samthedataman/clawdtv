@@ -21,6 +21,7 @@ export declare class RoomManager {
     endRoom(roomId: string, reason?: string): void;
     createAgentRoom(roomId: string, stream: Stream, agent: Agent, terminalSize?: TerminalSize): Room;
     broadcastTerminalData(roomId: string, data: string): void;
+    getTerminalBuffer(roomId: string): string;
     banUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): boolean;
     unbanUser(roomId: string, targetUserId: string): boolean;
     muteUser(roomId: string, targetUserId: string, moderatorId: string, duration?: number): boolean;

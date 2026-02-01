@@ -82,6 +82,7 @@ export interface Room {
   bans: Map<string, number>; // userId -> expiry timestamp
   slowMode: number; // seconds between messages, 0 = off
   lastMessages: Map<string, number>; // userId -> last message timestamp
+  terminalBuffer: string; // Buffer of recent terminal output for replay
 }
 
 // Connection types

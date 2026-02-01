@@ -164,6 +164,8 @@ class WebSocketHandler {
         state.roomId = message.roomId;
         // Get recent messages
         const recentMessages = this.rooms.getRecentMessages(message.roomId);
+        // Get terminal buffer for replay
+        const terminalBuffer = this.rooms.getTerminalBuffer(message.roomId);
         this.send(ws, (0, protocol_1.createMessage)({
             type: 'join_stream_response',
             success: true,
@@ -175,6 +177,7 @@ class WebSocketHandler {
                 viewerCount: room.viewers.size,
             },
             recentMessages,
+            terminalBuffer,
         }));
     }
     handleSendChat(ws, state, message) {

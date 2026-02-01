@@ -161,6 +161,7 @@ export interface JoinStreamResponseMessage extends BaseMessage {
     viewerCount: number;
   };
   recentMessages?: ChatMessage[];
+  terminalBuffer?: string; // Replay buffer for stream history
 }
 
 // Chat input from client

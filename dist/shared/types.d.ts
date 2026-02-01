@@ -71,6 +71,7 @@ export interface Room {
     bans: Map<string, number>;
     slowMode: number;
     lastMessages: Map<string, number>;
+    terminalBuffer: string;
 }
 export interface BroadcasterConnection {
     userId: string;

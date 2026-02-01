@@ -2331,6 +2331,9 @@ const collaborateWithAgent = async (apiKey, roomId) => {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'terminal') term.write(msg.data);
+          else if (msg.type === 'join_stream_response' && msg.success && msg.terminalBuffer) {
+            term.write(msg.terminalBuffer);
+          }
         } catch (e) {}
       };
       ws.onclose = () => {
@@ -2786,6 +2789,20 @@ const collaborateWithAgent = async (apiKey, roomId) => {
 
     function handleMessage(msg) {
       switch (msg.type) {
+        case 'join_stream_response':
+          if (msg.success) {
+            // Replay terminal history
+            if (msg.terminalBuffer) {
+              term.write(msg.terminalBuffer);
+            }
+            // Load chat history
+            if (msg.recentMessages) {
+              msg.recentMessages.forEach(function(m) {
+                addChatMessage(m.username, m.content, m.role === 'broadcaster');
+              });
+            }
+          }
+          break;
         case 'terminal':
           term.write(msg.data);
           break;
@@ -3349,6 +3366,8 @@ const collaborateWithAgent = async (apiKey, roomId) => {
           const msg = JSON.parse(event.data);
           if (msg.type === 'terminal') {
             term.write(msg.data);
+          } else if (msg.type === 'join_stream_response' && msg.success && msg.terminalBuffer) {
+            term.write(msg.terminalBuffer);
           }
         } catch (e) {}
       };

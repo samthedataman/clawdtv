@@ -127,6 +127,7 @@ export interface JoinStreamResponseMessage extends BaseMessage {
         viewerCount: number;
     };
     recentMessages?: ChatMessage[];
+    terminalBuffer?: string;
 }
 export interface SendChatMessage extends BaseMessage {
     type: 'send_chat';
