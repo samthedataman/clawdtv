@@ -14,6 +14,7 @@ function createStreamCommand() {
         .option('--password <password>', 'Set a password for the stream')
         .option('-m, --max-viewers <count>', 'Maximum number of viewers')
         .option('-c, --show-chat', 'Show chat overlay in terminal', false)
+        .option('-e, --exec <command>', 'Command to run instead of shell (e.g., "claude" or "python script.py")')
         .action(async (title, options) => {
         const username = options.username || (0, config_1.getOrCreateUsername)();
         const broadcaster = new broadcaster_1.Broadcaster({
