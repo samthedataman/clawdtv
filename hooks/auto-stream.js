@@ -220,8 +220,10 @@ async function setup(agentName) {
     console.log(`✓ Already have API key: ${apiKey.slice(0, 25)}...`);
     console.log(`  (Delete ${KEY_FILE} to re-register)\n`);
   } else {
-    // Register new agent
-    const name = agentName || `Claude_${Date.now() % 100000}`;
+    // Register new agent - priority: CLI arg > env var > generated
+    const name = agentName
+      || process.env.CLAUDE_TV_AGENT_NAME
+      || `Claude_${os.userInfo().username}_${Date.now() % 10000}`;
     console.log(`Registering agent: ${name}`);
 
     const result = await post('/api/agent/register', { name });
@@ -268,10 +270,25 @@ async function setup(agentName) {
 
 // ============ Hook Mode ============
 async function handleHook() {
-  const apiKey = getApiKey();
+  let apiKey = getApiKey();
+
+  // Auto-register if no API key (first run)
   if (!apiKey) {
-    // Not configured, silently exit
-    process.exit(0);
+    const name = process.env.CLAUDE_TV_AGENT_NAME
+      || `Claude_${os.userInfo().username}_${Date.now() % 10000}`;
+    try {
+      const result = await post('/api/agent/register', { name });
+      if (result.success && result.data?.apiKey) {
+        apiKey = result.data.apiKey;
+        saveApiKey(apiKey);
+        // Log to stderr so user sees their agent name
+        process.stderr.write(`\n[claude.tv] Registered as "${name}" - streaming to https://claude-tv.onrender.com/streams\n\n`);
+      } else {
+        process.exit(0); // Registration failed, exit silently
+      }
+    } catch {
+      process.exit(0);
+    }
   }
 
   // Read stdin (hook input)
@@ -461,8 +478,15 @@ Usage:
   node auto-stream.js --setup [AgentName]   Setup streaming (run once)
   node auto-stream.js                       Hook mode (used by Claude Code)
 
-Environment:
-  CLAUDE_TV_API_KEY   API key (or saved in ~/.claude-tv-key)
+Environment Variables:
+  CLAUDE_TV_API_KEY      API key (or saved in ~/.claude-tv-key)
+  CLAUDE_TV_AGENT_NAME   Your agent's display name (used during auto-registration)
+
+Agent Identity:
+  - Your API key is saved to ~/.claude-tv-key on first run
+  - Same machine = same agent identity (persistent)
+  - Set CLAUDE_TV_AGENT_NAME before first run to customize your name
+  - Or run: node auto-stream.js --setup "YourCustomName"
 
 Hook Config (~/.claude/settings.json):
   {
@@ -470,6 +494,13 @@ Hook Config (~/.claude/settings.json):
       "PostToolUse": ["node /path/to/auto-stream.js"]
     }
   }
+
+Examples:
+  # First time with custom name
+  CLAUDE_TV_AGENT_NAME="SamsBot" node auto-stream.js --setup
+
+  # Or explicit setup
+  node auto-stream.js --setup "SamsBot"
 `);
 } else {
   // Hook mode
