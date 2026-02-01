@@ -2480,22 +2480,23 @@ const collaborateWithAgent = async (apiKey, roomId) => {
     let streams = {};
     let availableStreams = ${JSON.stringify(publicStreams.map(s => ({ id: s.id, title: s.title, owner: s.ownerUsername, viewers: s.viewerCount })))};
 
-    // Auto-select layout based on stream count
+    // Auto-select layout based on ACTUAL stream count - ALWAYS start small
     function autoSelectLayout() {
-      const count = availableStreams.length;
+      const count = Object.keys(streams).length || availableStreams.length;
+      // Default to 1, only increase if we have more streams
+      // Never jump to larger layout than needed
       let newLayout = 1;
-      if (count >= 6) newLayout = 6;
+      if (count >= 9) newLayout = 9;
+      else if (count >= 6) newLayout = 6;
       else if (count >= 4) newLayout = 4;
       else if (count >= 2) newLayout = 2;
-      else newLayout = 1;
+      else newLayout = 1; // 0 or 1 streams = layout 1
 
-      if (newLayout !== layout) {
-        layout = newLayout;
-        document.querySelectorAll('.layout-btn').forEach(b => {
-          b.classList.toggle('active', parseInt(b.dataset.layout) === layout);
-        });
-        updateGrid();
-      }
+      layout = newLayout;
+      document.querySelectorAll('.layout-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.layout) === layout);
+      });
+      updateGrid();
     }
 
     document.querySelectorAll('.layout-btn').forEach(btn => {
@@ -2507,7 +2508,8 @@ const collaborateWithAgent = async (apiKey, roomId) => {
       });
     });
 
-    // Auto-select on load
+    // Always start with layout 1, then auto-adjust
+    layout = 1;
     autoSelectLayout();
 
     function updateGrid() {
@@ -3464,22 +3466,23 @@ const collaborateWithAgent = async (apiKey, roomId) => {
     let streams = {}; // roomId -> { term, ws, fitAddon }
     let availableStreams = ${JSON.stringify(publicStreams.map(s => ({ id: s.id, title: s.title, owner: s.ownerUsername, viewers: s.viewerCount })))};
 
-    // Auto-select layout based on stream count
+    // Auto-select layout based on ACTUAL stream count - ALWAYS start small
     function autoSelectLayout() {
-      const count = availableStreams.length;
+      const count = Object.keys(streams).length || availableStreams.length;
+      // Default to 1, only increase if we have more streams
+      // Never jump to larger layout than needed
       let newLayout = 1;
-      if (count >= 6) newLayout = 6;
+      if (count >= 9) newLayout = 9;
+      else if (count >= 6) newLayout = 6;
       else if (count >= 4) newLayout = 4;
       else if (count >= 2) newLayout = 2;
-      else newLayout = 1;
+      else newLayout = 1; // 0 or 1 streams = layout 1
 
-      if (newLayout !== layout) {
-        layout = newLayout;
-        document.querySelectorAll('.layout-btn').forEach(b => {
-          b.classList.toggle('active', parseInt(b.dataset.layout) === layout);
-        });
-        updateGrid();
-      }
+      layout = newLayout;
+      document.querySelectorAll('.layout-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.layout) === layout);
+      });
+      updateGrid();
     }
 
     // Layout management
@@ -3492,7 +3495,8 @@ const collaborateWithAgent = async (apiKey, roomId) => {
       });
     });
 
-    // Auto-select on load
+    // Always start with layout 1, then auto-adjust
+    layout = 1;
     autoSelectLayout();
 
     function updateGrid() {
