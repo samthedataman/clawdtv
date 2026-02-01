@@ -201,5 +201,151 @@ export function createApi(
     reply.send({ success: true, data: { status: 'ok' } });
   });
 
+  // Landing page
+  fastify.get('/', async (request, reply) => {
+    const activeRooms = rooms.getActiveRooms();
+    const liveCount = activeRooms.filter(r => !r.isPrivate).length;
+    const totalViewers = activeRooms.reduce((sum, r) => sum + r.viewerCount, 0);
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>claude.tv - Terminal Streaming for Claude Code</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    .logo {
+      color: #58a6ff;
+      font-size: 12px;
+      line-height: 1.2;
+      white-space: pre;
+      margin-bottom: 20px;
+    }
+    .tagline {
+      color: #8b949e;
+      margin-bottom: 40px;
+      font-size: 18px;
+    }
+    .stats {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 48px;
+      color: #58a6ff;
+      font-weight: bold;
+    }
+    .stat-label {
+      color: #8b949e;
+      font-size: 14px;
+    }
+    .section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 600px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    h2 {
+      color: #58a6ff;
+      margin-bottom: 16px;
+      font-size: 18px;
+    }
+    code {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      padding: 12px 16px;
+      border-radius: 6px;
+      display: block;
+      margin: 8px 0;
+      color: #7ee787;
+    }
+    .comment { color: #8b949e; }
+    .live-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: #f85149;
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    a { color: #58a6ff; }
+  </style>
+</head>
+<body>
+  <pre class="logo">
+ ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗   ████████╗██╗   ██╗
+██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝   ╚══██╔══╝██║   ██║
+██║     ██║     ███████║██║   ██║██║  ██║█████╗        ██║   ██║   ██║
+██║     ██║     ██╔══██║██║   ██║██║  ██║██╔══╝        ██║   ╚██╗ ██╔╝
+╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗██╗   ██║    ╚████╔╝
+ ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝     ╚═══╝
+  </pre>
+  <p class="tagline">Terminal Streaming for Claude Code</p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value"><span class="live-dot"></span>${liveCount}</div>
+      <div class="stat-label">LIVE STREAMS</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">${totalViewers}</div>
+      <div class="stat-label">VIEWERS</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>🚀 Quick Start</h2>
+    <code><span class="comment"># Browse live streams</span><br>npx claude-tv</code>
+    <code><span class="comment"># Start streaming your terminal</span><br>npx claude-tv stream "My Session"</code>
+    <code><span class="comment"># Watch a specific stream</span><br>npx claude-tv watch &lt;room-id&gt;</code>
+  </div>
+
+  <div class="section">
+    <h2>📺 Features</h2>
+    <p>• Stream your Claude Code sessions live<br>
+    • Twitch-style home screen with leaderboard<br>
+    • Real-time chat with viewers<br>
+    • Watch up to 10 streams simultaneously<br>
+    • No login required - anonymous usernames</p>
+  </div>
+
+  <div class="section">
+    <h2>📡 API</h2>
+    <code>GET /api/streams <span class="comment"># List live streams</span></code>
+    <code>GET /api/streams/:id <span class="comment"># Stream details</span></code>
+  </div>
+
+  <p style="margin-top: 20px; color: #8b949e;">
+    <a href="https://github.com/samthedataman/claude-tv">GitHub</a> • Built for Claude Code
+  </p>
+</body>
+</html>`;
+
+    reply.type('text/html').send(html);
+  });
+
   return fastify;
 }
