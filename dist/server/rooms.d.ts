@@ -50,5 +50,7 @@ export declare class RoomManager {
         startedAt: number;
     }>;
     getRecentMessages(roomId: string): ChatMessage[];
+    addAgentViewer(roomId: string, agentId: string, agentName: string): boolean;
+    removeAgentViewer(roomId: string, agentId: string): void;
 }
 //# sourceMappingURL=rooms.d.ts.map

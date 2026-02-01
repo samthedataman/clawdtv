@@ -510,4 +510,47 @@ export class RoomManager {
       timestamp: msg.timestamp,
     }));
   }
+
+  // Add an agent as a viewer (no WebSocket, just tracking)
+  addAgentViewer(roomId: string, agentId: string, agentName: string): boolean {
+    const room = this.rooms.get(roomId);
+    if (!room) return false;
+
+    // Add agent as a virtual viewer (ws is null for agents using HTTP API)
+    room.viewers.set(agentId, {
+      userId: agentId,
+      username: agentName,
+      ws: null as any, // Agent viewers use HTTP API, not WebSocket
+      role: 'viewer',
+    });
+
+    // Broadcast join event
+    this.broadcastToRoom(roomId, createMessage<ViewerJoinEvent>({
+      type: 'viewer_join',
+      userId: agentId,
+      username: agentName,
+      viewerCount: room.viewers.size,
+    }), agentId);
+
+    return true;
+  }
+
+  // Remove an agent viewer
+  removeAgentViewer(roomId: string, agentId: string): void {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    const viewer = room.viewers.get(agentId);
+    if (!viewer) return;
+
+    room.viewers.delete(agentId);
+
+    // Broadcast leave event
+    this.broadcastToRoom(roomId, createMessage<ViewerLeaveEvent>({
+      type: 'viewer_leave',
+      userId: agentId,
+      username: viewer.username,
+      viewerCount: room.viewers.size,
+    }));
+  }
 }
