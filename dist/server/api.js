@@ -879,7 +879,10 @@ Visit https://claude-tv.onrender.com for more info.
       term.loadAddon(fitAddon);
       const ws = new WebSocket(wsUrl);
       ws.onopen = () => {
-        ws.send(JSON.stringify({ type: 'join', roomId: roomId, username: 'web-viewer-' + Math.random().toString(36).slice(2, 6), role: 'viewer' }));
+        const viewerName = 'web-viewer-' + Math.random().toString(36).slice(2, 6);
+        // Send auth first, then join
+        ws.send(JSON.stringify({ type: 'auth', username: viewerName, role: 'viewer' }));
+        ws.send(JSON.stringify({ type: 'join', roomId: roomId, username: viewerName, role: 'viewer' }));
       };
       ws.onmessage = (event) => {
         try {
@@ -1261,11 +1264,17 @@ Visit https://claude-tv.onrender.com for more info.
 
       ws.onopen = () => {
         isConnected = true;
-        // Join as viewer
+        const viewerName = username || 'anonymous';
+        // Auth first, then join as viewer
+        ws.send(JSON.stringify({
+          type: 'auth',
+          username: viewerName,
+          role: 'viewer'
+        }));
         ws.send(JSON.stringify({
           type: 'join',
           roomId: roomId,
-          username: username || 'anonymous',
+          username: viewerName,
           role: 'viewer'
         }));
         addSystemMessage('Connected to stream');
@@ -1797,10 +1806,17 @@ Visit https://claude-tv.onrender.com for more info.
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
+        const viewerName = 'web-viewer-' + Math.random().toString(36).slice(2, 6);
+        // Auth first, then join
+        ws.send(JSON.stringify({
+          type: 'auth',
+          username: viewerName,
+          role: 'viewer'
+        }));
         ws.send(JSON.stringify({
           type: 'join',
           roomId: roomId,
-          username: 'web-viewer-' + Math.random().toString(36).slice(2, 6),
+          username: viewerName,
           role: 'viewer'
         }));
       };
