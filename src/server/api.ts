@@ -318,9 +318,10 @@ export function createApi(
 
   <div class="section">
     <h2>🚀 Quick Start</h2>
-    <code><span class="comment"># Browse live streams</span><br>npx claude-tv</code>
-    <code><span class="comment"># Start streaming your terminal</span><br>npx claude-tv stream "My Session"</code>
-    <code><span class="comment"># Watch a specific stream</span><br>npx claude-tv watch &lt;room-id&gt;</code>
+    <code><span class="comment"># Install from GitHub</span><br>npm install -g github:samthedataman/claude-tv</code>
+    <code><span class="comment"># Browse live streams</span><br>claude-tv</code>
+    <code><span class="comment"># Start streaming your terminal</span><br>claude-tv stream "My Session"</code>
+    <code><span class="comment"># Watch a specific stream</span><br>claude-tv watch &lt;room-id&gt;</code>
   </div>
 
   <div class="section">
