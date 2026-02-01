@@ -313,7 +313,10 @@ function createApi(db, auth, rooms) {
 <body>
   <div class="header">
     <h1>🔴 Live Streams</h1>
-    <a href="/">← Back to home</a>
+    <div style="display: flex; gap: 20px; align-items: center;">
+      <a href="/multiwatch" style="background: #238636; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold;">📺 Multi-Watch (10 streams!)</a>
+      <a href="/">← Back to home</a>
+    </div>
   </div>
   <div class="streams-grid">
     ${streamCards}
@@ -743,6 +746,526 @@ function createApi(db, auth, rooms) {
     // Initialize
     initTerminal();
     connect();
+  </script>
+</body>
+</html>`;
+        reply.type('text/html').send(html);
+    });
+    // Multi-stream viewer (watch up to 10 at once!)
+    fastify.get('/multiwatch', async (request, reply) => {
+        const activeRooms = rooms.getActiveRooms();
+        const publicStreams = activeRooms.filter(r => !r.isPrivate);
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Watch - claude.tv</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .header {
+      background: #161b22;
+      padding: 10px 20px;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 50px;
+    }
+    .header h1 {
+      font-size: 18px;
+      color: #58a6ff;
+    }
+    .header-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .layout-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+    }
+    .layout-btn:hover { background: #30363d; }
+    .layout-btn.active { background: #58a6ff; color: #000; border-color: #58a6ff; }
+    .add-stream-btn {
+      background: #238636;
+      border: none;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .add-stream-btn:hover { background: #2ea043; }
+    .main-container {
+      height: calc(100vh - 50px);
+      display: flex;
+    }
+    .streams-grid {
+      flex: 1;
+      display: grid;
+      gap: 2px;
+      background: #30363d;
+      padding: 2px;
+    }
+    .streams-grid.layout-1 { grid-template-columns: 1fr; }
+    .streams-grid.layout-2 { grid-template-columns: repeat(2, 1fr); }
+    .streams-grid.layout-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .streams-grid.layout-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .streams-grid.layout-9 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+    .streams-grid.layout-10 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); }
+    .stream-cell {
+      background: #0d1117;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .stream-cell.empty {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      border: 2px dashed #30363d;
+      background: #161b22;
+    }
+    .stream-cell.empty:hover {
+      border-color: #58a6ff;
+      background: #1c2128;
+    }
+    .stream-cell.empty::before {
+      content: '+';
+      font-size: 48px;
+      color: #30363d;
+    }
+    .stream-cell.empty:hover::before {
+      color: #58a6ff;
+    }
+    .cell-header {
+      background: #161b22;
+      padding: 4px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #30363d;
+      flex-shrink: 0;
+    }
+    .cell-title {
+      font-size: 11px;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cell-title .live-dot {
+      width: 6px;
+      height: 6px;
+      background: #f85149;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .cell-controls {
+      display: flex;
+      gap: 4px;
+    }
+    .cell-btn {
+      background: #21262d;
+      border: none;
+      color: #8b949e;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cell-btn:hover { background: #30363d; color: #fff; }
+    .cell-btn.close:hover { background: #f85149; }
+    .cell-terminal {
+      flex: 1;
+      min-height: 0;
+    }
+    .cell-terminal .xterm {
+      height: 100%;
+    }
+    .sidebar {
+      width: 280px;
+      background: #161b22;
+      border-left: 1px solid #30363d;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 12px;
+      border-bottom: 1px solid #30363d;
+      font-weight: bold;
+    }
+    .stream-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .stream-item {
+      padding: 10px;
+      background: #21262d;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .stream-item:hover {
+      background: #30363d;
+      transform: translateX(4px);
+    }
+    .stream-item.added {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .stream-item-title {
+      font-size: 13px;
+      color: #fff;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stream-item-meta {
+      font-size: 11px;
+      color: #8b949e;
+    }
+    .no-streams {
+      text-align: center;
+      padding: 20px;
+      color: #8b949e;
+    }
+    .viewers-badge {
+      background: #21262d;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      color: #8b949e;
+    }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 24px;
+      width: 400px;
+      max-width: 90%;
+    }
+    .modal-content h2 {
+      margin-bottom: 16px;
+      color: #fff;
+    }
+    .modal-content input {
+      width: 100%;
+      padding: 10px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #fff;
+      font-family: inherit;
+      margin-bottom: 16px;
+    }
+    .modal-content input:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .modal-buttons button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-cancel {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+    }
+    .btn-add {
+      background: #238636;
+      border: none;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📺 Multi-Watch</h1>
+    <div class="header-controls">
+      <button class="layout-btn" data-layout="1">1</button>
+      <button class="layout-btn" data-layout="2">2</button>
+      <button class="layout-btn active" data-layout="4">4</button>
+      <button class="layout-btn" data-layout="6">6</button>
+      <button class="layout-btn" data-layout="9">9</button>
+      <button class="layout-btn" data-layout="10">10</button>
+      <a href="/streams" style="color: #8b949e; text-decoration: none; margin-left: 12px;">← Back</a>
+    </div>
+  </div>
+  <div class="main-container">
+    <div class="streams-grid layout-4" id="streams-grid"></div>
+    <div class="sidebar">
+      <div class="sidebar-header">🔴 Live Streams</div>
+      <div class="stream-list" id="stream-list"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="add-modal">
+    <div class="modal-content">
+      <h2>Add Stream</h2>
+      <input type="text" id="room-id-input" placeholder="Enter Room ID...">
+      <div class="modal-buttons">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-add" onclick="addStreamFromInput()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+  <script>
+    const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = wsProtocol + '//' + location.host + '/ws';
+
+    let layout = 4;
+    let streams = {}; // roomId -> { term, ws, fitAddon }
+    let availableStreams = ${JSON.stringify(publicStreams.map(s => ({ id: s.id, title: s.title, owner: s.ownerUsername, viewers: s.viewerCount })))};
+
+    // Layout management
+    document.querySelectorAll('.layout-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        layout = parseInt(btn.dataset.layout);
+        updateGrid();
+      });
+    });
+
+    function updateGrid() {
+      const grid = document.getElementById('streams-grid');
+      grid.className = 'streams-grid layout-' + layout;
+      renderCells();
+    }
+
+    function renderCells() {
+      const grid = document.getElementById('streams-grid');
+      grid.innerHTML = '';
+
+      const roomIds = Object.keys(streams);
+      for (let i = 0; i < layout; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'stream-cell';
+
+        if (roomIds[i]) {
+          const roomId = roomIds[i];
+          const stream = streams[roomId];
+          cell.innerHTML = \`
+            <div class="cell-header">
+              <div class="cell-title"><span class="live-dot"></span>\${stream.title || roomId}</div>
+              <div class="cell-controls">
+                <button class="cell-btn close" onclick="removeStream('\${roomId}')">×</button>
+              </div>
+            </div>
+            <div class="cell-terminal" id="term-\${roomId}"></div>
+          \`;
+          grid.appendChild(cell);
+
+          // Re-attach terminal
+          setTimeout(() => {
+            const termContainer = document.getElementById('term-' + roomId);
+            if (termContainer && stream.term) {
+              termContainer.innerHTML = '';
+              stream.term.open(termContainer);
+              stream.fitAddon.fit();
+            }
+          }, 0);
+        } else {
+          cell.className = 'stream-cell empty';
+          cell.onclick = () => showModal();
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    function addStream(roomId, title) {
+      if (streams[roomId]) return;
+      if (Object.keys(streams).length >= 10) {
+        alert('Maximum 10 streams!');
+        return;
+      }
+
+      const term = new Terminal({
+        theme: {
+          background: '#000000',
+          foreground: '#c9d1d9',
+        },
+        fontSize: 11,
+        fontFamily: 'SF Mono, Fira Code, monospace',
+        scrollback: 1000,
+      });
+
+      const fitAddon = new FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({
+          type: 'join',
+          roomId: roomId,
+          username: 'web-viewer-' + Math.random().toString(36).slice(2, 6),
+          role: 'viewer'
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'terminal') {
+            term.write(msg.data);
+          }
+        } catch (e) {}
+      };
+
+      ws.onclose = () => {
+        if (streams[roomId]) {
+          streams[roomId].term.write('\\r\\n\\x1b[31m[Stream ended]\\x1b[0m');
+        }
+      };
+
+      streams[roomId] = { term, ws, fitAddon, title };
+      renderCells();
+      updateStreamList();
+    }
+
+    function removeStream(roomId) {
+      if (streams[roomId]) {
+        streams[roomId].ws.close();
+        streams[roomId].term.dispose();
+        delete streams[roomId];
+        renderCells();
+        updateStreamList();
+      }
+    }
+
+    function updateStreamList() {
+      const list = document.getElementById('stream-list');
+      if (availableStreams.length === 0) {
+        list.innerHTML = '<div class="no-streams">No streams live</div>';
+        return;
+      }
+
+      list.innerHTML = availableStreams.map(s => \`
+        <div class="stream-item \${streams[s.id] ? 'added' : ''}" onclick="addStream('\${s.id}', '\${s.title.replace(/'/g, "\\\\'")}')">
+          <div class="stream-item-title">
+            <span class="live-dot" style="width:6px;height:6px;background:#f85149;border-radius:50%;"></span>
+            \${s.title}
+            <span class="viewers-badge">👥 \${s.viewers}</span>
+          </div>
+          <div class="stream-item-meta">by \${s.owner}</div>
+        </div>
+      \`).join('');
+    }
+
+    function showModal() {
+      document.getElementById('add-modal').classList.add('show');
+      document.getElementById('room-id-input').focus();
+    }
+
+    function closeModal() {
+      document.getElementById('add-modal').classList.remove('show');
+      document.getElementById('room-id-input').value = '';
+    }
+
+    function addStreamFromInput() {
+      const roomId = document.getElementById('room-id-input').value.trim();
+      if (roomId) {
+        addStream(roomId, roomId);
+        closeModal();
+      }
+    }
+
+    document.getElementById('room-id-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addStreamFromInput();
+    });
+
+    window.addEventListener('resize', () => {
+      Object.values(streams).forEach(s => s.fitAddon.fit());
+    });
+
+    // Refresh stream list periodically
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/streams');
+        const data = await res.json();
+        if (data.success) {
+          availableStreams = data.data.streams.map(s => ({
+            id: s.id,
+            title: s.title,
+            owner: s.ownerUsername,
+            viewers: s.viewerCount
+          }));
+          updateStreamList();
+        }
+      } catch (e) {}
+    }, 10000);
+
+    // Initialize
+    updateGrid();
+    updateStreamList();
+
+    // Auto-add streams from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomsParam = urlParams.get('rooms');
+    if (roomsParam) {
+      roomsParam.split(',').forEach(roomId => {
+        if (roomId.trim()) addStream(roomId.trim(), roomId.trim());
+      });
+    }
   </script>
 </body>
 </html>`;
