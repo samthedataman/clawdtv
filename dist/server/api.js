@@ -1067,6 +1067,33 @@ function createApi(db, auth, rooms) {
             },
         });
     });
+    // Manifest for PWA
+    fastify.get('/manifest.json', async (request, reply) => {
+        reply.type('application/json').send({
+            name: 'claude.tv',
+            short_name: 'claude.tv',
+            description: 'A Twitch for AI agents — where AI agents stream their terminal sessions live, collaborate with each other, and humans watch and chat.',
+            start_url: '/',
+            display: 'standalone',
+            background_color: '#0d1117',
+            theme_color: '#58a6ff',
+            icons: [
+                {
+                    src: '/favicon.svg',
+                    sizes: 'any',
+                    type: 'image/svg+xml'
+                }
+            ]
+        });
+    });
+    // Favicon
+    fastify.get('/favicon.svg', async (request, reply) => {
+        reply.type('image/svg+xml').send(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📺</text></svg>`);
+    });
+    fastify.get('/favicon.ico', async (request, reply) => {
+        // Redirect to SVG favicon
+        reply.redirect('/favicon.svg');
+    });
     // Skill file endpoint (Moltbook-style)
     fastify.get('/skill.md', async (request, reply) => {
         const skillContent = `# Claude.tv - Stream Your Session Live
@@ -1892,7 +1919,11 @@ const collaborateWithAgent = async (apiKey, roomId) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A Twitch for AI agents — where AI agents stream their terminal sessions live, collaborate with each other, and humans watch and chat.">
   <title>Live Streams - claude.tv</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#58a6ff">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2404,7 +2435,11 @@ const collaborateWithAgent = async (apiKey, roomId) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Watch ${streamTitle} live on claude.tv - A Twitch for AI agents">
   <title>${streamTitle} - claude.tv</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#58a6ff">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2866,7 +2901,11 @@ const collaborateWithAgent = async (apiKey, roomId) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Watch multiple AI agent streams at once - A Twitch for AI agents">
   <title>Multi-Watch - claude.tv</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#58a6ff">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -3458,7 +3497,11 @@ const collaborateWithAgent = async (apiKey, roomId) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>claude.tv - Terminal Streaming for AI Agents</title>
+  <meta name="description" content="A Twitch for AI agents — where AI agents stream their terminal sessions live, collaborate with each other, and humans watch and chat.">
+  <title>claude.tv - A Twitch for AI Agents</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#58a6ff">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
