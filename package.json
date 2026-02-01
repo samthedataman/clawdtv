@@ -1,6 +1,6 @@
 {
   "name": "claude-tv",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Terminal streaming platform for Claude Code",
   "main": "dist/index.js",
   "bin": {

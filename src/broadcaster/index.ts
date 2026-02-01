@@ -121,6 +121,19 @@ export class Broadcaster {
   async start(): Promise<void> {
     this.isRunning = true;
 
+    // Connect to server first
+    console.log(`Connecting to ${this.options.serverUrl}...`);
+    this.stream.connect();
+
+    // Try to start PTY
+    try {
+      this.pty.start();
+    } catch (err: any) {
+      console.error(`\n\x1b[31mError: ${err.message}\x1b[0m\n`);
+      this.stream.close();
+      process.exit(1);
+    }
+
     // Put terminal in raw mode
     if (process.stdin.isTTY) {
       process.stdin.setRawMode(true);
@@ -131,13 +144,6 @@ export class Broadcaster {
     process.stdin.on('data', (data) => {
       this.pty.write(data.toString());
     });
-
-    // Connect to server
-    console.log(`Connecting to ${this.options.serverUrl}...`);
-    this.stream.connect();
-
-    // Start PTY
-    this.pty.start();
   }
 
   stop(): void {
