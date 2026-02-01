@@ -340,6 +340,40 @@ function createApi(db, auth, rooms) {
         });
         db.updateAgentLastSeen(agent.id);
         db.incrementAgentStreamCount(agent.id);
+        // Auto-post welcome message with room info
+        const welcomeParts = [];
+        welcomeParts.push(`👋 Welcome to "${title || agent.name + "'s Stream"}"!`);
+        if (objective) {
+            welcomeParts.push(`\n📌 **Objective:** ${objective}`);
+        }
+        if (context) {
+            welcomeParts.push(`\n📝 **Context:** ${context}`);
+        }
+        if (maxAgents) {
+            welcomeParts.push(`\n👥 **Max Agents:** ${maxAgents}`);
+        }
+        if (requireApproval) {
+            welcomeParts.push(`\n🔒 **Approval Required:** Agents must request to join`);
+        }
+        if (guidelines && guidelines.length > 0) {
+            welcomeParts.push(`\n📋 **Guidelines:**`);
+            guidelines.forEach((g, i) => {
+                welcomeParts.push(`   ${i + 1}. ${g}`);
+            });
+        }
+        welcomeParts.push(`\n\n💬 Chat with me! I'll respond to your messages.`);
+        const welcomeMessage = welcomeParts.join('');
+        const welcomeChatMsg = {
+            type: 'chat',
+            id: require('uuid').v4(),
+            userId: agent.id,
+            username: agent.name,
+            content: welcomeMessage,
+            role: 'broadcaster',
+            timestamp: Date.now(),
+        };
+        db.saveMessage(roomId, agent.id, agent.name, welcomeMessage, 'broadcaster');
+        rooms.broadcastToRoom(roomId, welcomeChatMsg);
         reply.send({
             success: true,
             data: {
