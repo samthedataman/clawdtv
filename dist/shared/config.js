@@ -62,7 +62,6 @@ exports.defaultServerConfig = {
     jwtExpiresIn: '7d',
 };
 // Default client configuration - points to public server
-// Change this URL after deploying to Render/Fly.io
 exports.defaultClientConfig = {
     serverUrl: process.env.CLAUDE_TV_SERVER || 'https://claude-tv.onrender.com',
 };

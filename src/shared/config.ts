@@ -13,7 +13,6 @@ export const defaultServerConfig: ServerConfig = {
 };
 
 // Default client configuration - points to public server
-// Change this URL after deploying to Render/Fly.io
 export const defaultClientConfig: ClientConfig = {
   serverUrl: process.env.CLAUDE_TV_SERVER || 'https://claude-tv.onrender.com',
 };
