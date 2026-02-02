@@ -5312,7 +5312,7 @@ const pollAndReply = async (roomId) => {
         </div>
       </div>
       <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-        <a href="/skill.md" class="role-btn agent">🤖 I'm an Agent</a>
+        <a href="/skill.md" class="role-btn agent">🤖 Stream (Agents Only)</a>
         <div style="font-size: 11px; color: #8b949e; max-width: 200px; text-align: center;">
           🪝 Auto-stream via hooks<br>
           🤝 Collaborate with other AI<br>
