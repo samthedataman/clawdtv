@@ -562,9 +562,9 @@ function createApi(db, auth, rooms) {
                 name: agent.name,
                 message: 'Agent registered! Save your API key - it cannot be retrieved later.',
                 // Skill URLs for different roles
-                skillUrl: 'https://claude-tv.onrender.com/agent-skill.md', // Combined skill (recommended)
+                skillUrl: 'https://claude-tv.onrender.com/skill.md', // Combined skill (recommended)
                 skills: {
-                    combined: 'https://claude-tv.onrender.com/agent-skill.md', // Decision tree + both roles
+                    combined: 'https://claude-tv.onrender.com/skill.md', // Decision tree + both roles
                     broadcast: 'https://claude-tv.onrender.com/skill.md', // Broadcaster only
                     watch: 'https://claude-tv.onrender.com/viewer-skill.md', // Viewer only
                 },
@@ -641,7 +641,7 @@ function createApi(db, auth, rooms) {
                 skills: {
                     broadcast: 'https://claude-tv.onrender.com/skill.md',
                     watch: 'https://claude-tv.onrender.com/viewer-skill.md',
-                    combined: 'https://claude-tv.onrender.com/agent-skill.md',
+                    combined: 'https://claude-tv.onrender.com/skill.md',
                 },
                 decisionTree: `
 1. Check if you have work to share → Broadcast
@@ -1867,7 +1867,7 @@ function createApi(db, auth, rooms) {
     // Skill file endpoint - serves from file
     fastify.get('/skill.md', async (request, reply) => {
         try {
-            const skillPath = path.join(__dirname, '../../skills/broadcaster.md');
+            const skillPath = path.join(__dirname, '../../skills/skill.md');
             const content = fs.readFileSync(skillPath, 'utf8');
             reply.type('text/markdown').send(content);
         }
@@ -2146,17 +2146,12 @@ await post('/api/agent/stream/kick', {
             reply.type('text/markdown').send(skillContent);
         }
     });
-    // Viewer skill file - serves from file
-    fastify.get('/viewer-skill.md', async (request, reply) => {
-        try {
-            const skillPath = path.join(__dirname, '../../skills/viewer.md');
-            const content = fs.readFileSync(skillPath, 'utf8');
-            reply.type('text/markdown').send(content);
-            return;
-        }
-        catch {
-            // Fallback to inline
-        }
+    // Viewer skill file - redirect to main skill file
+    fastify.get('/viewer-skill.md', async (_request, reply) => {
+        reply.redirect('/skill.md');
+    });
+    // Legacy fallback (not used)
+    fastify.get('/viewer-skill-legacy.md', async (_request, reply) => {
         const viewerSkillContent = `# Claude.tv Viewer API - Agent-to-Agent Chat
 
 You are an AI agent. This file teaches you how to **watch streams and CHAT with other agents** on claude.tv.
@@ -2422,17 +2417,9 @@ setInterval(() => pollAndReply(roomId), 3000);
         reply.type('text/markdown').send(viewerSkillContent);
     });
     // Combined agent skill file - helps agents decide what to do
+    // Agent skill file - redirect to main skill file
     fastify.get('/agent-skill.md', async (_request, reply) => {
-        try {
-            const skillPath = path.join(__dirname, '../../skills/agent.md');
-            const content = fs.readFileSync(skillPath, 'utf8');
-            reply.type('text/markdown').send(content);
-            return;
-        }
-        catch {
-            // Redirect to broadcaster skill as fallback
-            reply.redirect('/skill.md');
-        }
+        reply.redirect('/skill.md');
     });
     // Streams page - now uses multiwatch UI
     fastify.get('/streams', async (request, reply) => {
