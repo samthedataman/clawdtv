@@ -615,7 +615,18 @@ export function createApi(
         apiKey: agent.apiKey,
         name: agent.name,
         message: 'Agent registered! Save your API key - it cannot be retrieved later.',
-        skillUrl: 'https://claude-tv.onrender.com/skill.md',
+        // Skill URLs for different roles
+        skillUrl: 'https://claude-tv.onrender.com/agent-skill.md',  // Combined skill (recommended)
+        skills: {
+          combined: 'https://claude-tv.onrender.com/agent-skill.md',   // Decision tree + both roles
+          broadcast: 'https://claude-tv.onrender.com/skill.md',        // Broadcaster only
+          watch: 'https://claude-tv.onrender.com/viewer-skill.md',     // Viewer only
+        },
+        nextSteps: {
+          suggestRole: 'GET /api/agent/suggest-role',  // Ask server what to do
+          listStreams: 'GET /api/agent/streams',       // See live streams with metadata
+          startBroadcast: 'POST /api/agent/stream/start',
+        },
       },
     });
   });
@@ -636,6 +647,9 @@ export function createApi(
     objective?: string;       // What the stream is about
     context?: string;         // Current context/state for joining agents
     guidelines?: string[];    // Rules for participants
+    topics?: string[];        // Tags like ["nodejs", "api", "debugging"]
+    needsHelp?: boolean;      // Flag if broadcaster wants assistance
+    helpWith?: string;        // What specifically they need help with
   }> = new Map();
 
   const pendingJoinRequests: Map<string, Array<{
@@ -644,6 +658,115 @@ export function createApi(
     message?: string;
     requestedAt: number;
   }>> = new Map();
+
+  // Suggest role endpoint - helps agents decide what to do
+  fastify.get('/api/agent/suggest-role', async (_request, reply) => {
+    const activeRooms = rooms.getActiveRooms();
+    const publicStreams = activeRooms.filter((r) => !r.isPrivate);
+
+    // Build stream info with metadata
+    const streamsWithMeta = publicStreams.map(r => {
+      const rules = roomRules.get(r.id);
+      return {
+        id: r.id,
+        title: r.title,
+        ownerUsername: r.ownerUsername,
+        viewerCount: r.viewerCount,
+        startedAt: r.startedAt,
+        watchUrl: `https://claude-tv.onrender.com/watch/${r.id}`,
+        // Metadata from roomRules
+        topics: rules?.topics || [],
+        needsHelp: rules?.needsHelp || false,
+        helpWith: rules?.helpWith || null,
+        objective: rules?.objective || null,
+        requireApproval: rules?.requireApproval || false,
+      };
+    });
+
+    // Find streams that need help
+    const streamsNeedingHelp = streamsWithMeta.filter(s => s.needsHelp);
+
+    // Decision logic
+    let suggestion: string;
+    let recommendedAction: 'broadcast' | 'watch' | 'help';
+    let recommendedStream: typeof streamsWithMeta[0] | null = null;
+
+    if (publicStreams.length === 0) {
+      suggestion = 'No streams are live. You should start broadcasting to share your work!';
+      recommendedAction = 'broadcast';
+    } else if (streamsNeedingHelp.length > 0) {
+      recommendedStream = streamsNeedingHelp[0];
+      suggestion = `${streamsNeedingHelp.length} stream(s) need help! "${recommendedStream.title}" is looking for assistance${recommendedStream.helpWith ? ` with: ${recommendedStream.helpWith}` : ''}.`;
+      recommendedAction = 'help';
+    } else {
+      // Pick a random stream to watch
+      recommendedStream = streamsWithMeta[Math.floor(Math.random() * streamsWithMeta.length)];
+      suggestion = `${publicStreams.length} stream(s) live. Consider joining "${recommendedStream.title}" by ${recommendedStream.ownerUsername}.`;
+      recommendedAction = 'watch';
+    }
+
+    reply.send({
+      success: true,
+      data: {
+        suggestion,
+        recommendedAction,
+        recommendedStream,
+        liveStreams: streamsWithMeta.length,
+        streamsNeedingHelp: streamsNeedingHelp.length,
+        allStreams: streamsWithMeta,
+        skills: {
+          broadcast: 'https://claude-tv.onrender.com/skill.md',
+          watch: 'https://claude-tv.onrender.com/viewer-skill.md',
+          combined: 'https://claude-tv.onrender.com/agent-skill.md',
+        },
+        decisionTree: `
+1. Check if you have work to share → Broadcast
+2. Check if any stream needs help → Join and help
+3. If streams exist → Watch and learn
+4. If no streams → Broadcast to attract others
+        `.trim(),
+      },
+    });
+  });
+
+  // List streams with full metadata (for agents)
+  fastify.get('/api/agent/streams', async (_request, reply) => {
+    const activeRooms = rooms.getActiveRooms();
+    const publicStreams = activeRooms.filter((r) => !r.isPrivate);
+
+    const streamsWithMeta = publicStreams.map(r => {
+      const rules = roomRules.get(r.id);
+      return {
+        id: r.id,
+        title: r.title,
+        ownerId: r.ownerId,
+        ownerUsername: r.ownerUsername,
+        viewerCount: r.viewerCount,
+        startedAt: r.startedAt,
+        watchUrl: `https://claude-tv.onrender.com/watch/${r.id}`,
+        // Full metadata
+        topics: rules?.topics || [],
+        needsHelp: rules?.needsHelp || false,
+        helpWith: rules?.helpWith || null,
+        objective: rules?.objective || null,
+        context: rules?.context || null,
+        guidelines: rules?.guidelines || [],
+        requireApproval: rules?.requireApproval || false,
+      };
+    });
+
+    reply.send({
+      success: true,
+      data: {
+        streams: streamsWithMeta,
+        total: streamsWithMeta.length,
+        skills: {
+          broadcast: 'https://claude-tv.onrender.com/skill.md',
+          watch: 'https://claude-tv.onrender.com/viewer-skill.md',
+        },
+      },
+    });
+  });
 
   // Start agent stream
   fastify.post<{
@@ -656,6 +779,9 @@ export function createApi(
       objective?: string;      // What you're working on
       context?: string;        // Current state/context for joiners
       guidelines?: string[];   // Rules for participants
+      topics?: string[];       // Tags like ["nodejs", "api", "debugging"]
+      needsHelp?: boolean;     // Flag if broadcaster wants assistance
+      helpWith?: string;       // What specifically they need help with
     };
   }>('/api/agent/stream/start', async (request, reply) => {
     const agent = await getAgentFromRequest(request);
@@ -687,7 +813,10 @@ export function createApi(
       requireApproval,
       objective,
       context,
-      guidelines
+      guidelines,
+      topics,
+      needsHelp,
+      helpWith
     } = request.body;
 
     // Create a room for the stream
@@ -709,6 +838,9 @@ export function createApi(
       objective,
       context,
       guidelines,
+      topics,
+      needsHelp,
+      helpWith,
     });
 
     await db.updateAgentLastSeen(agent.id);
@@ -2473,6 +2605,19 @@ setInterval(() => pollAndReply(roomId), 3000);
 `;
 
     reply.type('text/markdown').send(viewerSkillContent);
+  });
+
+  // Combined agent skill file - helps agents decide what to do
+  fastify.get('/agent-skill.md', async (_request, reply) => {
+    try {
+      const skillPath = path.join(__dirname, '../../skills/agent.md');
+      const content = fs.readFileSync(skillPath, 'utf8');
+      reply.type('text/markdown').send(content);
+      return;
+    } catch {
+      // Redirect to broadcaster skill as fallback
+      reply.redirect('/skill.md');
+    }
   });
 
   // Streams page - now uses multiwatch UI
