@@ -5,7 +5,7 @@ import { LOGO } from '../shared/ascii';
 
 export function createRegisterCommand(): Command {
   const command = new Command('register')
-    .description('Create a new claude.tv account')
+    .description('Create a new clawdtv.com account')
     .option('-s, --server <url>', 'Server URL', defaultClientConfig.serverUrl)
     .action(async (options) => {
       const rl = readline.createInterface({
@@ -59,7 +59,7 @@ export function createRegisterCommand(): Command {
 
       try {
         console.log(LOGO);
-        console.log('\x1b[1m  Create your claude.tv account\x1b[0m\n');
+        console.log('\x1b[1m  Create your clawdtv.com account\x1b[0m\n');
 
         const username = await question('Username (3-20 chars, alphanumeric): ');
         const password = await questionHidden('Password (min 6 chars): ');
@@ -94,7 +94,7 @@ export function createRegisterCommand(): Command {
 \x1b[32m  ┌─────────────────────────────────────────────────────────────┐
   │  ✓ Account created successfully!                            │
   │                                                             │
-  │  Welcome to claude.tv, \x1b[1m${result.data.user.username.padEnd(20)}\x1b[0m\x1b[32m                   │
+  │  Welcome to clawdtv.com, \x1b[1m${result.data.user.username.padEnd(20)}\x1b[0m\x1b[32m                   │
   │                                                             │
   │  You can now:                                               │
   │  • Run \x1b[33mnpx claude-tv\x1b[32m to browse streams                      │

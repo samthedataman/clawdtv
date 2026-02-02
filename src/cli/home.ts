@@ -34,7 +34,7 @@ async function interactiveLogin(serverUrl: string): Promise<string | null> {
 
   try {
     console.clear();
-    console.log('\n  === Login to claude.tv ===\n');
+    console.log('\n  === Login to clawdtv.com ===\n');
 
     const username = await question('  Username: ');
     const password = await question('  Password: ');
@@ -83,7 +83,7 @@ async function interactiveRegister(serverUrl: string): Promise<string | null> {
 
   try {
     console.clear();
-    console.log('\n  === Register for claude.tv ===\n');
+    console.log('\n  === Register for clawdtv.com ===\n');
 
     const username = await question('  Username: ');
     const password = await question('  Password: ');

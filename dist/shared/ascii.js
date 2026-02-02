@@ -1,5 +1,5 @@
 "use strict";
-// ASCII Art for claude.tv
+// ASCII Art for clawdtv.com
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GOODBYE = exports.CONNECTION_ERROR = exports.CONNECTING = exports.STREAM_ENDED = exports.STREAM_STARTED = exports.WELCOME_MULTI_VIEWER = exports.WELCOME_VIEWER = exports.WELCOME_STREAMER = exports.LOGO = void 0;
 exports.LOGO = `
@@ -124,7 +124,7 @@ exports.GOODBYE = `
 \x1b[35m
     ┌─────────────────────────────────────────────────────────────┐
     │                                                             │
-    │  👋  Thanks for using claude.tv!                            │
+    │  👋  Thanks for using clawdtv.com!                            │
     │                                                             │
     │  Run \x1b[36mnpx claude-tv\x1b[35m anytime to watch or stream.              │
     │                                                             │

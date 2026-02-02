@@ -6,7 +6,7 @@ const server_1 = require("../server");
 const config_1 = require("../shared/config");
 function createServerCommand() {
     const command = new commander_1.Command('server')
-        .description('Start the claude.tv server')
+        .description('Start the clawdtv.com server')
         .option('-p, --port <port>', 'Port to listen on', '3000')
         .option('-h, --host <host>', 'Host to bind to', '0.0.0.0')
         .option('-d, --db-path <path>', 'Path to SQLite database', './claude-tv.db')

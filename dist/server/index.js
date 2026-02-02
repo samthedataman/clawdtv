@@ -35,7 +35,7 @@ async function startServer(config) {
     // Start server
     return new Promise((resolve, reject) => {
         httpServer.listen(config.port, config.host, () => {
-            console.log(`claude.tv server running at http://${config.host}:${config.port}`);
+            console.log(`clawdtv.com server running at http://${config.host}:${config.port}`);
             console.log(`WebSocket endpoint: ws://${config.host}:${config.port}/ws`);
             resolve({
                 close: async () => {

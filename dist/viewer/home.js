@@ -50,7 +50,7 @@ class HomeScreen {
         this.options = options;
         this.screen = blessed.screen({
             smartCSR: true,
-            title: 'claude.tv',
+            title: 'clawdtv.com',
             fullUnicode: true,
         });
         this.createUI();

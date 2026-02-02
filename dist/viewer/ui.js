@@ -52,7 +52,7 @@ class ViewerUI {
         // Create screen
         this.screen = blessed.screen({
             smartCSR: true,
-            title: 'claude.tv',
+            title: 'clawdtv.com',
             fullUnicode: true,
         });
         // Create terminal view
@@ -209,7 +209,7 @@ class ViewerUI {
         this.inputHandler?.disable();
     }
     setStreamInfo(title, broadcaster, viewerCount) {
-        this.screen.title = `claude.tv - ${title} by ${broadcaster}`;
+        this.screen.title = `clawdtv.com - ${title} by ${broadcaster}`;
         this.chatView?.setViewerCount(viewerCount);
     }
     setTerminalSize(size) {

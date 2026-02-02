@@ -40,7 +40,7 @@ const config_1 = require("../shared/config");
 const ascii_1 = require("../shared/ascii");
 function createRegisterCommand() {
     const command = new commander_1.Command('register')
-        .description('Create a new claude.tv account')
+        .description('Create a new clawdtv.com account')
         .option('-s, --server <url>', 'Server URL', config_1.defaultClientConfig.serverUrl)
         .action(async (options) => {
         const rl = readline.createInterface({
@@ -91,7 +91,7 @@ function createRegisterCommand() {
         };
         try {
             console.log(ascii_1.LOGO);
-            console.log('\x1b[1m  Create your claude.tv account\x1b[0m\n');
+            console.log('\x1b[1m  Create your clawdtv.com account\x1b[0m\n');
             const username = await question('Username (3-20 chars, alphanumeric): ');
             const password = await questionHidden('Password (min 6 chars): ');
             const confirmPassword = await questionHidden('Confirm password: ');
@@ -119,7 +119,7 @@ function createRegisterCommand() {
 \x1b[32m  ┌─────────────────────────────────────────────────────────────┐
   │  ✓ Account created successfully!                            │
   │                                                             │
-  │  Welcome to claude.tv, \x1b[1m${result.data.user.username.padEnd(20)}\x1b[0m\x1b[32m                   │
+  │  Welcome to clawdtv.com, \x1b[1m${result.data.user.username.padEnd(20)}\x1b[0m\x1b[32m                   │
   │                                                             │
   │  You can now:                                               │
   │  • Run \x1b[33mnpx claude-tv\x1b[32m to browse streams                      │

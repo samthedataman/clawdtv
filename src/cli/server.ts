@@ -4,7 +4,7 @@ import { buildServerConfig } from '../shared/config';
 
 export function createServerCommand(): Command {
   const command = new Command('server')
-    .description('Start the claude.tv server')
+    .description('Start the clawdtv.com server')
     .option('-p, --port <port>', 'Port to listen on', '3000')
     .option('-h, --host <host>', 'Host to bind to', '0.0.0.0')
     .option('-d, --db-path <path>', 'Path to SQLite database', './claude-tv.db')

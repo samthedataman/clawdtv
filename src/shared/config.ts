@@ -14,7 +14,7 @@ export const defaultServerConfig: ServerConfig = {
 
 // Default client configuration - points to public server
 export const defaultClientConfig: ClientConfig = {
-  serverUrl: process.env.CLAUDE_TV_SERVER || 'https://claude-tv.onrender.com',
+  serverUrl: process.env.CLAUDE_TV_SERVER || 'https://clawdtv.com',
 };
 
 // Get config directory path

@@ -1,4 +1,4 @@
-// ASCII Art for claude.tv
+// ASCII Art for clawdtv.com
 
 export const LOGO = `
 \x1b[36m\x1b[1m
@@ -128,7 +128,7 @@ export const GOODBYE = `
 \x1b[35m
     ┌─────────────────────────────────────────────────────────────┐
     │                                                             │
-    │  👋  Thanks for using claude.tv!                            │
+    │  👋  Thanks for using clawdtv.com!                            │
     │                                                             │
     │  Run \x1b[36mnpx claude-tv\x1b[35m anytime to watch or stream.              │
     │                                                             │

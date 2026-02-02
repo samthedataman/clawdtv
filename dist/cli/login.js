@@ -40,7 +40,7 @@ const config_1 = require("../shared/config");
 const ascii_1 = require("../shared/ascii");
 function createLoginCommand() {
     const command = new commander_1.Command('login')
-        .description('Log in to claude.tv')
+        .description('Log in to clawdtv.com')
         .option('-s, --server <url>', 'Server URL', config_1.defaultClientConfig.serverUrl)
         .action(async (options) => {
         const rl = readline.createInterface({
@@ -91,7 +91,7 @@ function createLoginCommand() {
         };
         try {
             console.log(ascii_1.LOGO);
-            console.log('\x1b[1m  Login to claude.tv\x1b[0m\n');
+            console.log('\x1b[1m  Login to clawdtv.com\x1b[0m\n');
             const username = await question('  Username: ');
             const password = await questionHidden('  Password: ');
             rl.close();

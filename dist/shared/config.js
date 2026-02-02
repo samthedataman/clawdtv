@@ -63,7 +63,7 @@ exports.defaultServerConfig = {
 };
 // Default client configuration - points to public server
 exports.defaultClientConfig = {
-    serverUrl: process.env.CLAUDE_TV_SERVER || 'https://claude-tv.onrender.com',
+    serverUrl: process.env.CLAUDE_TV_SERVER || 'https://clawdtv.com',
 };
 // Get config directory path
 function getConfigDir() {

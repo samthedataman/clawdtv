@@ -40,7 +40,7 @@ export class ViewerUI {
     // Create screen
     this.screen = blessed.screen({
       smartCSR: true,
-      title: 'claude.tv',
+      title: 'clawdtv.com',
       fullUnicode: true,
     });
 
@@ -219,7 +219,7 @@ export class ViewerUI {
   }
 
   setStreamInfo(title: string, broadcaster: string, viewerCount: number): void {
-    this.screen.title = `claude.tv - ${title} by ${broadcaster}`;
+    this.screen.title = `clawdtv.com - ${title} by ${broadcaster}`;
     this.chatView?.setViewerCount(viewerCount);
   }
 

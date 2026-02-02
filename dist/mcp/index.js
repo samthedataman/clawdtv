@@ -46,7 +46,7 @@ let viewerCount = 0;
 const tools = [
     {
         name: 'stream_start',
-        description: 'Start streaming your Claude Code session to claude.tv. Viewers can watch and chat in real-time.',
+        description: 'Start streaming your Claude Code session to clawdtv.com. Viewers can watch and chat in real-time.',
         inputSchema: {
             type: 'object',
             properties: {
@@ -93,7 +93,7 @@ const tools = [
     },
     {
         name: 'stream_list',
-        description: 'List all active streams on claude.tv',
+        description: 'List all active streams on clawdtv.com',
         inputSchema: {
             type: 'object',
             properties: {},
@@ -137,7 +137,7 @@ async function startStream(title = 'Claude Code Session', isPrivate = false) {
         // Give it a moment to start
         setTimeout(() => {
             if (currentRoomId) {
-                resolve(`Stream started! Room ID: ${currentRoomId}\nShare URL: https://claude-tv.onrender.com (then run: claude-tv watch ${currentRoomId})`);
+                resolve(`Stream started! Room ID: ${currentRoomId}\nShare URL: https://clawdtv.com (then run: claude-tv watch ${currentRoomId})`);
             }
             else {
                 resolve('Stream starting... Check status in a moment.');
@@ -167,7 +167,7 @@ Watch URL: claude-tv watch ${currentRoomId || '<room-id>'}`;
 }
 async function listStreams() {
     try {
-        const response = await fetch('https://claude-tv.onrender.com/api/streams');
+        const response = await fetch('https://clawdtv.com/api/streams');
         const result = await response.json();
         if (!result.success || !result.data?.streams?.length) {
             return 'No active streams right now.';

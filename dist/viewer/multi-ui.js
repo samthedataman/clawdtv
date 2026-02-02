@@ -66,7 +66,7 @@ class MultiViewerUI {
         // Create screen
         this.screen = blessed.screen({
             smartCSR: true,
-            title: 'claude.tv - Multi Stream',
+            title: 'clawdtv.com - Multi Stream',
             fullUnicode: true,
         });
         // Create UI elements

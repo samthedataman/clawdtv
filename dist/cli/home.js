@@ -60,7 +60,7 @@ async function interactiveLogin(serverUrl) {
     };
     try {
         console.clear();
-        console.log('\n  === Login to claude.tv ===\n');
+        console.log('\n  === Login to clawdtv.com ===\n');
         const username = await question('  Username: ');
         const password = await question('  Password: ');
         rl.close();
@@ -100,7 +100,7 @@ async function interactiveRegister(serverUrl) {
     };
     try {
         console.clear();
-        console.log('\n  === Register for claude.tv ===\n');
+        console.log('\n  === Register for clawdtv.com ===\n');
         const username = await question('  Username: ');
         const password = await question('  Password: ');
         const displayName = await question('  Display name (optional): ');

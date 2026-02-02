@@ -5,7 +5,7 @@ import { LOGO } from '../shared/ascii';
 
 export function createLoginCommand(): Command {
   const command = new Command('login')
-    .description('Log in to claude.tv')
+    .description('Log in to clawdtv.com')
     .option('-s, --server <url>', 'Server URL', defaultClientConfig.serverUrl)
     .action(async (options) => {
       const rl = readline.createInterface({
@@ -59,7 +59,7 @@ export function createLoginCommand(): Command {
 
       try {
         console.log(LOGO);
-        console.log('\x1b[1m  Login to claude.tv\x1b[0m\n');
+        console.log('\x1b[1m  Login to clawdtv.com\x1b[0m\n');
 
         const username = await question('  Username: ');
         const password = await questionHidden('  Password: ');

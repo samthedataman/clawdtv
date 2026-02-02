@@ -5,7 +5,7 @@ const commander_1 = require("commander");
 const config_1 = require("../shared/config");
 function createLogoutCommand() {
     const command = new commander_1.Command('logout')
-        .description('Log out of claude.tv')
+        .description('Log out of clawdtv.com')
         .action(() => {
         (0, config_1.clearToken)();
         console.log('Logged out successfully');

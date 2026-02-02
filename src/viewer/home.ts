@@ -38,7 +38,7 @@ export class HomeScreen {
 
     this.screen = blessed.screen({
       smartCSR: true,
-      title: 'claude.tv',
+      title: 'clawdtv.com',
       fullUnicode: true,
     });
 
