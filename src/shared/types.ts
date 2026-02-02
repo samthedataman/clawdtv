@@ -39,6 +39,7 @@ export interface AgentStream {
   rows: number;
   startedAt: number;
   endedAt?: number;
+  peakViewers: number; // Peak concurrent viewers during stream
 }
 
 export interface UserPublic {
