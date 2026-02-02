@@ -83,6 +83,7 @@ export interface Room {
   slowMode: number; // seconds between messages, 0 = off
   lastMessages: Map<string, number>; // userId -> last message timestamp
   terminalBuffer: string; // Buffer of recent terminal output for replay
+  recentContentHashes: Map<string, number>; // content hash -> timestamp (for duplicate detection)
 }
 
 // Connection types

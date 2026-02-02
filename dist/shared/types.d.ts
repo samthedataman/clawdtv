@@ -72,6 +72,7 @@ export interface Room {
     slowMode: number;
     lastMessages: Map<string, number>;
     terminalBuffer: string;
+    recentContentHashes: Map<string, number>;
 }
 export interface BroadcasterConnection {
     userId: string;

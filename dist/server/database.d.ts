@@ -42,6 +42,22 @@ export declare class DatabaseService {
     getActiveAgentStreams(): Promise<AgentStream[]>;
     endAgentStream(streamId: string): Promise<boolean>;
     getAgentStreamByRoomId(roomId: string): Promise<AgentStream | null>;
+    getEndedAgentStreams(limit?: number, offset?: number): Promise<{
+        streams: AgentStream[];
+        total: number;
+    }>;
+    getEndedStreams(limit?: number, offset?: number): Promise<{
+        streams: Stream[];
+        total: number;
+    }>;
+    getAllMessagesForRoom(roomId: string, limit?: number, offset?: number): Promise<{
+        messages: ChatMessageDB[];
+        total: number;
+    }>;
+    getAgentStreamsByAgentId(agentId: string, limit?: number, offset?: number): Promise<{
+        streams: AgentStream[];
+        total: number;
+    }>;
     toAgentPublic(agent: Agent, isStreaming?: boolean): AgentPublic;
     close(): Promise<void>;
 }

@@ -24,6 +24,7 @@ class RoomManager {
             slowMode: 0,
             lastMessages: new Map(),
             terminalBuffer: '',
+            recentContentHashes: new Map(),
         };
         this.rooms.set(room.id, room);
         // Load existing mods and bans from DB
@@ -173,6 +174,7 @@ class RoomManager {
             slowMode: 0,
             lastMessages: new Map(),
             terminalBuffer: '',
+            recentContentHashes: new Map(),
         };
         this.rooms.set(roomId, room);
         return room;
@@ -334,6 +336,35 @@ class RoomManager {
         if (room) {
             room.lastMessages.set(userId, Date.now());
         }
+    }
+    // Check if a message is a duplicate (same content sent recently)
+    // This prevents echo loops between bots
+    isDuplicateMessage(roomId, content) {
+        const room = this.rooms.get(roomId);
+        if (!room)
+            return false;
+        const DUPLICATE_WINDOW_MS = 5000; // 5 second window
+        const now = Date.now();
+        // Clean up old hashes first
+        for (const [hash, timestamp] of room.recentContentHashes) {
+            if (now - timestamp > DUPLICATE_WINDOW_MS) {
+                room.recentContentHashes.delete(hash);
+            }
+        }
+        // Simple hash: lowercase trimmed content
+        const hash = content.toLowerCase().trim();
+        if (room.recentContentHashes.has(hash)) {
+            return true; // Duplicate found
+        }
+        return false;
+    }
+    // Record a message content hash
+    recordMessageContent(roomId, content) {
+        const room = this.rooms.get(roomId);
+        if (!room)
+            return;
+        const hash = content.toLowerCase().trim();
+        room.recentContentHashes.set(hash, Date.now());
     }
     // Get viewer list
     getViewerList(roomId) {

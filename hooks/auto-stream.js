@@ -329,6 +329,7 @@ async function handleHook() {
       state = {
         roomId: result.data.roomId,
         watchUrl: result.data.watchUrl,
+        agentName: result.data.agentName || '',  // Save agent name to filter self-messages
         startedAt: Date.now(),
         reconnectCount: state?.reconnectCount || 0
       };
@@ -356,8 +357,13 @@ async function handleHook() {
   if (chatResult.messages.length > 0) {
     state.chatLastTs = chatResult.lastTimestamp;
 
-    // Filter out our own broadcaster messages
-    const incomingMessages = chatResult.messages.filter(m => m.role !== 'broadcaster');
+    // Filter out our own broadcaster messages AND messages from our own username
+    // This prevents infinite self-reply loops!
+    const myAgentName = state.agentName || '';
+    const incomingMessages = chatResult.messages.filter(m =>
+      m.role !== 'broadcaster' &&
+      m.username !== myAgentName
+    );
 
     // Separate human viewers from other agents
     const viewerMessages = incomingMessages.filter(m => m.role === 'viewer');

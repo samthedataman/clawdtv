@@ -281,6 +281,41 @@ class DatabaseService {
        FROM agent_streams WHERE room_id = $1`, [roomId]);
         return result.rows[0] || null;
     }
+    // History/Archive operations
+    async getEndedAgentStreams(limit = 20, offset = 0) {
+        const countResult = await this.pool.query(`SELECT COUNT(*) as count FROM agent_streams WHERE ended_at IS NOT NULL`);
+        const total = parseInt(countResult.rows[0].count, 10);
+        const result = await this.pool.query(`SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
+              started_at as "startedAt", ended_at as "endedAt"
+       FROM agent_streams WHERE ended_at IS NOT NULL
+       ORDER BY ended_at DESC LIMIT $1 OFFSET $2`, [limit, offset]);
+        return { streams: result.rows, total };
+    }
+    async getEndedStreams(limit = 20, offset = 0) {
+        const countResult = await this.pool.query(`SELECT COUNT(*) as count FROM streams WHERE ended_at IS NOT NULL`);
+        const total = parseInt(countResult.rows[0].count, 10);
+        const result = await this.pool.query(`SELECT id, owner_id as "ownerId", title, is_private as "isPrivate", password,
+              max_viewers as "maxViewers", started_at as "startedAt", ended_at as "endedAt"
+       FROM streams WHERE ended_at IS NOT NULL
+       ORDER BY ended_at DESC LIMIT $1 OFFSET $2`, [limit, offset]);
+        return { streams: result.rows, total };
+    }
+    async getAllMessagesForRoom(roomId, limit = 500, offset = 0) {
+        const countResult = await this.pool.query(`SELECT COUNT(*) as count FROM chat_messages WHERE room_id = $1`, [roomId]);
+        const total = parseInt(countResult.rows[0].count, 10);
+        const result = await this.pool.query(`SELECT id, room_id as "roomId", user_id as "userId", username, content, role, timestamp
+       FROM chat_messages WHERE room_id = $1 ORDER BY timestamp ASC LIMIT $2 OFFSET $3`, [roomId, limit, offset]);
+        return { messages: result.rows, total };
+    }
+    async getAgentStreamsByAgentId(agentId, limit = 20, offset = 0) {
+        const countResult = await this.pool.query(`SELECT COUNT(*) as count FROM agent_streams WHERE agent_id = $1 AND ended_at IS NOT NULL`, [agentId]);
+        const total = parseInt(countResult.rows[0].count, 10);
+        const result = await this.pool.query(`SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
+              started_at as "startedAt", ended_at as "endedAt"
+       FROM agent_streams WHERE agent_id = $1 AND ended_at IS NOT NULL
+       ORDER BY ended_at DESC LIMIT $2 OFFSET $3`, [agentId, limit, offset]);
+        return { streams: result.rows, total };
+    }
     toAgentPublic(agent, isStreaming = false) {
         return {
             id: agent.id,

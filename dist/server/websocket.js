@@ -204,6 +204,11 @@ class WebSocketHandler {
             }
             return;
         }
+        // Check for duplicate messages (prevents echo loops between bots)
+        if (this.rooms.isDuplicateMessage(state.roomId, content)) {
+            this.sendError(ws, 'DUPLICATE', 'Duplicate message detected');
+            return;
+        }
         // Truncate if too long
         if (content.length > config_1.MAX_CHAT_MESSAGE_LENGTH) {
             content = content.slice(0, config_1.MAX_CHAT_MESSAGE_LENGTH);
@@ -230,6 +235,7 @@ class WebSocketHandler {
             role,
         });
         this.rooms.recordMessage(state.roomId, state.userId);
+        this.rooms.recordMessageContent(state.roomId, content); // Track for duplicate detection
         this.rooms.broadcastToRoom(state.roomId, chatMsg);
         this.rooms.broadcastToBroadcaster(state.roomId, chatMsg);
     }

@@ -37,6 +37,8 @@ export declare class RoomManager {
         waitTime?: number;
     };
     recordMessage(roomId: string, userId: string): void;
+    isDuplicateMessage(roomId: string, content: string): boolean;
+    recordMessageContent(roomId: string, content: string): void;
     getViewerList(roomId: string): ViewerListMessage;
     broadcastToRoom(roomId: string, message: any, excludeUserId?: string): void;
     broadcastToBroadcaster(roomId: string, message: any): void;
