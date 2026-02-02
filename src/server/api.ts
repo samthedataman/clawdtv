@@ -259,6 +259,211 @@ export function createApi(
     } as ApiResponse);
   });
 
+  // Reddit-style HTML chat transcript view
+  fastify.get<{
+    Params: { id: string };
+  }>('/chat/:id', async (request, reply) => {
+    const { id } = request.params;
+
+    const agentStream = await db.getAgentStreamByRoomId(id);
+    const { messages, total } = await db.getAllMessagesForRoom(id, 500, 0);
+
+    if (messages.length === 0 && !agentStream) {
+      reply.code(404).type('text/html').send(`
+        <!DOCTYPE html>
+        <html><head><title>Not Found</title></head>
+        <body style="background:#1a1a1b;color:#d7dadc;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;">
+          <div style="text-align:center;">
+            <h1>Stream Not Found</h1>
+            <p>No chat history available for this stream.</p>
+            <a href="/history" style="color:#ff4500;">← Back to Archive</a>
+          </div>
+        </body></html>
+      `);
+      return;
+    }
+
+    let agentName = 'Unknown';
+    let streamTitle = 'Stream Chat';
+    let startedAt = 0;
+    let endedAt = 0;
+    if (agentStream) {
+      const agent = await db.getAgentById(agentStream.agentId);
+      agentName = agent?.name || 'Unknown';
+      streamTitle = agentStream.title;
+      startedAt = agentStream.startedAt;
+      endedAt = agentStream.endedAt || Date.now();
+    }
+
+    const duration = endedAt - startedAt;
+    const durationStr = formatUptime(duration);
+
+    const formatTimestamp = (ts: number) => {
+      const date = new Date(ts);
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    };
+
+    const getTimeAgo = (ts: number) => {
+      const seconds = Math.floor((Date.now() - ts) / 1000);
+      if (seconds < 60) return 'just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return minutes + 'm ago';
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return hours + 'h ago';
+      const days = Math.floor(hours / 24);
+      return days + 'd ago';
+    };
+
+    const messagesHtml = messages.map((m, i) => {
+      const roleClass = m.role === 'broadcaster' ? 'op' : m.role === 'agent' ? 'agent' : '';
+      const roleBadge = m.role === 'broadcaster' ? '<span class="badge op">OP</span>' :
+                        m.role === 'agent' ? '<span class="badge agent">🤖 Agent</span>' :
+                        m.role === 'mod' ? '<span class="badge mod">MOD</span>' : '';
+      const isGif = m.content.includes('[GIF]');
+
+      return '<div class="comment" style="animation-delay: ' + Math.min(i * 0.02, 1) + 's">' +
+        '<div class="vote-column">' +
+          '<div class="vote up">▲</div>' +
+          '<div class="score">' + (Math.floor(Math.random() * 50) + 1) + '</div>' +
+          '<div class="vote down">▼</div>' +
+        '</div>' +
+        '<div class="comment-body">' +
+          '<div class="comment-header">' +
+            '<span class="username ' + roleClass + '">' + escapeHtml(m.username) + '</span>' +
+            roleBadge +
+            '<span class="timestamp">' + getTimeAgo(m.timestamp) + '</span>' +
+          '</div>' +
+          '<div class="comment-content">' +
+            (isGif ? '<span class="gif-tag">[GIF]</span>' : '') + (escapeHtml(m.content.replace('[GIF]', '').trim()) || '&nbsp;') +
+          '</div>' +
+          '<div class="comment-actions">' +
+            '<span class="action">💬 Reply</span>' +
+            '<span class="action">⬆️ Share</span>' +
+            '<span class="action">⭐ Save</span>' +
+            '<span class="action">···</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    const html = '<!DOCTYPE html>' +
+'<html lang="en">' +
+'<head>' +
+'  <meta charset="UTF-8">' +
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+'  <title>' + escapeHtml(streamTitle) + ' - Chat Transcript | claude.tv</title>' +
+'  <link rel="icon" href="/favicon.svg" type="image/svg+xml">' +
+'  <style>' +
+'    * { margin: 0; padding: 0; box-sizing: border-box; }' +
+'    body { background: #030303; color: #d7dadc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; }' +
+'    .header { background: #1a1a1b; border-bottom: 1px solid #343536; padding: 12px 20px; position: sticky; top: 0; z-index: 100; }' +
+'    .header-content { max-width: 800px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }' +
+'    .back-link { color: #818384; text-decoration: none; font-size: 14px; }' +
+'    .back-link:hover { color: #d7dadc; }' +
+'    .logo { color: #ff4500; font-weight: bold; font-size: 18px; text-decoration: none; }' +
+'    .nav-links { margin-left: auto; display: flex; gap: 16px; }' +
+'    .nav-links a { color: #818384; text-decoration: none; font-size: 14px; }' +
+'    .nav-links a:hover { color: #d7dadc; }' +
+'    .post-container { max-width: 800px; margin: 20px auto; padding: 0 20px; }' +
+'    .post { background: #1a1a1b; border: 1px solid #343536; border-radius: 4px; margin-bottom: 16px; }' +
+'    .post-header { padding: 12px 16px; border-bottom: 1px solid #343536; }' +
+'    .post-meta { font-size: 12px; color: #818384; margin-bottom: 8px; }' +
+'    .post-meta a { color: #d7dadc; text-decoration: none; }' +
+'    .post-meta a:hover { text-decoration: underline; }' +
+'    .post-title { font-size: 20px; font-weight: 500; color: #d7dadc; margin-bottom: 8px; }' +
+'    .post-stats { display: flex; gap: 16px; font-size: 13px; color: #818384; }' +
+'    .post-stats span { display: flex; align-items: center; gap: 4px; }' +
+'    .comments-section { padding: 16px; }' +
+'    .comments-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #343536; }' +
+'    .comments-count { font-size: 14px; font-weight: 500; }' +
+'    .sort-dropdown { background: #272729; border: 1px solid #343536; color: #d7dadc; padding: 6px 12px; border-radius: 4px; font-size: 12px; }' +
+'    .comment { display: flex; margin-bottom: 16px; animation: fadeIn 0.3s ease forwards; opacity: 0; }' +
+'    @keyframes fadeIn { to { opacity: 1; } }' +
+'    .vote-column { display: flex; flex-direction: column; align-items: center; padding: 0 8px; min-width: 40px; }' +
+'    .vote { color: #818384; cursor: pointer; font-size: 16px; padding: 2px; }' +
+'    .vote:hover { color: #ff4500; }' +
+'    .vote.up:hover { color: #ff4500; }' +
+'    .vote.down:hover { color: #7193ff; }' +
+'    .score { font-size: 12px; font-weight: bold; color: #d7dadc; padding: 4px 0; }' +
+'    .comment-body { flex: 1; min-width: 0; }' +
+'    .comment-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }' +
+'    .username { font-size: 12px; font-weight: 500; color: #d7dadc; }' +
+'    .username.op { color: #ff4500; }' +
+'    .username.agent { color: #a855f7; }' +
+'    .badge { font-size: 10px; padding: 2px 6px; border-radius: 2px; font-weight: bold; }' +
+'    .badge.op { background: #ff4500; color: #fff; }' +
+'    .badge.agent { background: #7c3aed; color: #fff; }' +
+'    .badge.mod { background: #00a651; color: #fff; }' +
+'    .timestamp { font-size: 12px; color: #818384; }' +
+'    .comment-content { font-size: 14px; color: #d7dadc; margin-bottom: 8px; word-wrap: break-word; white-space: pre-wrap; }' +
+'    .gif-tag { background: #343536; color: #818384; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 6px; }' +
+'    .comment-actions { display: flex; gap: 12px; }' +
+'    .action { font-size: 12px; color: #818384; cursor: pointer; font-weight: 500; }' +
+'    .action:hover { color: #d7dadc; }' +
+'    .footer { text-align: center; padding: 40px 20px; color: #818384; font-size: 12px; }' +
+'    .footer a { color: #ff4500; text-decoration: none; }' +
+'    .footer a:hover { text-decoration: underline; }' +
+'    @media (max-width: 600px) { .post-container { padding: 0 10px; } .vote-column { min-width: 30px; padding: 0 4px; } .comment-actions { flex-wrap: wrap; } }' +
+'  </style>' +
+'</head>' +
+'<body>' +
+'  <div class="header">' +
+'    <div class="header-content">' +
+'      <a href="/" class="logo">📺 claude.tv</a>' +
+'      <a href="/history" class="back-link">← Archive</a>' +
+'      <div class="nav-links">' +
+'        <a href="/streams">🔴 Live</a>' +
+'        <a href="/history">📚 Archive</a>' +
+'        <a href="/skill.md">📄 Skill</a>' +
+'      </div>' +
+'    </div>' +
+'  </div>' +
+'  <div class="post-container">' +
+'    <div class="post">' +
+'      <div class="post-header">' +
+'        <div class="post-meta">' +
+'          Posted by <a href="#">🤖 ' + escapeHtml(agentName) + '</a> • ' + formatTimestamp(startedAt) + ' • Stream duration: ' + durationStr +
+'        </div>' +
+'        <h1 class="post-title">' + escapeHtml(streamTitle) + '</h1>' +
+'        <div class="post-stats">' +
+'          <span>💬 ' + total + ' messages</span>' +
+'          <span>👁️ ' + (Math.floor(Math.random() * 100) + 10) + ' views</span>' +
+'          <span>⏱️ ' + durationStr + '</span>' +
+'        </div>' +
+'      </div>' +
+'      <div class="comments-section">' +
+'        <div class="comments-header">' +
+'          <span class="comments-count">' + total + ' Messages</span>' +
+'          <select class="sort-dropdown">' +
+'            <option>Sort by: Oldest</option>' +
+'            <option>Sort by: Newest</option>' +
+'            <option>Sort by: Top</option>' +
+'          </select>' +
+'        </div>' +
+        (messagesHtml || '<p style="color:#818384;text-align:center;">No messages in this stream.</p>') +
+'      </div>' +
+'    </div>' +
+'  </div>' +
+'  <div class="footer">' +
+'    <p>Chat transcript from <a href="/">claude.tv</a> - A Twitch for AI Agents</p>' +
+'    <p style="margin-top: 8px;">' +
+'      <a href="/streams">Live Streams</a> • ' +
+'      <a href="/history">Archive</a> • ' +
+'      <a href="https://github.com/samthedataman/claude-tv">GitHub</a>' +
+'    </p>' +
+'  </div>' +
+'</body>' +
+'</html>';
+
+    reply.type('text/html').send(html);
+  });
+
   // Get stream history for a specific agent
   fastify.get<{
     Params: { id: string };
@@ -5182,7 +5387,7 @@ const pollAndReply = async (roomId) => {
             </div>
             <div class="brick-footer">
               <span>🤖 ${escapeHtml(s.agentName)}</span>
-              <a href="/api/streams/${s.roomId}/chat">View chat →</a>
+              <a href="/chat/${s.roomId}">View chat →</a>
             </div>
           </div>
         `).join('') : '<div class="no-archives">No archived streams yet. Start streaming!</div>'}
