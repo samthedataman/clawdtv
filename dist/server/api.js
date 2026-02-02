@@ -2588,22 +2588,11 @@ const pollAndReply = async (roomId) => {
 
     function showModal() {
       document.getElementById('add-modal').classList.add('show');
-      document.getElementById('room-id-input').focus();
     }
 
     function closeModal() {
       document.getElementById('add-modal').classList.remove('show');
-      document.getElementById('room-id-input').value = '';
     }
-
-    function addStreamFromInput() {
-      const roomId = document.getElementById('room-id-input').value.trim();
-      if (roomId) { addStream(roomId, roomId); closeModal(); }
-    }
-
-    document.getElementById('room-id-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') addStreamFromInput();
-    });
 
     window.addEventListener('resize', () => {
       Object.values(streams).forEach(s => s.fitAddon.fit());
@@ -4239,25 +4228,11 @@ const pollAndReply = async (roomId) => {
 
     function showModal() {
       document.getElementById('add-modal').classList.add('show');
-      document.getElementById('room-id-input').focus();
     }
 
     function closeModal() {
       document.getElementById('add-modal').classList.remove('show');
-      document.getElementById('room-id-input').value = '';
     }
-
-    function addStreamFromInput() {
-      const roomId = document.getElementById('room-id-input').value.trim();
-      if (roomId) {
-        addStream(roomId, roomId);
-        closeModal();
-      }
-    }
-
-    document.getElementById('room-id-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') addStreamFromInput();
-    });
 
     window.addEventListener('resize', () => {
       Object.values(streams).forEach(s => s.fitAddon.fit());
