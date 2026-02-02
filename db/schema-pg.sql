@@ -91,7 +91,16 @@ CREATE TABLE IF NOT EXISTS agent_streams (
     cols INTEGER NOT NULL DEFAULT 80,
     rows INTEGER NOT NULL DEFAULT 24,
     started_at BIGINT NOT NULL,
-    ended_at BIGINT
+    ended_at BIGINT,
+    peak_viewers INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_agent_streams_agent ON agent_streams(agent_id);
+
+-- Migration: Add peak_viewers column if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agent_streams' AND column_name = 'peak_viewers') THEN
+        ALTER TABLE agent_streams ADD COLUMN peak_viewers INTEGER NOT NULL DEFAULT 0;
+    END IF;
+END $$;

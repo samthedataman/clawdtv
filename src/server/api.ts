@@ -2755,6 +2755,39 @@ const pollAndReply = async (roomId) => {
     .cell-terminal .xterm {
       height: 100%;
     }
+    .cell-chat {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: #161b22;
+      border-top: 1px solid #30363d;
+    }
+    .cell-chat input {
+      flex: 1;
+      padding: 6px 8px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #c9d1d9;
+      font-size: 11px;
+      font-family: inherit;
+    }
+    .cell-chat input:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+    .cell-chat button {
+      padding: 6px 10px;
+      background: #238636;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .cell-chat button:hover {
+      background: #2ea043;
+    }
     .sidebar {
       width: 280px;
       background: #161b22;
@@ -2982,6 +3015,10 @@ const pollAndReply = async (roomId) => {
               </div>
             </div>
             <div class="cell-terminal" id="term-\${roomId}"></div>
+            <div class="cell-chat">
+              <input type="text" id="chat-\${roomId}" placeholder="💬 Chat with the agent..." onkeypress="if(event.key==='Enter')sendChat('\${roomId}')">
+              <button onclick="sendChat('\${roomId}')">Send</button>
+            </div>
           \`;
           grid.appendChild(cell);
           setTimeout(() => {
@@ -3025,12 +3062,20 @@ const pollAndReply = async (roomId) => {
           else if (msg.type === 'join_stream_response' && msg.success && msg.terminalBuffer) {
             term.write(msg.terminalBuffer);
           }
+          else if (msg.type === 'chat') {
+            // Show incoming chat in terminal
+            const color = msg.role === 'broadcaster' ? '\\x1b[33m' : '\\x1b[32m';
+            term.write('\\r\\n' + color + '[' + msg.username + ']\\x1b[0m ' + msg.content);
+          }
+          else if (msg.type === 'system') {
+            term.write('\\r\\n\\x1b[90m* ' + msg.content + '\\x1b[0m');
+          }
         } catch (e) {}
       };
       ws.onclose = () => {
         if (streams[roomId]) streams[roomId].term.write('\\r\\n\\x1b[31m[Stream ended]\\x1b[0m');
       };
-      streams[roomId] = { term, ws, fitAddon, title };
+      streams[roomId] = { term, ws, fitAddon, title, viewerName };
       renderCells();
       updateStreamList();
     }
@@ -3042,6 +3087,19 @@ const pollAndReply = async (roomId) => {
         delete streams[roomId];
         renderCells();
         updateStreamList();
+      }
+    }
+
+    function sendChat(roomId) {
+      const input = document.getElementById('chat-' + roomId);
+      const message = input.value.trim();
+      if (!message) return;
+      const stream = streams[roomId];
+      if (stream && stream.ws && stream.ws.readyState === WebSocket.OPEN) {
+        stream.ws.send(JSON.stringify({ type: 'send_chat', content: message }));
+        // Show sent message in terminal
+        stream.term.write('\\r\\n\\x1b[36m[You]\\x1b[0m ' + message + '\\r\\n');
+        input.value = '';
       }
     }
 
@@ -4374,6 +4432,39 @@ const pollAndReply = async (roomId) => {
     }
     .cell-terminal .xterm {
       height: 100%;
+    }
+    .cell-chat {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: #161b22;
+      border-top: 1px solid #30363d;
+    }
+    .cell-chat input {
+      flex: 1;
+      padding: 6px 8px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #c9d1d9;
+      font-size: 11px;
+      font-family: inherit;
+    }
+    .cell-chat input:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+    .cell-chat button {
+      padding: 6px 10px;
+      background: #238636;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .cell-chat button:hover {
+      background: #2ea043;
     }
     .sidebar {
       width: 280px;
