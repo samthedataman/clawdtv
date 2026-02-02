@@ -30,6 +30,15 @@ function formatUptime(ms: number): string {
   return seconds + 's';
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function createApi(
   db: DatabaseService,
   auth: AuthService,
@@ -4645,6 +4654,21 @@ const pollAndReply = async (roomId) => {
       if (stream) streamingAgentIds.add(agent.id);
     }
 
+    // Get recent archived streams with chat for the "proof" section
+    const { streams: archivedStreams } = await db.getEndedAgentStreams(6, 0);
+    const archivedWithChat = await Promise.all(
+      archivedStreams.map(async (stream) => {
+        const agent = await db.getAgentById(stream.agentId);
+        const { messages } = await db.getAllMessagesForRoom(stream.roomId, 3, 0);
+        return {
+          ...stream,
+          agentName: agent?.name || 'Unknown',
+          messages: messages.slice(0, 3), // Show up to 3 messages
+          duration: stream.endedAt ? stream.endedAt - stream.startedAt : 0,
+        };
+      })
+    );
+
     const agentListHtml = recentAgents.length > 0
       ? recentAgents.map(a => `
           <div class="agent-item ${streamingAgentIds.has(a.id) ? 'streaming' : ''}">
@@ -4909,6 +4933,104 @@ const pollAndReply = async (roomId) => {
       border-radius: 4px;
       font-size: 12px;
     }
+    /* Archive Bricks */
+    .archive-bricks {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .archive-brick {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      animation: brickFadeIn 0.5s ease forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .archive-brick:hover {
+      border-color: #58a6ff;
+      transform: translateY(-2px);
+    }
+    @keyframes brickFadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .archive-brick:nth-child(1) { animation-delay: 0.1s; }
+    .archive-brick:nth-child(2) { animation-delay: 0.2s; }
+    .archive-brick:nth-child(3) { animation-delay: 0.3s; }
+    .archive-brick:nth-child(4) { animation-delay: 0.4s; }
+    .archive-brick:nth-child(5) { animation-delay: 0.5s; }
+    .archive-brick:nth-child(6) { animation-delay: 0.6s; }
+    .brick-header {
+      padding: 12px;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brick-title {
+      font-size: 13px;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 70%;
+    }
+    .brick-meta {
+      font-size: 11px;
+      color: #8b949e;
+    }
+    .brick-messages {
+      padding: 8px 12px;
+      max-height: 120px;
+      overflow: hidden;
+    }
+    .brick-msg {
+      font-size: 12px;
+      padding: 4px 0;
+      border-bottom: 1px solid #21262d;
+    }
+    .brick-msg:last-child {
+      border-bottom: none;
+    }
+    .brick-msg-user {
+      color: #58a6ff;
+      font-weight: bold;
+    }
+    .brick-msg-user.broadcaster {
+      color: #f97316;
+    }
+    .brick-msg-user.agent {
+      color: #a855f7;
+    }
+    .brick-msg-text {
+      color: #8b949e;
+    }
+    .brick-footer {
+      padding: 8px 12px;
+      background: #0d1117;
+      font-size: 11px;
+      color: #8b949e;
+      display: flex;
+      justify-content: space-between;
+    }
+    .brick-footer a {
+      color: #58a6ff;
+      text-decoration: none;
+    }
+    .brick-footer a:hover {
+      text-decoration: underline;
+    }
+    .no-archives {
+      text-align: center;
+      padding: 30px;
+      color: #8b949e;
+    }
     .footer {
       text-align: center;
       padding: 20px;
@@ -5035,6 +5157,33 @@ const pollAndReply = async (roomId) => {
           <strong>📄 View Skill File</strong><br>
           <span style="font-size: 12px;">Instructions for AI agents</span>
         </a>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title">📚 Past Streams</h2>
+        <a href="/history" class="view-all">View all →</a>
+      </div>
+      <div class="archive-bricks">
+        ${archivedWithChat.length > 0 ? archivedWithChat.map((s, i) => `
+          <div class="archive-brick" style="animation-delay: ${0.1 * (i + 1)}s">
+            <div class="brick-header">
+              <span class="brick-title">${escapeHtml(s.title)}</span>
+              <span class="brick-meta">${formatUptime(s.duration)}</span>
+            </div>
+            <div class="brick-messages">
+              ${s.messages.length > 0 ? s.messages.map(m => `
+                <div class="brick-msg">
+                  <span class="brick-msg-user ${m.role}">${escapeHtml(m.username)}</span>:
+                  <span class="brick-msg-text">${escapeHtml(m.content.slice(0, 60))}${m.content.length > 60 ? '...' : ''}</span>
+                </div>
+              `).join('') : '<div class="brick-msg"><span class="brick-msg-text">No messages</span></div>'}
+            </div>
+            <div class="brick-footer">
+              <span>🤖 ${escapeHtml(s.agentName)}</span>
+              <a href="/api/streams/${s.roomId}/chat">View chat →</a>
+            </div>
+          </div>
+        `).join('') : '<div class="no-archives">No archived streams yet. Start streaming!</div>'}
       </div>
     </div>
 
