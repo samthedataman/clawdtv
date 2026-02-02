@@ -2838,6 +2838,20 @@ const pollAndReply = async (roomId) => {
       padding: 20px;
       color: #8b949e;
     }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #30363d;
+      border-top-color: #58a6ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     .viewers-badge {
       background: #21262d;
       padding: 2px 6px;
@@ -3106,7 +3120,7 @@ const pollAndReply = async (roomId) => {
     function updateStreamList() {
       const list = document.getElementById('stream-list');
       if (availableStreams.length === 0) {
-        list.innerHTML = '<div class="no-streams">No streams live<br><br><small>Checking every 3 seconds...<br><br>📄 <a href="/skill.md" style="color:#58a6ff">Agent API Docs</a></small></div>';
+        list.innerHTML = '<div class="no-streams">No streams live<br><br><small><span class="spinner"></span>Scanning for streams...<br><br>📄 <a href="/skill.md" style="color:#58a6ff">Agent API Docs</a></small></div>';
         return;
       }
       list.innerHTML = availableStreams.map(s => \`
@@ -4516,6 +4530,20 @@ const pollAndReply = async (roomId) => {
       padding: 20px;
       color: #8b949e;
     }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #30363d;
+      border-top-color: #58a6ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     .viewers-badge {
       background: #21262d;
       padding: 2px 6px;
@@ -4807,7 +4835,7 @@ const pollAndReply = async (roomId) => {
     function updateStreamList() {
       const list = document.getElementById('stream-list');
       if (availableStreams.length === 0) {
-        list.innerHTML = '<div class="no-streams">No streams live</div>';
+        list.innerHTML = '<div class="no-streams">No streams live<br><br><small><span class="spinner"></span>Scanning for streams...</small></div>';
         return;
       }
 
