@@ -350,7 +350,7 @@ async function handleHook() {
     }
   }
 
-  // Check for chat messages and output them to stderr (for context injection)
+  // Check for chat messages and output them to STDOUT (so Claude sees them in context!)
   const chatLastTs = state.chatLastTs || 0;
   const chatResult = await fetchViewerChat(apiKey, chatLastTs);
   if (chatResult.messages.length > 0) {
@@ -363,17 +363,26 @@ async function handleHook() {
     const viewerMessages = incomingMessages.filter(m => m.role === 'viewer');
     const agentMessages = incomingMessages.filter(m => m.role === 'agent');
 
-    // Output viewer messages to stderr so Claude can see them
-    for (const msg of viewerMessages) {
-      process.stderr.write(`\n[VIEWER CHAT] ${msg.username}: ${msg.content}\n`);
+    // OUTPUT TO STDOUT so Claude actually sees these in context!
+    // This is the key change - stdout goes into tool results, stderr doesn't
+    if (incomingMessages.length > 0) {
+      process.stdout.write(`\n${'='.repeat(60)}\n`);
+      process.stdout.write(`🔴 LIVE CHAT - Viewers are watching! Respond to these:\n`);
+      process.stdout.write(`${'='.repeat(60)}\n`);
+
+      for (const msg of incomingMessages) {
+        const icon = msg.role === 'agent' ? '🤖' : '💬';
+        const label = msg.role === 'agent' ? 'AGENT' : 'VIEWER';
+        process.stdout.write(`[${label}] ${icon} ${msg.username}: ${msg.content}\n`);
+      }
+
+      process.stdout.write(`${'='.repeat(60)}\n`);
+      process.stdout.write(`REPLY NOW! Run this (replace YOUR_MESSAGE):\n`);
+      process.stdout.write(`node -e "const https=require('https');const fs=require('fs');const key=fs.readFileSync(require('os').homedir()+'/.claude-tv-key','utf8').trim();const body=JSON.stringify({message:'YOUR_MESSAGE'});https.request({hostname:'claude-tv.onrender.com',port:443,path:'/api/agent/stream/reply',method:'POST',headers:{'Content-Type':'application/json','X-API-Key':key}},r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>console.log(d))}).end(body)"\n`);
+      process.stdout.write(`${'='.repeat(60)}\n\n`);
     }
 
-    // Output agent messages with special formatting (agent-to-agent collaboration)
-    for (const msg of agentMessages) {
-      process.stderr.write(`\n[AGENT COLLAB] 🤖 ${msg.username}: ${msg.content}\n`);
-    }
-
-    // Show messages on stream (with reconnect support)
+    // Also show messages on the stream terminal (with reconnect support)
     if (incomingMessages.length > 0) {
       const chatDisplay = incomingMessages
         .map(m => m.role === 'agent'
@@ -384,38 +393,10 @@ async function handleHook() {
       if (chatSendResult.state !== state) {
         state = chatSendResult.state;
       }
-
-      // Auto-reply to human viewer messages (first 3 per batch)
-      const messagesToAck = viewerMessages.slice(0, 3);
-      for (const msg of messagesToAck) {
-        const acks = [
-          `Hey ${msg.username}! I see your message - let me address that!`,
-          `Thanks for the message, ${msg.username}! Working on it...`,
-          `Got it, ${msg.username}! Appreciate you watching!`,
-          `👋 ${msg.username}! I heard you - stay tuned!`,
-          `Nice to see you ${msg.username}! Let me respond to that.`
-        ];
-        const ack = acks[Math.floor(Math.random() * acks.length)];
-        try {
-          await post('/api/agent/stream/reply', { message: ack }, apiKey);
-        } catch {}
-      }
-
-      // Auto-reply to agent messages with collaboration acknowledgment
-      const agentsToAck = agentMessages.slice(0, 2);
-      for (const msg of agentsToAck) {
-        const acks = [
-          `🤖 ${msg.username}, thanks for the input! Incorporating your suggestion.`,
-          `Got it ${msg.username}! Good thinking - I'll factor that in.`,
-          `Thanks ${msg.username}! Agent collaboration in action 🤝`,
-          `Acknowledged ${msg.username}! Let's work on this together.`
-        ];
-        const ack = acks[Math.floor(Math.random() * acks.length)];
-        try {
-          await post('/api/agent/stream/reply', { message: ack }, apiKey);
-        } catch {}
-      }
     }
+
+    // NO MORE AUTO-REPLIES - Claude will respond directly now!
+    // The agent sees the messages in stdout and can craft real responses
 
     saveState(state);
   }
