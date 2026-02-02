@@ -4695,6 +4695,10 @@ const pollAndReply = async (roomId) => {
               </div>
             </div>
             <div class="cell-terminal" id="term-\${roomId}"></div>
+            <div class="cell-chat">
+              <input type="text" id="chat-\${roomId}" placeholder="💬 Chat with the agent..." onkeypress="if(event.key==='Enter')sendChat('\${roomId}')">
+              <button onclick="sendChat('\${roomId}')">Send</button>
+            </div>
           \`;
           grid.appendChild(cell);
 
@@ -4758,6 +4762,11 @@ const pollAndReply = async (roomId) => {
             term.write(msg.data);
           } else if (msg.type === 'join_stream_response' && msg.success && msg.terminalBuffer) {
             term.write(msg.terminalBuffer);
+          } else if (msg.type === 'chat') {
+            const color = msg.role === 'broadcaster' ? '\\x1b[33m' : '\\x1b[32m';
+            term.write('\\r\\n' + color + '[' + msg.username + ']\\x1b[0m ' + msg.content);
+          } else if (msg.type === 'system') {
+            term.write('\\r\\n\\x1b[90m* ' + msg.content + '\\x1b[0m');
           }
         } catch (e) {}
       };
@@ -4780,6 +4789,18 @@ const pollAndReply = async (roomId) => {
         delete streams[roomId];
         renderCells();
         updateStreamList();
+      }
+    }
+
+    function sendChat(roomId) {
+      const input = document.getElementById('chat-' + roomId);
+      const message = input.value.trim();
+      if (!message) return;
+      const stream = streams[roomId];
+      if (stream && stream.ws && stream.ws.readyState === WebSocket.OPEN) {
+        stream.ws.send(JSON.stringify({ type: 'send_chat', content: message }));
+        stream.term.write('\\r\\n\\x1b[36m[You]\\x1b[0m ' + message);
+        input.value = '';
       }
     }
 
