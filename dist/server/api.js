@@ -3502,10 +3502,11 @@ setInterval(() => pollAndReply(roomId), 3000);
       height: 100vh;
     }
     .terminal-section {
-      flex: 1;
+      width: 450px;
       display: flex;
       flex-direction: column;
       min-width: 0;
+      border-left: 1px solid #30363d;
     }
     .stream-header {
       background: #161b22;
@@ -3582,27 +3583,35 @@ setInterval(() => pollAndReply(roomId), 3000);
       height: 100%;
     }
     .chat-section {
-      width: 340px;
+      flex: 1;
       background: #161b22;
-      border-left: 1px solid #30363d;
       display: flex;
       flex-direction: column;
+      min-width: 0;
     }
     .chat-header {
-      padding: 12px 16px;
+      padding: 12px 20px;
       border-bottom: 1px solid #30363d;
       font-weight: bold;
       color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #161b22;
     }
     #chat-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 12px;
+      padding: 16px 20px;
+      background: #0d1117;
     }
     .chat-message {
-      margin-bottom: 8px;
-      font-size: 14px;
-      line-height: 1.4;
+      margin-bottom: 12px;
+      font-size: 15px;
+      line-height: 1.5;
+      padding: 8px 12px;
+      background: #161b22;
+      border-radius: 8px;
     }
     .chat-message .username {
       font-weight: bold;
@@ -3928,34 +3937,22 @@ setInterval(() => pollAndReply(roomId), 3000);
 </head>
 <body>
   <div class="container">
-    <div class="terminal-section">
-      <div class="stream-header">
-        <div class="stream-title">
-          <a href="/streams" style="color: #58a6ff; text-decoration: none; font-size: 14px; margin-right: 12px;">← Streams</a>
-          <a href="/history" style="color: #8b949e; text-decoration: none; font-size: 14px; margin-right: 16px;">📚 Archive</a>
-          <div class="live-badge"><span class="live-dot"></span>LIVE</div>
-          <h1>${streamTitle}</h1>
-        </div>
-        <div class="stream-meta">
-          <span>by <strong>${broadcasterName}</strong></span>
-          <span> • </span>
-          <span class="viewer-count" id="viewer-count">0 viewers</span>
-        </div>
-      </div>
-      <div id="terminal-container"></div>
-      <div class="status-bar">
-        <span>Room: ${roomId}</span>
-        <a href="/streams">← Browse streams</a>
-      </div>
-    </div>
     <div class="chat-section">
       <div class="chat-header">
-        💬 Chat
-        <a href="/viewer-skill.md" target="_blank" style="float: right; font-size: 11px; color: #58a6ff; text-decoration: none; font-weight: normal;">🤖 Agent API</a>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <a href="/streams" style="color: #58a6ff; text-decoration: none; font-size: 14px;">← Streams</a>
+          <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+          <h1 style="font-size: 16px; color: #fff; margin: 0;">${streamTitle}</h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="color: #8b949e; font-size: 12px;">by <strong style="color: #c9d1d9;">${broadcasterName}</strong></span>
+          <span class="viewer-count" id="viewer-count" style="color: #58a6ff; font-size: 12px;">0 viewers</span>
+          <a href="/viewer-skill.md" target="_blank" style="font-size: 11px; color: #58a6ff; text-decoration: none; font-weight: normal;">🤖 Agent API</a>
+        </div>
       </div>
       <div id="chat-messages"></div>
       <div class="chat-input-container" style="position: relative;">
-        <input type="text" id="username-input" placeholder="Enter your name..." maxlength="20">
+        <input type="text" id="username-input" placeholder="Enter your name to chat..." maxlength="20">
         <div class="chat-input-row">
           <input type="text" id="chat-input" placeholder="Send a message..." maxlength="500" disabled>
           <button class="gif-btn" id="gif-btn" disabled title="Send GIF">GIF</button>
@@ -3969,6 +3966,16 @@ setInterval(() => pollAndReply(roomId), 3000);
           </div>
           <div class="gif-powered">Powered by Tenor</div>
         </div>
+      </div>
+    </div>
+    <div class="terminal-section">
+      <div class="stream-header" style="padding: 8px 12px;">
+        <span style="color: #8b949e; font-size: 12px;">🖥️ Terminal</span>
+        <a href="/history" style="color: #8b949e; text-decoration: none; font-size: 11px;">📚 Archive</a>
+      </div>
+      <div id="terminal-container"></div>
+      <div class="status-bar" style="padding: 6px 12px; font-size: 11px;">
+        <span>Room: ${roomId}</span>
       </div>
     </div>
   </div>
