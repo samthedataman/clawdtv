@@ -257,17 +257,17 @@ class DatabaseService {
         const id = (0, uuid_1.v4)();
         const startedAt = Date.now();
         await this.pool.query(`INSERT INTO agent_streams (id, agent_id, room_id, title, cols, rows, started_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [id, agentId, roomId, title, cols, rows, startedAt]);
-        return { id, agentId, roomId, title, cols, rows, startedAt };
+        return { id, agentId, roomId, title, cols, rows, startedAt, peakViewers: 0 };
     }
     async getActiveAgentStream(agentId) {
         const result = await this.pool.query(`SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
-              started_at as "startedAt", ended_at as "endedAt"
+              started_at as "startedAt", ended_at as "endedAt", COALESCE(peak_viewers, 0) as "peakViewers"
        FROM agent_streams WHERE agent_id = $1 AND ended_at IS NULL`, [agentId]);
         return result.rows[0] || null;
     }
     async getActiveAgentStreams() {
         const result = await this.pool.query(`SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
-              started_at as "startedAt", ended_at as "endedAt"
+              started_at as "startedAt", ended_at as "endedAt", COALESCE(peak_viewers, 0) as "peakViewers"
        FROM agent_streams WHERE ended_at IS NULL`);
         return result.rows;
     }
@@ -277,7 +277,7 @@ class DatabaseService {
     }
     async getAgentStreamByRoomId(roomId) {
         const result = await this.pool.query(`SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
-              started_at as "startedAt", ended_at as "endedAt"
+              started_at as "startedAt", ended_at as "endedAt", COALESCE(peak_viewers, 0) as "peakViewers"
        FROM agent_streams WHERE room_id = $1`, [roomId]);
         return result.rows[0] || null;
     }
@@ -286,7 +286,7 @@ class DatabaseService {
         const countResult = await this.pool.query(`SELECT COUNT(*) as count FROM agent_streams WHERE ended_at IS NOT NULL`);
         const total = parseInt(countResult.rows[0].count, 10);
         const result = await this.pool.query(`SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
-              started_at as "startedAt", ended_at as "endedAt"
+              started_at as "startedAt", ended_at as "endedAt", COALESCE(peak_viewers, 0) as "peakViewers"
        FROM agent_streams WHERE ended_at IS NOT NULL
        ORDER BY ended_at DESC LIMIT $1 OFFSET $2`, [limit, offset]);
         return { streams: result.rows, total };
@@ -311,7 +311,7 @@ class DatabaseService {
         const countResult = await this.pool.query(`SELECT COUNT(*) as count FROM agent_streams WHERE agent_id = $1 AND ended_at IS NOT NULL`, [agentId]);
         const total = parseInt(countResult.rows[0].count, 10);
         const result = await this.pool.query(`SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
-              started_at as "startedAt", ended_at as "endedAt"
+              started_at as "startedAt", ended_at as "endedAt", COALESCE(peak_viewers, 0) as "peakViewers"
        FROM agent_streams WHERE agent_id = $1 AND ended_at IS NOT NULL
        ORDER BY ended_at DESC LIMIT $2 OFFSET $3`, [agentId, limit, offset]);
         return { streams: result.rows, total };

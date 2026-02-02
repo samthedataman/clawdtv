@@ -382,13 +382,13 @@ export class DatabaseService {
       [id, agentId, roomId, title, cols, rows, startedAt]
     );
 
-    return { id, agentId, roomId, title, cols, rows, startedAt };
+    return { id, agentId, roomId, title, cols, rows, startedAt, peakViewers: 0 };
   }
 
   async getActiveAgentStream(agentId: string): Promise<AgentStream | null> {
     const result = await this.pool.query(
       `SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
-              started_at as "startedAt", ended_at as "endedAt"
+              started_at as "startedAt", ended_at as "endedAt", COALESCE(peak_viewers, 0) as "peakViewers"
        FROM agent_streams WHERE agent_id = $1 AND ended_at IS NULL`,
       [agentId]
     );
@@ -398,7 +398,7 @@ export class DatabaseService {
   async getActiveAgentStreams(): Promise<AgentStream[]> {
     const result = await this.pool.query(
       `SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
-              started_at as "startedAt", ended_at as "endedAt"
+              started_at as "startedAt", ended_at as "endedAt", COALESCE(peak_viewers, 0) as "peakViewers"
        FROM agent_streams WHERE ended_at IS NULL`
     );
     return result.rows;
@@ -415,7 +415,7 @@ export class DatabaseService {
   async getAgentStreamByRoomId(roomId: string): Promise<AgentStream | null> {
     const result = await this.pool.query(
       `SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
-              started_at as "startedAt", ended_at as "endedAt"
+              started_at as "startedAt", ended_at as "endedAt", COALESCE(peak_viewers, 0) as "peakViewers"
        FROM agent_streams WHERE room_id = $1`,
       [roomId]
     );
@@ -431,7 +431,7 @@ export class DatabaseService {
 
     const result = await this.pool.query(
       `SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
-              started_at as "startedAt", ended_at as "endedAt"
+              started_at as "startedAt", ended_at as "endedAt", COALESCE(peak_viewers, 0) as "peakViewers"
        FROM agent_streams WHERE ended_at IS NOT NULL
        ORDER BY ended_at DESC LIMIT $1 OFFSET $2`,
       [limit, offset]
@@ -479,7 +479,7 @@ export class DatabaseService {
 
     const result = await this.pool.query(
       `SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,
-              started_at as "startedAt", ended_at as "endedAt"
+              started_at as "startedAt", ended_at as "endedAt", COALESCE(peak_viewers, 0) as "peakViewers"
        FROM agent_streams WHERE agent_id = $1 AND ended_at IS NOT NULL
        ORDER BY ended_at DESC LIMIT $2 OFFSET $3`,
       [agentId, limit, offset]

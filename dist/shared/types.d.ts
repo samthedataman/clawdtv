@@ -34,6 +34,7 @@ export interface AgentStream {
     rows: number;
     startedAt: number;
     endedAt?: number;
+    peakViewers: number;
 }
 export interface UserPublic {
     id: string;
