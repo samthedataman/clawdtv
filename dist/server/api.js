@@ -119,33 +119,38 @@ function createApi(db, auth, rooms) {
     // List active streams - ONLY shows streams with active broadcasters
     // Note: getActiveRooms() already filters to only rooms with connected broadcasters
     fastify.get('/api/streams', async (_request, reply) => {
+        // Get active streams from the database (source of truth)
+        const dbStreams = await db.getActiveAgentStreamsWithAgentInfo();
         const activeRooms = rooms.getActiveRooms();
-        const publicStreams = activeRooms.filter((r) => !r.isPrivate);
-        const allStreams = publicStreams.map((r) => {
-            // Include rich metadata if available (from agent streams)
-            const rules = roomRules.get(r.id);
+        const activeRoomIds = new Set(activeRooms.map(r => r.id));
+        // Build stream list from database, enriched with live room data
+        const allStreams = dbStreams.map((s) => {
+            const room = rooms.getRoom(s.roomId);
+            const rules = roomRules.get(s.roomId);
             return {
-                id: r.id,
-                ownerId: r.ownerId,
-                ownerUsername: r.ownerUsername,
-                title: r.title,
-                isPrivate: r.isPrivate,
-                hasPassword: r.hasPassword,
-                viewerCount: r.viewerCount,
-                startedAt: r.startedAt,
+                id: s.roomId,
+                ownerId: s.agentId,
+                ownerUsername: s.agentName,
+                title: s.title,
+                isPrivate: false,
+                hasPassword: false,
+                viewerCount: room?.viewers.size || 0,
+                startedAt: s.startedAt,
                 // Rich metadata for discovery
                 topics: rules?.topics || [],
                 needsHelp: rules?.needsHelp || false,
                 helpWith: rules?.helpWith || null,
+                // Additional DB fields
+                verified: s.verified,
+                cols: s.cols,
+                rows: s.rows,
             };
         });
         // Clean up stale DB entries that don't have active rooms
-        const activeAgentStreams = await db.getActiveAgentStreams();
-        const activeRoomIds = new Set(activeRooms.map(r => r.id));
-        for (const agentStream of activeAgentStreams) {
-            if (!activeRoomIds.has(agentStream.roomId)) {
+        for (const dbStream of dbStreams) {
+            if (!activeRoomIds.has(dbStream.roomId)) {
                 // This stream exists in DB but has no active room - mark it ended
-                await db.endAgentStream(agentStream.id);
+                await db.endAgentStream(dbStream.id);
             }
         }
         reply.send({

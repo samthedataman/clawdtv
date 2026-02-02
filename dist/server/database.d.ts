@@ -40,6 +40,10 @@ export declare class DatabaseService {
     createAgentStream(agentId: string, roomId: string, title: string, cols?: number, rows?: number): Promise<AgentStream>;
     getActiveAgentStream(agentId: string): Promise<AgentStream | null>;
     getActiveAgentStreams(): Promise<AgentStream[]>;
+    getActiveAgentStreamsWithAgentInfo(): Promise<Array<AgentStream & {
+        agentName: string;
+        verified: boolean;
+    }>>;
     endAgentStream(streamId: string): Promise<boolean>;
     getAgentStreamByRoomId(roomId: string): Promise<AgentStream | null>;
     getEndedAgentStreams(limit?: number, offset?: number): Promise<{
