@@ -2805,7 +2805,15 @@ setInterval(() => pollAndReply(roomId), 3000);
 
     let layout = 1;
     let streams = {};
-    let availableStreams = ${JSON.stringify(publicStreams.map(s => ({ id: s.id, title: s.title, owner: s.ownerUsername, viewers: s.viewerCount })))};
+    let availableStreams = ${JSON.stringify(publicStreams.map(s => ({
+            id: s.id,
+            title: s.title,
+            owner: s.ownerUsername,
+            viewers: s.viewerCount,
+            topics: roomRules.get(s.id)?.topics || [],
+            needsHelp: roomRules.get(s.id)?.needsHelp || false,
+            helpWith: roomRules.get(s.id)?.helpWith || null
+        })))};
 
     // Auto-select layout based on ACTUAL stream count - ALWAYS start small
     function autoSelectLayout() {
@@ -2957,16 +2965,28 @@ setInterval(() => pollAndReply(roomId), 3000);
         list.innerHTML = '<div class="no-streams">No streams live<br><br><small><span class="spinner"></span>Scanning for streams...<br><br>📄 <a href="/skill.md" style="color:#58a6ff">Agent API Docs</a></small></div>';
         return;
       }
-      list.innerHTML = availableStreams.map(s => \`
-        <div class="stream-item \${streams[s.id] ? 'added' : ''}" onclick="addStream('\${s.id}', '\${s.title.replace(/'/g, "\\\\'")}')">
-          <div class="stream-item-title">
-            <span class="live-dot" style="width:6px;height:6px;background:#f85149;border-radius:50%;"></span>
-            \${s.title}
-            <span class="viewers-badge">👥 \${s.viewers}</span>
+      list.innerHTML = availableStreams.map(s => {
+        const topicTags = (s.topics || []).slice(0, 3).map(t =>
+          '<span style="background:#21262d;color:#8b949e;padding:2px 6px;border-radius:4px;font-size:9px;margin-right:4px;">' + t + '</span>'
+        ).join('');
+        const helpBadge = s.needsHelp ?
+          '<span style="background:#f85149;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;margin-left:4px;" title="' + (s.helpWith || 'Needs help!') + '">🆘 Help</span>' : '';
+        return \`
+          <div class="stream-item \${streams[s.id] ? 'added' : ''}" onclick="addStream('\${s.id}', '\${s.title.replace(/'/g, "\\\\'")}')">
+            <div class="stream-item-title">
+              <span class="live-dot" style="width:6px;height:6px;background:#f85149;border-radius:50%;flex-shrink:0;"></span>
+              <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">\${s.title}</span>
+              \${helpBadge}
+              <span class="viewers-badge">👥 \${s.viewers}</span>
+            </div>
+            <div class="stream-item-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+              <span>by \${s.owner}</span>
+              <span>\${topicTags}</span>
+            </div>
+            \${s.helpWith ? '<div style="font-size:10px;color:#f0883e;margin-top:4px;font-style:italic;">💡 ' + s.helpWith + '</div>' : ''}
           </div>
-          <div class="stream-item-meta">by \${s.owner}</div>
-        </div>
-      \`).join('');
+        \`;
+      }).join('');
     }
 
     function showModal() {
@@ -2988,7 +3008,15 @@ setInterval(() => pollAndReply(roomId), 3000);
         const data = await res.json();
         if (data.success) {
           const oldCount = availableStreams.length;
-          availableStreams = data.data.streams.map(s => ({ id: s.id, title: s.title, owner: s.ownerUsername, viewers: s.viewerCount }));
+          availableStreams = data.data.streams.map(s => ({
+            id: s.id,
+            title: s.title,
+            owner: s.ownerUsername,
+            viewers: s.viewerCount,
+            topics: s.topics || [],
+            needsHelp: s.needsHelp || false,
+            helpWith: s.helpWith || null
+          }));
           updateStreamList();
 
           // Auto-add NEW streams to the grid if we have room
@@ -4734,7 +4762,15 @@ setInterval(() => pollAndReply(roomId), 3000);
 
     let layout = 1;
     let streams = {}; // roomId -> { term, ws, fitAddon }
-    let availableStreams = ${JSON.stringify(publicStreams.map(s => ({ id: s.id, title: s.title, owner: s.ownerUsername, viewers: s.viewerCount })))};
+    let availableStreams = ${JSON.stringify(publicStreams.map(s => ({
+            id: s.id,
+            title: s.title,
+            owner: s.ownerUsername,
+            viewers: s.viewerCount,
+            topics: roomRules.get(s.id)?.topics || [],
+            needsHelp: roomRules.get(s.id)?.needsHelp || false,
+            helpWith: roomRules.get(s.id)?.helpWith || null
+        })))};
 
     // Auto-select layout based on ACTUAL stream count - ALWAYS start small
     function autoSelectLayout() {
@@ -4911,16 +4947,28 @@ setInterval(() => pollAndReply(roomId), 3000);
         return;
       }
 
-      list.innerHTML = availableStreams.map(s => \`
-        <div class="stream-item \${streams[s.id] ? 'added' : ''}" onclick="addStream('\${s.id}', '\${s.title.replace(/'/g, "\\\\'")}')">
-          <div class="stream-item-title">
-            <span class="live-dot" style="width:6px;height:6px;background:#f85149;border-radius:50%;"></span>
-            \${s.title}
-            <span class="viewers-badge">👥 \${s.viewers}</span>
+      list.innerHTML = availableStreams.map(s => {
+        const topicTags = (s.topics || []).slice(0, 3).map(t =>
+          '<span style="background:#21262d;color:#8b949e;padding:2px 6px;border-radius:4px;font-size:9px;margin-right:4px;">' + t + '</span>'
+        ).join('');
+        const helpBadge = s.needsHelp ?
+          '<span style="background:#f85149;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;margin-left:4px;" title="' + (s.helpWith || 'Needs help!') + '">🆘 Help</span>' : '';
+        return \`
+          <div class="stream-item \${streams[s.id] ? 'added' : ''}" onclick="addStream('\${s.id}', '\${s.title.replace(/'/g, "\\\\'")}')">
+            <div class="stream-item-title">
+              <span class="live-dot" style="width:6px;height:6px;background:#f85149;border-radius:50%;flex-shrink:0;"></span>
+              <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">\${s.title}</span>
+              \${helpBadge}
+              <span class="viewers-badge">👥 \${s.viewers}</span>
+            </div>
+            <div class="stream-item-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+              <span>by \${s.owner}</span>
+              <span>\${topicTags}</span>
+            </div>
+            \${s.helpWith ? '<div style="font-size:10px;color:#f0883e;margin-top:4px;font-style:italic;">💡 ' + s.helpWith + '</div>' : ''}
           </div>
-          <div class="stream-item-meta">by \${s.owner}</div>
-        </div>
-      \`).join('');
+        \`;
+      }).join('');
     }
 
     function showModal() {
@@ -4946,7 +4994,10 @@ setInterval(() => pollAndReply(roomId), 3000);
             id: s.id,
             title: s.title,
             owner: s.ownerUsername,
-            viewers: s.viewerCount
+            viewers: s.viewerCount,
+            topics: s.topics || [],
+            needsHelp: s.needsHelp || false,
+            helpWith: s.helpWith || null
           }));
           updateStreamList();
 
