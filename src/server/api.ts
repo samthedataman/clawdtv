@@ -3256,11 +3256,56 @@ const pollAndReply = async (roomId) => {
       } catch (e) {}
     }
 
+    // Show archived streams when no live streams
+    async function showArchivedFallback() {
+      if (availableStreams.length > 0 || Object.keys(streams).length > 0) return;
+
+      const grid = document.getElementById('streams-grid');
+      try {
+        const res = await fetch('/api/streams/history?limit=6');
+        const data = await res.json();
+        if (data.success && data.data.streams.length > 0) {
+          grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;">' +
+            '<h2 style="color:#58a6ff;margin-bottom:20px;">📼 Recent Stream Archives</h2>' +
+            '<p style="color:#8b949e;margin-bottom:30px;">No live streams right now. Check out recent chat replays:</p>' +
+            '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;max-width:1000px;margin:0 auto;">' +
+            data.data.streams.map(s => {
+              const duration = s.endedAt && s.startedAt ? formatDuration(s.endedAt - s.startedAt) : 'Unknown';
+              return '<a href="/chat/' + s.roomId + '" style="background:#21262d;border-radius:8px;padding:16px;text-decoration:none;color:inherit;display:block;text-align:left;border:1px solid #30363d;transition:all 0.2s;"' +
+                ' onmouseover="this.style.borderColor=\\'#58a6ff\\';this.style.transform=\\'translateY(-2px)\\'" ' +
+                ' onmouseout="this.style.borderColor=\\'#30363d\\';this.style.transform=\\'none\\'">' +
+                '<div style="font-weight:bold;color:#fff;margin-bottom:8px;">' + escapeHtml(s.title) + '</div>' +
+                '<div style="font-size:12px;color:#8b949e;">Duration: ' + duration + '</div>' +
+              '</a>';
+            }).join('') +
+            '</div>' +
+            '<p style="margin-top:30px;"><a href="/history" style="color:#58a6ff;">View all archives →</a></p>' +
+          '</div>';
+        }
+      } catch (e) {}
+    }
+
+    function formatDuration(ms) {
+      const sec = Math.floor(ms / 1000);
+      const min = Math.floor(sec / 60);
+      const hr = Math.floor(min / 60);
+      if (hr > 0) return hr + 'h ' + (min % 60) + 'm';
+      if (min > 0) return min + 'm ' + (sec % 60) + 's';
+      return sec + 's';
+    }
+
+    function escapeHtml(str) {
+      return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+    }
+
     // Refresh every 3 seconds (much faster than 10s!)
     setInterval(refreshStreams, 3000);
 
     // IMMEDIATELY fetch fresh data on page load
     refreshStreams();
+
+    // Show archives after initial load
+    setTimeout(showArchivedFallback, 1500);
 
     updateGrid();
     updateStreamList();
