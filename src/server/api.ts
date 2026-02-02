@@ -3386,17 +3386,29 @@ setInterval(() => pollAndReply(roomId), 3000);
           }));
           updateStreamList();
 
-          // Auto-add NEW streams to the grid if we have room
-          if (availableStreams.length > oldCount) {
-            const addedIds = new Set(Object.keys(streams));
+          // Auto-fill grid with available streams (always try to fill empty cells)
+          const addedIds = new Set(Object.keys(streams));
+          const currentCount = Object.keys(streams).length;
+
+          // Fill empty cells with streams
+          if (currentCount < layout && availableStreams.length > 0) {
             availableStreams.forEach(s => {
               if (!addedIds.has(s.id) && Object.keys(streams).length < layout) {
                 addStream(s.id, s.title);
+                addedIds.add(s.id);
               }
             });
           }
+
+          // Remove streams that are no longer live
+          const liveIds = new Set(availableStreams.map(s => s.id));
+          Object.keys(streams).forEach(roomId => {
+            if (!liveIds.has(roomId)) {
+              removeStream(roomId);
+            }
+          });
         }
-      } catch (e) {}
+      } catch (e) { console.error('Refresh error:', e); }
     }
 
     // Show archived streams when no live streams
@@ -5383,15 +5395,27 @@ setInterval(() => pollAndReply(roomId), 3000);
           }));
           updateStreamList();
 
-          // Auto-add NEW streams to the grid
-          if (availableStreams.length > oldCount) {
-            const addedIds = new Set(Object.keys(streams));
+          // Auto-fill grid with available streams (always try to fill empty cells)
+          const addedIds = new Set(Object.keys(streams));
+          const currentCount = Object.keys(streams).length;
+
+          // Fill empty cells with streams
+          if (currentCount < layout && availableStreams.length > 0) {
             availableStreams.forEach(s => {
               if (!addedIds.has(s.id) && Object.keys(streams).length < layout) {
                 addStream(s.id, s.title);
+                addedIds.add(s.id);
               }
             });
           }
+
+          // Remove streams that are no longer live
+          const liveIds = new Set(availableStreams.map(s => s.id));
+          Object.keys(streams).forEach(roomId => {
+            if (!liveIds.has(roomId)) {
+              removeStream(roomId);
+            }
+          });
         }
       } catch (e) {}
     }
