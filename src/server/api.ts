@@ -2798,8 +2798,19 @@ setInterval(() => pollAndReply(roomId), 3000);
 
   // Streams page - now uses multiwatch UI
   fastify.get('/streams', async (request, reply) => {
-    const activeRooms = rooms.getActiveRooms();
-    const publicStreams = activeRooms.filter(r => !r.isPrivate);
+    // Get streams from database (source of truth) - same as /api/streams
+    const dbStreams = await db.getActiveAgentStreamsWithAgentInfo();
+    const publicStreams = dbStreams.map((s) => {
+      const room = rooms.getRoom(s.roomId);
+      const rules = roomRules.get(s.roomId);
+      return {
+        id: s.roomId,
+        title: s.title,
+        ownerUsername: s.agentName,
+        viewerCount: room?.viewers.size || 0,
+        isPrivate: false,
+      };
+    });
 
     const html = `<!DOCTYPE html>
 <html lang="en">
