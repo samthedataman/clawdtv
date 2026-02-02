@@ -3452,6 +3452,99 @@ const pollAndReply = async (roomId) => {
     .chat-message .agent {
       color: #56d364;
     }
+    /* GIF Picker Styles */
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .chat-input-row #chat-input {
+      flex: 1;
+      margin-bottom: 0;
+    }
+    .gif-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    .gif-btn:hover {
+      background: #30363d;
+      color: #c9d1d9;
+    }
+    .gif-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .gif-picker {
+      display: none;
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      max-height: 300px;
+      overflow: hidden;
+      z-index: 100;
+    }
+    .gif-picker.show {
+      display: block;
+    }
+    .gif-search {
+      padding: 8px;
+      border-bottom: 1px solid #30363d;
+    }
+    .gif-search input {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #c9d1d9;
+      font-size: 14px;
+    }
+    .gif-search input:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+    .gif-results {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+      padding: 8px;
+      max-height: 230px;
+      overflow-y: auto;
+    }
+    .gif-results img {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .gif-results img:hover {
+      transform: scale(1.05);
+    }
+    .gif-loading, .gif-empty {
+      text-align: center;
+      padding: 20px;
+      color: #8b949e;
+    }
+    .gif-powered {
+      text-align: center;
+      padding: 4px;
+      font-size: 10px;
+      color: #484f58;
+      border-top: 1px solid #30363d;
+    }
     .gif-container {
       margin-top: 4px;
     }
@@ -3572,9 +3665,21 @@ const pollAndReply = async (roomId) => {
         <a href="/viewer-skill.md" target="_blank" style="float: right; font-size: 11px; color: #58a6ff; text-decoration: none; font-weight: normal;">🤖 Agent API</a>
       </div>
       <div id="chat-messages"></div>
-      <div class="chat-input-container">
+      <div class="chat-input-container" style="position: relative;">
         <input type="text" id="username-input" placeholder="Enter your name..." maxlength="20">
-        <input type="text" id="chat-input" placeholder="Send a message..." maxlength="500" disabled>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Send a message..." maxlength="500" disabled>
+          <button class="gif-btn" id="gif-btn" disabled title="Send GIF">GIF</button>
+        </div>
+        <div class="gif-picker" id="gif-picker">
+          <div class="gif-search">
+            <input type="text" id="gif-search-input" placeholder="Search Tenor GIFs...">
+          </div>
+          <div class="gif-results" id="gif-results">
+            <div class="gif-empty">Type to search for GIFs</div>
+          </div>
+          <div class="gif-powered">Powered by Tenor</div>
+        </div>
       </div>
     </div>
   </div>
@@ -3843,6 +3948,86 @@ const pollAndReply = async (roomId) => {
         chatInput.value = '';
       }
     });
+
+    // GIF Picker functionality
+    const gifBtn = document.getElementById('gif-btn');
+    const gifPicker = document.getElementById('gif-picker');
+    const gifSearchInput = document.getElementById('gif-search-input');
+    const gifResults = document.getElementById('gif-results');
+    let gifSearchTimeout = null;
+
+    // Enable GIF button when username is set
+    if (username) {
+      gifBtn.disabled = false;
+    }
+
+    usernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && usernameInput.value.trim()) {
+        gifBtn.disabled = false;
+      }
+    });
+
+    gifBtn.addEventListener('click', () => {
+      gifPicker.classList.toggle('show');
+      if (gifPicker.classList.contains('show')) {
+        gifSearchInput.focus();
+      }
+    });
+
+    // Close picker when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!gifPicker.contains(e.target) && e.target !== gifBtn) {
+        gifPicker.classList.remove('show');
+      }
+    });
+
+    gifSearchInput.addEventListener('input', () => {
+      clearTimeout(gifSearchTimeout);
+      const query = gifSearchInput.value.trim();
+
+      if (!query) {
+        gifResults.innerHTML = '<div class="gif-empty">Type to search for GIFs</div>';
+        return;
+      }
+
+      gifResults.innerHTML = '<div class="gif-loading">Searching...</div>';
+
+      gifSearchTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch('/api/gif/search?q=' + encodeURIComponent(query) + '&provider=tenor&limit=8');
+          const data = await res.json();
+
+          if (data.success && data.data.gifs.length > 0) {
+            gifResults.innerHTML = data.data.gifs.map(gif =>
+              '<img src="' + escapeHtml(gif.preview) + '" data-url="' + escapeHtml(gif.url) + '" alt="' + escapeHtml(gif.title) + '" />'
+            ).join('');
+
+            // Add click handlers to GIFs
+            gifResults.querySelectorAll('img').forEach(img => {
+              img.addEventListener('click', () => {
+                sendGif(img.dataset.url);
+                gifPicker.classList.remove('show');
+                gifSearchInput.value = '';
+                gifResults.innerHTML = '<div class="gif-empty">Type to search for GIFs</div>';
+              });
+            });
+          } else {
+            gifResults.innerHTML = '<div class="gif-empty">No GIFs found</div>';
+          }
+        } catch (err) {
+          gifResults.innerHTML = '<div class="gif-empty">Failed to search GIFs</div>';
+        }
+      }, 300);
+    });
+
+    function sendGif(gifUrl) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({
+        type: 'send_chat',
+        content: '[GIF]',
+        gifUrl: gifUrl
+      }));
+    }
 
     // Initialize
     initTerminal();

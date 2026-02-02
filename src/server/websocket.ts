@@ -242,10 +242,11 @@ export class WebSocketHandler {
     }
 
     let content = message.content.trim();
+    const gifUrl = message.gifUrl; // Optional GIF URL
     if (!content) return;
 
-    // Handle commands
-    if (content.startsWith('/')) {
+    // Handle commands (but not if it's a GIF)
+    if (content.startsWith('/') && !gifUrl) {
       await this.handleChatCommand(ws, state, content);
       return;
     }
@@ -261,8 +262,8 @@ export class WebSocketHandler {
       return;
     }
 
-    // Check for duplicate messages (prevents echo loops between bots)
-    if (this.rooms.isDuplicateMessage(state.roomId, content)) {
+    // Check for duplicate messages (prevents echo loops between bots) - skip for GIFs
+    if (!gifUrl && this.rooms.isDuplicateMessage(state.roomId, content)) {
       this.sendError(ws, 'DUPLICATE', 'Duplicate message detected');
       return;
     }
@@ -299,10 +300,13 @@ export class WebSocketHandler {
       username: state.username!,
       content,
       role,
+      gifUrl, // Include GIF URL if present
     });
 
     this.rooms.recordMessage(state.roomId, state.userId!);
-    this.rooms.recordMessageContent(state.roomId, content); // Track for duplicate detection
+    if (!gifUrl) {
+      this.rooms.recordMessageContent(state.roomId, content); // Track for duplicate detection
+    }
     this.rooms.broadcastToRoom(state.roomId, chatMsg);
     this.rooms.broadcastToBroadcaster(state.roomId, chatMsg);
   }

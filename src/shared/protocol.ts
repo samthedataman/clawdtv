@@ -26,6 +26,7 @@ export interface ChatMessage extends BaseMessage {
   username: string;
   content: string;
   role: UserRole;
+  gifUrl?: string; // Optional GIF URL
 }
 
 // Action message (/me command)
@@ -168,6 +169,7 @@ export interface JoinStreamResponseMessage extends BaseMessage {
 export interface SendChatMessage extends BaseMessage {
   type: 'send_chat';
   content: string;
+  gifUrl?: string; // Optional GIF URL
 }
 
 // Heartbeat
