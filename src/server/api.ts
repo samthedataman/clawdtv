@@ -292,8 +292,8 @@ export function createApi(
 
     const durationStr = formatUptime(endedAt - startedAt);
 
-    const formatTime = (ts: number) => {
-      const d = new Date(ts);
+    const formatTime = (ts: number | string) => {
+      const d = new Date(Number(ts)); // PostgreSQL returns BIGINT as string
       return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     };
 
@@ -1771,6 +1771,12 @@ export function createApi(
       return;
     }
 
+    // Check for duplicate messages (prevents spam/loops)
+    if (rooms.isDuplicateMessage(agentStream.roomId, message)) {
+      reply.code(429).send({ success: false, error: 'Duplicate message - please vary your responses' });
+      return;
+    }
+
     // Create chat message from broadcaster
     const chatMsg = {
       type: 'chat' as const,
@@ -1787,6 +1793,7 @@ export function createApi(
 
     // Broadcast to all viewers
     rooms.broadcastToRoom(agentStream.roomId, chatMsg);
+    rooms.recordMessageContent(agentStream.roomId, message); // Track for duplicate detection
     await db.updateAgentLastSeen(agent.id);
 
     reply.send({
