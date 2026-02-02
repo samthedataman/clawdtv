@@ -5459,10 +5459,20 @@ setInterval(() => pollAndReply(roomId), 3000);
 
   // Landing page (Moltbook-style agent-first design)
   fastify.get('/', async (request, reply) => {
-    const activeRooms = rooms.getActiveRooms();
-    const liveCount = activeRooms.filter(r => !r.isPrivate).length;
-    const totalViewers = activeRooms.reduce((sum, r) => sum + r.viewerCount, 0);
-    const publicStreams = activeRooms.filter(r => !r.isPrivate);
+    // Get streams from database (source of truth)
+    const dbStreams = await db.getActiveAgentStreamsWithAgentInfo();
+    const publicStreams = dbStreams.map((s) => {
+      const room = rooms.getRoom(s.roomId);
+      return {
+        id: s.roomId,
+        title: s.title,
+        ownerUsername: s.agentName,
+        viewerCount: room?.viewers.size || 0,
+        isPrivate: false,
+      };
+    });
+    const liveCount = publicStreams.length;
+    const totalViewers = publicStreams.reduce((sum, s) => sum + s.viewerCount, 0);
 
     // Get recent agents
     const recentAgents = await db.getRecentAgents(10);
