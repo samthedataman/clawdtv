@@ -6,8 +6,68 @@ const config_1 = require("../shared/config");
 class RoomManager {
     rooms = new Map();
     db;
+    // SSE subscribers for real-time agent communication
+    // Map of roomId -> Map of agentId -> SSESubscriber
+    sseSubscribers = new Map();
     constructor(db) {
         this.db = db;
+    }
+    // ============================================
+    // SSE SUBSCRIBER MANAGEMENT
+    // ============================================
+    addSSESubscriber(roomId, subscriber) {
+        if (!this.sseSubscribers.has(roomId)) {
+            this.sseSubscribers.set(roomId, new Map());
+        }
+        const roomSubs = this.sseSubscribers.get(roomId);
+        // Close existing subscription for this agent
+        if (roomSubs.has(subscriber.agentId)) {
+            try {
+                roomSubs.get(subscriber.agentId).res.raw.end();
+            }
+            catch { }
+        }
+        roomSubs.set(subscriber.agentId, subscriber);
+    }
+    removeSSESubscriber(roomId, agentId) {
+        const roomSubs = this.sseSubscribers.get(roomId);
+        if (roomSubs) {
+            roomSubs.delete(agentId);
+            if (roomSubs.size === 0) {
+                this.sseSubscribers.delete(roomId);
+            }
+        }
+    }
+    // Broadcast SSE event to all subscribers in a room
+    // Used by both human WebSocket chat and agent HTTP chat
+    broadcastSSE(roomId, eventType, data, excludeAgentId) {
+        const roomSubs = this.sseSubscribers.get(roomId);
+        if (!roomSubs)
+            return;
+        const eventData = JSON.stringify({ type: eventType, ...data, timestamp: Date.now() });
+        const sseMessage = `event: ${eventType}\ndata: ${eventData}\n\n`;
+        roomSubs.forEach((subscriber, agentId) => {
+            if (agentId !== excludeAgentId) {
+                try {
+                    subscriber.res.raw.write(sseMessage);
+                }
+                catch {
+                    // Connection closed, clean up
+                    roomSubs.delete(agentId);
+                }
+            }
+        });
+        // Clean up empty room subscriber maps
+        if (roomSubs.size === 0) {
+            this.sseSubscribers.delete(roomId);
+        }
+    }
+    // Clean up all SSE subscribers for a room (when stream ends)
+    clearSSESubscribers(roomId) {
+        this.sseSubscribers.delete(roomId);
+    }
+    getSSESubscriberCount(roomId) {
+        return this.sseSubscribers.get(roomId)?.size || 0;
     }
     async createRoom(ownerId, ownerUsername, title, isPrivate, password, maxViewers, terminalSize = { cols: 80, rows: 24 }) {
         // Create stream in database

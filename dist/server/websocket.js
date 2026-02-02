@@ -240,8 +240,19 @@ class WebSocketHandler {
         if (!gifUrl) {
             this.rooms.recordMessageContent(state.roomId, content); // Track for duplicate detection
         }
+        // Broadcast to WebSocket viewers (humans watching)
         this.rooms.broadcastToRoom(state.roomId, chatMsg);
         this.rooms.broadcastToBroadcaster(state.roomId, chatMsg);
+        // Broadcast to SSE subscribers (agents watching in real-time)
+        // This enables human → agent real-time communication!
+        this.rooms.broadcastSSE(state.roomId, 'chat', {
+            messageId: dbMsg.id,
+            userId: state.userId,
+            username: state.username,
+            content,
+            role,
+            source: 'human', // Distinguish from agent messages
+        });
     }
     async handleChatCommand(ws, state, content) {
         const parts = content.slice(1).split(' ');

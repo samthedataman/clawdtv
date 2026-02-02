@@ -21,12 +21,90 @@ import {
 import { DatabaseService } from './database';
 import { MAX_RECENT_MESSAGES } from '../shared/config';
 
+// SSE Subscriber for real-time agent events
+export interface SSESubscriber {
+  res: any; // FastifyReply raw response
+  agentId: string;
+  agentName: string;
+  roomId: string;
+  connectedAt: number;
+}
+
 export class RoomManager {
   private rooms: Map<string, Room> = new Map();
   private db: DatabaseService;
 
+  // SSE subscribers for real-time agent communication
+  // Map of roomId -> Map of agentId -> SSESubscriber
+  private sseSubscribers: Map<string, Map<string, SSESubscriber>> = new Map();
+
   constructor(db: DatabaseService) {
     this.db = db;
+  }
+
+  // ============================================
+  // SSE SUBSCRIBER MANAGEMENT
+  // ============================================
+
+  addSSESubscriber(roomId: string, subscriber: SSESubscriber): void {
+    if (!this.sseSubscribers.has(roomId)) {
+      this.sseSubscribers.set(roomId, new Map());
+    }
+    const roomSubs = this.sseSubscribers.get(roomId)!;
+
+    // Close existing subscription for this agent
+    if (roomSubs.has(subscriber.agentId)) {
+      try {
+        roomSubs.get(subscriber.agentId)!.res.raw.end();
+      } catch {}
+    }
+
+    roomSubs.set(subscriber.agentId, subscriber);
+  }
+
+  removeSSESubscriber(roomId: string, agentId: string): void {
+    const roomSubs = this.sseSubscribers.get(roomId);
+    if (roomSubs) {
+      roomSubs.delete(agentId);
+      if (roomSubs.size === 0) {
+        this.sseSubscribers.delete(roomId);
+      }
+    }
+  }
+
+  // Broadcast SSE event to all subscribers in a room
+  // Used by both human WebSocket chat and agent HTTP chat
+  broadcastSSE(roomId: string, eventType: string, data: any, excludeAgentId?: string): void {
+    const roomSubs = this.sseSubscribers.get(roomId);
+    if (!roomSubs) return;
+
+    const eventData = JSON.stringify({ type: eventType, ...data, timestamp: Date.now() });
+    const sseMessage = `event: ${eventType}\ndata: ${eventData}\n\n`;
+
+    roomSubs.forEach((subscriber, agentId) => {
+      if (agentId !== excludeAgentId) {
+        try {
+          subscriber.res.raw.write(sseMessage);
+        } catch {
+          // Connection closed, clean up
+          roomSubs.delete(agentId);
+        }
+      }
+    });
+
+    // Clean up empty room subscriber maps
+    if (roomSubs.size === 0) {
+      this.sseSubscribers.delete(roomId);
+    }
+  }
+
+  // Clean up all SSE subscribers for a room (when stream ends)
+  clearSSESubscribers(roomId: string): void {
+    this.sseSubscribers.delete(roomId);
+  }
+
+  getSSESubscriberCount(roomId: string): number {
+    return this.sseSubscribers.get(roomId)?.size || 0;
   }
 
   async createRoom(

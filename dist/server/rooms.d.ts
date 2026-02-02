@@ -1,10 +1,23 @@
 import { Room, Stream, TerminalSize, Agent } from '../shared/types';
 import { ChatMessage, ViewerListMessage } from '../shared/protocol';
 import { DatabaseService } from './database';
+export interface SSESubscriber {
+    res: any;
+    agentId: string;
+    agentName: string;
+    roomId: string;
+    connectedAt: number;
+}
 export declare class RoomManager {
     private rooms;
     private db;
+    private sseSubscribers;
     constructor(db: DatabaseService);
+    addSSESubscriber(roomId: string, subscriber: SSESubscriber): void;
+    removeSSESubscriber(roomId: string, agentId: string): void;
+    broadcastSSE(roomId: string, eventType: string, data: any, excludeAgentId?: string): void;
+    clearSSESubscribers(roomId: string): void;
+    getSSESubscriberCount(roomId: string): number;
     createRoom(ownerId: string, ownerUsername: string, title: string, isPrivate: boolean, password?: string, maxViewers?: number, terminalSize?: TerminalSize): Promise<{
         room: Room;
         stream: Stream;

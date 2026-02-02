@@ -121,16 +121,24 @@ function createApi(db, auth, rooms) {
     fastify.get('/api/streams', async (_request, reply) => {
         const activeRooms = rooms.getActiveRooms();
         const publicStreams = activeRooms.filter((r) => !r.isPrivate);
-        const allStreams = publicStreams.map((r) => ({
-            id: r.id,
-            ownerId: r.ownerId,
-            ownerUsername: r.ownerUsername,
-            title: r.title,
-            isPrivate: r.isPrivate,
-            hasPassword: r.hasPassword,
-            viewerCount: r.viewerCount,
-            startedAt: r.startedAt,
-        }));
+        const allStreams = publicStreams.map((r) => {
+            // Include rich metadata if available (from agent streams)
+            const rules = roomRules.get(r.id);
+            return {
+                id: r.id,
+                ownerId: r.ownerId,
+                ownerUsername: r.ownerUsername,
+                title: r.title,
+                isPrivate: r.isPrivate,
+                hasPassword: r.hasPassword,
+                viewerCount: r.viewerCount,
+                startedAt: r.startedAt,
+                // Rich metadata for discovery
+                topics: rules?.topics || [],
+                needsHelp: rules?.needsHelp || false,
+                helpWith: rules?.helpWith || null,
+            };
+        });
         // Clean up stale DB entries that don't have active rooms
         const activeAgentStreams = await db.getActiveAgentStreams();
         const activeRoomIds = new Set(activeRooms.map(r => r.id));
@@ -526,40 +534,17 @@ function createApi(db, auth, rooms) {
     // ============================================
     // Store active agent WebSocket connections
     const agentConnections = new Map(); // agentId -> ws
-    // Map of roomId -> Map of agentId -> SSESubscriber
-    const sseSubscribers = new Map();
-    // Helper: Broadcast SSE event to all subscribers in a room
+    // ============================================
+    // SSE (Server-Sent Events) for Real-Time Agent Communication
+    // Now managed by RoomManager for shared access between HTTP API and WebSocket
+    // See rooms.broadcastSSE(), rooms.addSSESubscriber(), rooms.removeSSESubscriber()
+    // ============================================
+    // Convenience aliases for cleaner code
     const broadcastSSE = (roomId, eventType, data, excludeAgentId) => {
-        const roomSubscribers = sseSubscribers.get(roomId);
-        if (!roomSubscribers)
-            return;
-        const eventData = JSON.stringify({ type: eventType, ...data, timestamp: Date.now() });
-        const sseMessage = `event: ${eventType}\ndata: ${eventData}\n\n`;
-        roomSubscribers.forEach((subscriber, agentId) => {
-            if (agentId !== excludeAgentId) {
-                try {
-                    subscriber.res.raw.write(sseMessage);
-                }
-                catch (err) {
-                    // Connection closed, clean up
-                    roomSubscribers.delete(agentId);
-                }
-            }
-        });
-        // Clean up empty room subscriber maps
-        if (roomSubscribers.size === 0) {
-            sseSubscribers.delete(roomId);
-        }
+        rooms.broadcastSSE(roomId, eventType, data, excludeAgentId);
     };
-    // Helper: Remove SSE subscriber
     const removeSSESubscriber = (roomId, agentId) => {
-        const roomSubscribers = sseSubscribers.get(roomId);
-        if (roomSubscribers) {
-            roomSubscribers.delete(agentId);
-            if (roomSubscribers.size === 0) {
-                sseSubscribers.delete(roomId);
-            }
-        }
+        rooms.removeSSESubscriber(roomId, agentId);
     };
     // Agent registration
     fastify.post('/api/agent/register', async (request, reply) => {
@@ -744,19 +729,8 @@ function createApi(db, auth, rooms) {
             timestamp: Date.now(),
         });
         reply.raw.write(`event: connected\ndata: ${connectEvent}\n\n`);
-        // Add to subscribers
-        if (!sseSubscribers.has(roomId)) {
-            sseSubscribers.set(roomId, new Map());
-        }
-        const roomSubscribers = sseSubscribers.get(roomId);
-        // Remove any existing subscription for this agent in this room
-        if (roomSubscribers.has(agent.id)) {
-            try {
-                roomSubscribers.get(agent.id).res.raw.end();
-            }
-            catch { }
-        }
-        roomSubscribers.set(agent.id, {
+        // Add to subscribers (managed by RoomManager for shared access)
+        rooms.addSSESubscriber(roomId, {
             res: reply,
             agentId: agent.id,
             agentName: agent.name,
@@ -956,7 +930,7 @@ function createApi(db, auth, rooms) {
         // Clean up room rules and SSE subscribers
         roomRules.delete(agentStream.roomId);
         pendingJoinRequests.delete(agentStream.roomId);
-        sseSubscribers.delete(agentStream.roomId);
+        rooms.clearSSESubscribers(agentStream.roomId);
         await await db.updateAgentLastSeen(agent.id);
         reply.send({ success: true, message: 'Stream ended' });
     });
