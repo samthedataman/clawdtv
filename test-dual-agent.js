@@ -142,11 +142,12 @@ function connectSSE(roomId, apiKey, agentName, onEvent) {
 // ============================================
 // BROADCASTER AGENT (ponders when alone)
 // ============================================
-async function runBroadcaster(apiKey, roomId) {
+async function runBroadcaster(apiKey, roomId, agentId) {
   log('broadcaster', 'Starting SSE-based broadcaster...');
 
   let viewerCount = 0;
   let thoughtIndex = 0;
+  let myAgentId = agentId; // Track our own ID for filtering
 
   // Ponder when alone (every 5 seconds)
   const ponderLoop = setInterval(async () => {
@@ -172,6 +173,7 @@ async function runBroadcaster(apiKey, roomId) {
   const sseConnection = connectSSE(roomId, apiKey, 'Broadcaster', async (event, data, _self) => {
     switch (event) {
       case 'connected':
+        myAgentId = data.agentId; // Capture our ID from server
         log('broadcaster', `✅ SSE connected to own stream`);
         break;
 
@@ -191,7 +193,8 @@ async function runBroadcaster(apiKey, roomId) {
         break;
 
       case 'chat':
-        if (data.username !== 'Broadcaster') { // Not our own message
+        // Check if this is our own message (by agentId)
+        if (data.userId !== myAgentId) {
           metrics.messagesReceived++;
           log('broadcaster', `📨 [SSE] ${data.username}: "${data.content.slice(0, 50)}..."`);
 
@@ -223,15 +226,17 @@ async function runBroadcaster(apiKey, roomId) {
 // ============================================
 // VIEWER AGENT (uses SSE for real-time chat)
 // ============================================
-async function runViewer(apiKey, roomId, broadcasterName) {
+async function runViewer(apiKey, roomId, broadcasterName, agentId) {
   log('viewer', 'Starting SSE-based viewer...');
 
   let messageCount = 0;
+  let myAgentId = agentId; // Track our own ID for filtering
 
   // Connect to SSE first
   const sseConnection = connectSSE(roomId, apiKey, 'Viewer', async (event, data, _self) => {
     switch (event) {
       case 'connected':
+        myAgentId = data.agentId; // Capture our ID from server
         log('viewer', `✅ SSE connected to ${data.broadcasterName}'s stream`);
 
         // Now send initial greeting
@@ -245,7 +250,8 @@ async function runViewer(apiKey, roomId, broadcasterName) {
         break;
 
       case 'chat':
-        if (data.username !== 'Helper') { // Not our own message (viewer name may vary)
+        // Check if this is our own message (by agentId)
+        if (data.userId !== myAgentId) {
           messageCount++;
           metrics.messagesReceived++;
           log('viewer', `📨 [SSE] ${data.username}: "${data.content.slice(0, 50)}..."`);
@@ -303,7 +309,8 @@ async function main() {
     return;
   }
   const broadcasterKey = bReg.data.apiKey;
-  log('system', `Registered: ${bReg.data.name}`);
+  const broadcasterId = bReg.data.agentId;
+  log('system', `Registered: ${bReg.data.name} (ID: ${broadcasterId})`);
 
   // Step 2: Start stream with philosophical theme
   log('system', 'Starting stream...');
@@ -325,7 +332,7 @@ async function main() {
   log('system', `Watch URL: ${stream.data.watchUrl}`);
 
   // Step 3: Start broadcaster (will ponder when alone)
-  const broadcasterLoops = await runBroadcaster(broadcasterKey, roomId);
+  const broadcasterLoops = await runBroadcaster(broadcasterKey, roomId, broadcasterId);
 
   // Let broadcaster ponder alone for a bit
   console.log('\n' + '-'.repeat(70));
@@ -343,7 +350,8 @@ async function main() {
     return;
   }
   const viewerKey = vReg.data.apiKey;
-  log('system', `Registered: ${vReg.data.name}`);
+  const viewerId = vReg.data.agentId;
+  log('system', `Registered: ${vReg.data.name} (ID: ${viewerId})`);
 
   // Step 5: Viewer joins stream
   log('system', 'Viewer joining stream...');
@@ -355,7 +363,7 @@ async function main() {
   log('system', 'PHASE 2: Both agents interacting via SSE (20 seconds)...');
   console.log('-'.repeat(70) + '\n');
 
-  const viewerLoops = await runViewer(viewerKey, roomId, broadcasterName);
+  const viewerLoops = await runViewer(viewerKey, roomId, broadcasterName, viewerId);
 
   // Run for 20 more seconds
   await sleep(20000);
