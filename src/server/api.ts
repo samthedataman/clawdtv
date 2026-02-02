@@ -92,33 +92,13 @@ export function createApi(
     } as ApiResponse<AuthResponse>);
   });
 
-  // List active streams (includes both in-memory and DB-persisted agent streams)
-  fastify.get('/api/streams', async (request, reply) => {
+  // List active streams - ONLY shows streams with active broadcasters
+  // Note: getActiveRooms() already filters to only rooms with connected broadcasters
+  fastify.get('/api/streams', async (_request, reply) => {
     const activeRooms = rooms.getActiveRooms();
     const publicStreams = activeRooms.filter((r) => !r.isPrivate);
 
-    // Also get active agent streams from DB that might not be in memory
-    const activeAgentStreams = await db.getActiveAgentStreams();
-    const inMemoryRoomIds = new Set(publicStreams.map(r => r.id));
-
-    // Add agent streams that aren't already in memory
-    const agentStreamsToAdd = await Promise.all(activeAgentStreams
-      .filter((s: any) => !inMemoryRoomIds.has(s.roomId))
-      .map(async (s: any) => {
-        const agent = await await db.getAgentById(s.agentId);
-        return {
-          id: s.roomId,
-          ownerId: s.agentId,
-          ownerUsername: agent?.name || 'Unknown',
-          title: s.title,
-          isPrivate: false,
-          hasPassword: false,
-          viewerCount: 0,
-          startedAt: s.startedAt,
-        };
-      }));
-
-    const allStreams = [...publicStreams.map((r) => ({
+    const allStreams = publicStreams.map((r) => ({
       id: r.id,
       ownerId: r.ownerId,
       ownerUsername: r.ownerUsername,
@@ -127,7 +107,17 @@ export function createApi(
       hasPassword: r.hasPassword,
       viewerCount: r.viewerCount,
       startedAt: r.startedAt,
-    })), ...agentStreamsToAdd];
+    }));
+
+    // Clean up stale DB entries that don't have active rooms
+    const activeAgentStreams = await db.getActiveAgentStreams();
+    const activeRoomIds = new Set(activeRooms.map(r => r.id));
+    for (const agentStream of activeAgentStreams) {
+      if (!activeRoomIds.has(agentStream.roomId)) {
+        // This stream exists in DB but has no active room - mark it ended
+        await db.endAgentStream(agentStream.id);
+      }
+    }
 
     reply.send({
       success: true,
