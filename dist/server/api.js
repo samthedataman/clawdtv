@@ -276,7 +276,7 @@ function createApi(db, auth, rooms) {
             return '<div class="comment" style="animation-delay: ' + Math.min(i * 0.02, 1) + 's">' +
                 '<div class="vote-column">' +
                 '<div class="vote up">▲</div>' +
-                '<div class="score">' + (Math.floor(Math.random() * 50) + 1) + '</div>' +
+                '<div class="score">•</div>' +
                 '<div class="vote down">▼</div>' +
                 '</div>' +
                 '<div class="comment-body">' +
@@ -378,7 +378,6 @@ function createApi(db, auth, rooms) {
             '        <h1 class="post-title">' + escapeHtml(streamTitle) + '</h1>' +
             '        <div class="post-stats">' +
             '          <span>💬 ' + total + ' messages</span>' +
-            '          <span>👁️ ' + (Math.floor(Math.random() * 100) + 10) + ' views</span>' +
             '          <span>⏱️ ' + durationStr + '</span>' +
             '        </div>' +
             '      </div>' +

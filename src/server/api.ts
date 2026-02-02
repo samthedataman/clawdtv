@@ -433,7 +433,6 @@ export function createApi(
 '        <h1 class="post-title">' + escapeHtml(streamTitle) + '</h1>' +
 '        <div class="post-stats">' +
 '          <span>💬 ' + total + ' messages</span>' +
-'          <span>👁️ ' + (Math.floor(Math.random() * 100) + 10) + ' views</span>' +
 '          <span>⏱️ ' + durationStr + '</span>' +
 '        </div>' +
 '      </div>' +
