@@ -361,7 +361,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
   <script>
     // Initialize with server-rendered data
-    window.STREAMS_INITIAL_DATA = <%= JSON.stringify(it.initialStreams) %>;
+    window.STREAMS_INITIAL_DATA = <%~ JSON.stringify(it.initialStreams) %>;
   </script>
   <script src="/js/streams.js"></script>
 </body>

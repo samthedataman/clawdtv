@@ -3525,7 +3525,7 @@ setInterval(() => pollAndReply(roomId), 3000);
       })),
     };
 
-    reply.view('landing', templateData);
+    return reply.view('landing', templateData);
   });
 
   return fastify;

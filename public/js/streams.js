@@ -61,18 +61,33 @@
         const stream = streams[roomId];
         cell.innerHTML = `
           <div class="cell-header">
-            <div class="cell-title"><span class="live-dot"></span>${stream.title || roomId}</div>
+            <div class="cell-title"><span class="live-dot"></span>${escapeHtml(stream.title) || escapeHtml(roomId)}</div>
             <div class="cell-controls">
-              <button class="cell-btn close" onclick="window.streamsApp.removeStream('${roomId}')">×</button>
+              <button class="cell-btn close" data-room-id="${escapeHtml(roomId)}">×</button>
             </div>
           </div>
-          <div class="cell-terminal" id="term-${roomId}"></div>
+          <div class="cell-terminal" id="term-${escapeHtml(roomId)}"></div>
           <div class="cell-chat">
-            <input type="text" id="chat-${roomId}" placeholder="💬 Chat with the agent..." onkeypress="if(event.key==='Enter')window.streamsApp.sendChat('${roomId}')">
-            <button onclick="window.streamsApp.sendChat('${roomId}')">Send</button>
+            <input type="text" id="chat-${escapeHtml(roomId)}" placeholder="💬 Chat with the agent...">
+            <button class="send-chat-btn" data-room-id="${escapeHtml(roomId)}">Send</button>
           </div>
         `;
         grid.appendChild(cell);
+
+        // Attach event listeners
+        const closeBtn = cell.querySelector('.cell-btn.close');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', () => removeStream(roomId));
+        }
+
+        const chatInput = cell.querySelector(`#chat-${roomId}`);
+        const sendBtn = cell.querySelector('.send-chat-btn');
+        if (chatInput && sendBtn) {
+          chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendChat(roomId);
+          });
+          sendBtn.addEventListener('click', () => sendChat(roomId));
+        }
 
         // Re-attach terminal to DOM
         setTimeout(() => {
@@ -160,8 +175,8 @@
    */
   function removeStream(roomId) {
     if (streams[roomId]) {
-      streams[roomId].ws.close();
-      streams[roomId].term.dispose();
+      if (streams[roomId].ws) streams[roomId].ws.close();
+      if (streams[roomId].term) streams[roomId].term.dispose();
       delete streams[roomId];
       renderCells();
       updateStreamList();
@@ -198,28 +213,39 @@
 
     list.innerHTML = availableStreams.map(s => {
       const topicTags = (s.topics || []).slice(0, 3).map(t =>
-        '<span style="background:#21262d;color:#8b949e;padding:2px 6px;border-radius:4px;font-size:9px;margin-right:4px;">' + t + '</span>'
+        '<span style="background:#21262d;color:#8b949e;padding:2px 6px;border-radius:4px;font-size:9px;margin-right:4px;">' + escapeHtml(t) + '</span>'
       ).join('');
 
       const helpBadge = s.needsHelp ?
-        '<span style="background:#f85149;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;margin-left:4px;" title="' + (s.helpWith || 'Needs help!') + '">🆘 Help</span>' : '';
+        '<span style="background:#f85149;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;margin-left:4px;" title="' + escapeHtml(s.helpWith || 'Needs help!') + '">🆘 Help</span>' : '';
 
       return `
-        <div class="stream-item ${streams[s.id] ? 'added' : ''}" onclick="window.streamsApp.addStream('${s.id}', '${s.title.replace(/'/g, "\\'")}')">
+        <div class="stream-item ${streams[s.id] ? 'added' : ''}" data-stream-id="${escapeHtml(s.id)}" data-stream-title="${escapeHtml(s.title)}">
           <div class="stream-item-title">
             <span class="live-dot" style="width:6px;height:6px;background:#f85149;border-radius:50%;flex-shrink:0;"></span>
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.title}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(s.title)}</span>
             ${helpBadge}
             <span class="viewers-badge">👥 ${s.viewers}</span>
           </div>
           <div class="stream-item-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-            <span>by ${s.owner}</span>
+            <span>by ${escapeHtml(s.owner)}</span>
             <span>${topicTags}</span>
           </div>
-          ${s.helpWith ? '<div style="font-size:10px;color:#f0883e;margin-top:4px;font-style:italic;">💡 ' + s.helpWith + '</div>' : ''}
+          ${s.helpWith ? '<div style="font-size:10px;color:#f0883e;margin-top:4px;font-style:italic;">💡 ' + escapeHtml(s.helpWith) + '</div>' : ''}
         </div>
       `;
     }).join('');
+
+    // Attach event listeners to stream items
+    document.querySelectorAll('.stream-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const streamId = item.getAttribute('data-stream-id');
+        const streamTitle = item.getAttribute('data-stream-title');
+        if (streamId && streamTitle) {
+          addStream(streamId, streamTitle);
+        }
+      });
+    });
   }
 
   /**
@@ -334,7 +360,12 @@
    * Escape HTML
    */
   function escapeHtml(str) {
-    return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+    return str ? str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;') : '';
   }
 
   /**
@@ -342,6 +373,18 @@
    */
   function handleResize() {
     Object.values(streams).forEach(s => s.fitAddon.fit());
+  }
+
+  /**
+   * Cleanup resources before page unload
+   */
+  function cleanup() {
+    Object.keys(streams).forEach(roomId => {
+      if (streams[roomId]) {
+        if (streams[roomId].ws) streams[roomId].ws.close();
+        if (streams[roomId].term) streams[roomId].term.dispose();
+      }
+    });
   }
 
   /**
@@ -398,6 +441,9 @@
 
     // Handle window resize
     window.addEventListener('resize', handleResize);
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', cleanup);
   }
 
   // Public API exposed to window

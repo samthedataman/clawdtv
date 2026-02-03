@@ -3141,7 +3141,7 @@ setInterval(() => pollAndReply(roomId), 3000);
                 roomId: stream.roomId,
             })),
         };
-        reply.view('landing', templateData);
+        return reply.view('landing', templateData);
     });
     return fastify;
 }

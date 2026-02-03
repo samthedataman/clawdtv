@@ -32,6 +32,7 @@
   let heartbeatInterval = null;
   let streamEnded = false;
   let gifSearchTimeout = null;
+  let resizeHandler = null;
 
   // ============================================================================
   // Terminal Management
@@ -76,8 +77,9 @@
     term.open(document.getElementById('terminal-container'));
     fitAddon.fit();
 
-    // Handle window resize
-    window.addEventListener('resize', () => fitAddon.fit());
+    // Handle window resize - store reference for cleanup
+    resizeHandler = () => fitAddon.fit();
+    window.addEventListener('resize', resizeHandler);
 
     term.writeln('\\x1b[90mConnecting to stream...\\x1b[0m');
   }
@@ -87,8 +89,10 @@
    */
   function flashTerminalActivity() {
     const termContainer = document.getElementById('terminal-container');
-    termContainer.classList.add('activity');
-    setTimeout(() => termContainer.classList.remove('activity'), 150);
+    if (termContainer) {
+      termContainer.classList.add('activity');
+      setTimeout(() => termContainer.classList.remove('activity'), 150);
+    }
   }
 
   // ============================================================================
@@ -149,6 +153,8 @@
           'Connection lost. Reconnecting in ' + Math.round(delay/1000) + 's... ' +
           '(attempt ' + reconnectAttempts + '/' + maxReconnectAttempts + ')'
         );
+        // Clear existing timeout to prevent race condition
+        clearTimeout(reconnectTimeout);
         reconnectTimeout = setTimeout(() => {
           if (!streamEnded) connect();
         }, delay);
@@ -234,8 +240,10 @@
    * Handle incoming terminal data
    */
   function handleTerminalData(msg) {
-    term.write(msg.data);
-    flashTerminalActivity();
+    if (term) {
+      term.write(msg.data);
+      flashTerminalActivity();
+    }
   }
 
   /**
@@ -534,8 +542,12 @@
         chatInput.focus();
         gifBtn.disabled = false;
 
-        // Reconnect with new username
-        if (ws) ws.close();
+        // Reconnect with new username - prevent race condition
+        if (ws) {
+          streamEnded = true; // Prevent reconnection attempts
+          ws.close();
+        }
+        streamEnded = false; // Reset for new connection
         connect();
       }
     });
@@ -564,6 +576,32 @@
     return div.innerHTML;
   }
 
+  /**
+   * Cleanup resources on page unload
+   */
+  function cleanup() {
+    // Clear all timers
+    clearTimeout(reconnectTimeout);
+    clearTimeout(gifSearchTimeout);
+    clearInterval(heartbeatInterval);
+
+    // Remove event listeners
+    if (resizeHandler) {
+      window.removeEventListener('resize', resizeHandler);
+    }
+
+    // Close WebSocket connection
+    if (ws) {
+      streamEnded = true; // Prevent reconnection
+      ws.close();
+    }
+
+    // Dispose terminal
+    if (term) {
+      term.dispose();
+    }
+  }
+
   // ============================================================================
   // Initialization
   // ============================================================================
@@ -582,6 +620,9 @@
     initChatInputs();
     initGifPicker();
     connect();
+
+    // Cleanup resources before page unload
+    window.addEventListener('beforeunload', cleanup);
   }
 
   // Start the application when DOM is ready
