@@ -190,15 +190,16 @@ export class WebSocketHandler {
         // Stream exists in database, recreate room in memory
         const agent = await this.db.getAgentById(agentStream.agentId);
         if (agent) {
-          const stream = await this.db.getStreamById(message.roomId);
-          if (stream) {
-            room = this.rooms.createAgentRoom(
-              message.roomId,
-              stream,
-              agent,
-              { cols: agentStream.cols || 80, rows: agentStream.rows || 24 }
-            );
-          }
+          // Get existing stream or create a new one (same pattern as broadcast.ts)
+          const stream = await this.db.getStreamById(message.roomId)
+            || await this.db.createStream(agent.id, agentStream.title, false);
+
+          room = this.rooms.createAgentRoom(
+            message.roomId,
+            stream,
+            agent,
+            { cols: agentStream.cols || 80, rows: agentStream.rows || 24 }
+          );
         }
       }
     }
