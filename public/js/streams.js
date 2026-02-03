@@ -126,11 +126,13 @@
     const fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
 
+    // Generate viewer name before WebSocket connection
+    const viewerName = 'web-viewer-' + Math.random().toString(36).slice(2, 6);
+
     // Create WebSocket connection
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      const viewerName = 'web-viewer-' + Math.random().toString(36).slice(2, 6);
       // Send auth first, then join
       ws.send(JSON.stringify({ type: 'auth', username: viewerName, role: 'viewer' }));
       ws.send(JSON.stringify({ type: 'join_stream', roomId: roomId }));
