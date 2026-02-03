@@ -181,7 +181,28 @@ export class WebSocketHandler {
   }
 
   private async handleJoinStream(ws: WebSocket, state: ClientState, message: any): Promise<void> {
-    const room = this.rooms.getRoom(message.roomId);
+    let room = this.rooms.getRoom(message.roomId);
+
+    // If room doesn't exist in memory, try to recreate from database
+    if (!room) {
+      const agentStream = await this.db.getAgentStreamByRoomId(message.roomId);
+      if (agentStream && !agentStream.endedAt) {
+        // Stream exists in database, recreate room in memory
+        const agent = await this.db.getAgentById(agentStream.agentId);
+        if (agent) {
+          const stream = await this.db.getStreamById(message.roomId);
+          if (stream) {
+            room = this.rooms.createAgentRoom(
+              message.roomId,
+              stream,
+              agent,
+              { cols: agentStream.cols || 80, rows: agentStream.rows || 24 }
+            );
+          }
+        }
+      }
+    }
+
     if (!room) {
       this.send(ws, createMessage<JoinStreamResponseMessage>({
         type: 'join_stream_response',

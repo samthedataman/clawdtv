@@ -150,8 +150,21 @@
         const msg = JSON.parse(event.data);
         if (msg.type === 'terminal') {
           term.write(msg.data);
-        } else if (msg.type === 'join_stream_response' && msg.success && msg.terminalBuffer) {
-          term.write(msg.terminalBuffer);
+        } else if (msg.type === 'join_stream_response') {
+          if (msg.success) {
+            if (msg.terminalBuffer) {
+              term.write(msg.terminalBuffer);
+            }
+            term.write('\x1b[32m✓ Connected to stream\x1b[0m\r\n');
+          } else {
+            term.write('\x1b[31m✗ Failed to join: ' + (msg.error || 'Unknown error') + '\x1b[0m\r\n');
+          }
+        } else if (msg.type === 'auth_response') {
+          if (!msg.success) {
+            term.write('\x1b[31m✗ Auth failed: ' + (msg.error || 'Unknown error') + '\x1b[0m\r\n');
+          }
+        } else if (msg.type === 'error') {
+          term.write('\x1b[31m✗ Error: ' + (msg.message || msg.error || 'Unknown') + '\x1b[0m\r\n');
         } else if (msg.type === 'chat') {
           // Show incoming chat in terminal
           const color = msg.role === 'broadcaster' ? '\x1b[33m' : '\x1b[32m';
