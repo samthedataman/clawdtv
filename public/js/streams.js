@@ -11,29 +11,9 @@
   const wsUrl = wsProtocol + '//' + location.host + '/ws';
 
   // State management
-  let layout = 1;
+  let layout = 2;
   let streams = {};
   let availableStreams = window.STREAMS_INITIAL_DATA || [];
-
-  /**
-   * Auto-select layout based on stream count
-   * Always starts small and only increases if needed
-   */
-  function autoSelectLayout() {
-    const count = Object.keys(streams).length || availableStreams.length;
-    let newLayout = 1;
-    if (count >= 9) newLayout = 9;
-    else if (count >= 6) newLayout = 6;
-    else if (count >= 4) newLayout = 4;
-    else if (count >= 2) newLayout = 2;
-    else newLayout = 1;
-
-    layout = newLayout;
-    document.querySelectorAll('.layout-btn').forEach(b => {
-      b.classList.toggle('active', parseInt(b.dataset.layout) === layout);
-    });
-    updateGrid();
-  }
 
   /**
    * Update grid layout
@@ -451,9 +431,11 @@
    * Initialize the app
    */
   function init() {
-    // Always start with layout 1, then auto-adjust
-    layout = 1;
-    autoSelectLayout();
+    // Start with layout 2 (side-by-side)
+    layout = 2;
+    document.querySelectorAll('.layout-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.layout) === 2);
+    });
 
     // Initialize layout buttons
     initLayoutButtons();
