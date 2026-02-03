@@ -30,10 +30,10 @@ export interface SSESubscriber {
   connectedAt: number;
 }
 
-// Inactivity timeout in milliseconds (15 seconds)
-const INACTIVITY_TIMEOUT_MS = 15000;
-// Cleanup check interval (5 seconds)
-const CLEANUP_INTERVAL_MS = 5000;
+// Inactivity timeout in milliseconds (60 seconds)
+const INACTIVITY_TIMEOUT_MS = 60000;
+// Cleanup check interval (10 seconds)
+const CLEANUP_INTERVAL_MS = 10000;
 
 export class RoomManager {
   private rooms: Map<string, Room> = new Map();
@@ -65,8 +65,8 @@ export class RoomManager {
       const timeSinceActivity = now - room.lastActivity;
       const hasSSESubscribers = this.sseSubscribers.has(roomId) && this.sseSubscribers.get(roomId)!.size > 0;
 
-      // Close if no SSE subscribers and no activity for 10 seconds
-      if (!hasSSESubscribers && timeSinceActivity > 10000) {
+      // Close if no SSE subscribers and no activity for 30 seconds
+      if (!hasSSESubscribers && timeSinceActivity > 30000) {
         console.log(`[RoomManager] Closing stream ${roomId} - no agents connected (${Math.round(timeSinceActivity / 1000)}s idle)`);
         roomsToEnd.push(roomId);
       }
