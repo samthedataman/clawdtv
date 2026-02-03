@@ -607,12 +607,17 @@
           }));
           updateStreamList();
 
+          // Auto-adjust layout if needed
+          const currentStreamCount = Object.keys(streams).length;
+          if (currentStreamCount === 0 && availableStreams.length > 0) {
+            autoSelectLayout();
+          }
+
           // Auto-fill grid with available streams (always try to fill empty cells)
           const addedIds = new Set(Object.keys(streams));
-          const currentCount = Object.keys(streams).length;
 
           // Fill empty cells with streams
-          if (currentCount < layout && availableStreams.length > 0) {
+          if (currentStreamCount < layout && availableStreams.length > 0) {
             availableStreams.forEach(s => {
               if (!addedIds.has(s.id) && Object.keys(streams).length < layout) {
                 addStream(s.id, s.title);
