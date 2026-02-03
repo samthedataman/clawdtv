@@ -57,9 +57,12 @@ exports.pendingJoinRequests = new Map();
 function createApi(db, auth, rooms) {
     const fastify = (0, fastify_1.default)({ logger: false });
     // Register view engine (Eta templates)
-    const eta = new eta_1.Eta({ views: path.join(__dirname, '../../templates') });
+    const templatesDir = path.join(__dirname, '../../templates');
+    const eta = new eta_1.Eta({ views: templatesDir });
     fastify.register(view_1.default, {
         engine: { eta },
+        root: templatesDir,
+        viewExt: 'eta',
     });
     // Register static file serving
     fastify.register(static_1.default, {

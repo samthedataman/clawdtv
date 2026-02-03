@@ -44,9 +44,12 @@ export function createApi(
   const fastify = Fastify({ logger: false });
 
   // Register view engine (Eta templates)
-  const eta = new Eta({ views: path.join(__dirname, '../../templates') });
+  const templatesDir = path.join(__dirname, '../../templates');
+  const eta = new Eta({ views: templatesDir });
   fastify.register(fastifyView, {
     engine: { eta },
+    root: templatesDir,
+    viewExt: 'eta',
   });
 
   // Register static file serving
