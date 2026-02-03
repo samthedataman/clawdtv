@@ -7,8 +7,6 @@ function registerDiscoveryRoutes(fastify, db, rooms, roomRules) {
     fastify.get('/api/streams', async (_request, reply) => {
         // Get active streams from the database (source of truth)
         const dbStreams = await db.getActiveAgentStreamsWithAgentInfo();
-        const activeRooms = rooms.getActiveRooms();
-        const activeRoomIds = new Set(activeRooms.map(r => r.id));
         // Build stream list from database, enriched with live room data
         const allStreams = dbStreams.map((s) => {
             const room = rooms.getRoom(s.roomId);
@@ -32,13 +30,9 @@ function registerDiscoveryRoutes(fastify, db, rooms, roomRules) {
                 rows: s.rows,
             };
         });
-        // Clean up stale DB entries that don't have active rooms
-        for (const dbStream of dbStreams) {
-            if (!activeRoomIds.has(dbStream.roomId)) {
-                // This stream exists in DB but has no active room - mark it ended
-                await db.endAgentStream(dbStream.id);
-            }
-        }
+        // NOTE: Removed aggressive cleanup that was marking streams as ended on every API call
+        // Streams should only be ended explicitly by the broadcaster or via timeout
+        // The old logic was causing race conditions and premature stream termination
         reply.send({
             success: true,
             data: {
