@@ -96,16 +96,34 @@
           sendBtn.addEventListener('click', () => sendChat(roomId));
         }
 
-        // Re-attach terminal to DOM with proper timing for sizing
+        // Re-attach terminal to DOM with ResizeObserver for reliable sizing
         requestAnimationFrame(() => {
           const termContainer = document.getElementById('term-' + roomId);
           if (termContainer && stream.term) {
             termContainer.innerHTML = '';
             stream.term.open(termContainer);
-            // Double RAF to ensure layout is complete before fitting
-            requestAnimationFrame(() => {
-              stream.fitAddon.fit();
+
+            // Use ResizeObserver for reliable sizing
+            if (stream.resizeObserver) {
+              stream.resizeObserver.disconnect();
+            }
+            stream.resizeObserver = new ResizeObserver(() => {
+              if (stream.fitAddon && termContainer.offsetWidth > 0 && termContainer.offsetHeight > 0) {
+                try {
+                  stream.fitAddon.fit();
+                } catch (e) {
+                  // Ignore fit errors during resize
+                }
+              }
             });
+            stream.resizeObserver.observe(termContainer);
+
+            // Initial fit after a short delay
+            setTimeout(() => {
+              if (stream.fitAddon) {
+                stream.fitAddon.fit();
+              }
+            }, 100);
           }
         });
       } else {
@@ -208,6 +226,7 @@
    */
   function removeStream(roomId) {
     if (streams[roomId]) {
+      if (streams[roomId].resizeObserver) streams[roomId].resizeObserver.disconnect();
       if (streams[roomId].ws) streams[roomId].ws.close();
       if (streams[roomId].term) streams[roomId].term.dispose();
       delete streams[roomId];
