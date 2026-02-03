@@ -146,10 +146,6 @@ function registerDiscoveryRoutes(fastify, db, rooms, roomRules) {
             },
         });
     });
-    // Health check
-    fastify.get('/api/health', async (request, reply) => {
-        reply.send({ success: true, data: { status: 'ok' } });
-    });
     // List all registered agents
     fastify.get('/api/agents', async (request, reply) => {
         const agents = await db.getRecentAgents(50);

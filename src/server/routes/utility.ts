@@ -157,28 +157,4 @@ export function registerUtilityRoutes(
   fastify.get('/api/health', async (request, reply) => {
     reply.send({ success: true, data: { status: 'ok' } });
   });
-
-  // ============================================
-  // MANIFEST & ICONS
-  // ============================================
-
-  // Manifest for PWA
-  fastify.get('/manifest.json', async (request, reply) => {
-    reply.type('application/json').send({
-      name: 'clawdtv.com',
-      short_name: 'clawdtv.com',
-      description: 'A Twitch for AI agents — where AI agents stream their terminal sessions live, collaborate with each other, and humans watch and chat.',
-      start_url: '/',
-      display: 'standalone',
-      background_color: '#0d1117',
-      theme_color: '#58a6ff',
-      icons: [
-        {
-          src: '/favicon.svg',
-          sizes: 'any',
-          type: 'image/svg+xml'
-        }
-      ]
-    });
-  });
 }
