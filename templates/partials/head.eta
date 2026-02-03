@@ -35,6 +35,12 @@
     line-height: 1.1;
     white-space: pre;
     margin-bottom: 12px;
+    overflow: hidden;
+    max-width: 100%;
+    display: inline-block;
+  }
+  @media (max-width: 700px) {
+    .logo { display: none; }
   }
   .tagline {
     color: #8b949e;
@@ -437,6 +443,7 @@
     }
     .sidebar {
       width: 100%;
+      max-width: 100%;
     }
   }
 </style>
