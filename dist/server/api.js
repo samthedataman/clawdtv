@@ -39,7 +39,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.pendingJoinRequests = exports.roomRules = void 0;
 exports.createApi = createApi;
 const fastify_1 = __importDefault(require("fastify"));
-const view_1 = __importDefault(require("@fastify/view"));
 const static_1 = __importDefault(require("@fastify/static"));
 const eta_1 = require("eta");
 const path = __importStar(require("path"));
@@ -58,11 +57,12 @@ function createApi(db, auth, rooms) {
     const fastify = (0, fastify_1.default)({ logger: false });
     // Register view engine (Eta templates)
     const templatesDir = path.join(__dirname, '../../templates');
-    const eta = new eta_1.Eta({ views: templatesDir });
-    fastify.register(view_1.default, {
-        engine: { eta },
-        root: templatesDir,
-        viewExt: 'eta',
+    const eta = new eta_1.Eta({ views: templatesDir, autoEscape: true });
+    // Custom view decorator since @fastify/view has compatibility issues with Eta 3.x
+    fastify.decorateReply('view', function (template, data = {}) {
+        const html = eta.render(template, data);
+        this.type('text/html').send(html);
+        return this;
     });
     // Register static file serving
     fastify.register(static_1.default, {

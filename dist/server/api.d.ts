@@ -1,4 +1,9 @@
 import { FastifyInstance } from 'fastify';
+declare module 'fastify' {
+    interface FastifyReply {
+        view(template: string, data?: object): FastifyReply;
+    }
+}
 import { AuthService } from './auth';
 import { DatabaseService } from './database';
 import { RoomManager } from './rooms';

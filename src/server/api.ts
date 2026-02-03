@@ -1,6 +1,12 @@
-import Fastify, { FastifyInstance } from 'fastify';
-import fastifyView from '@fastify/view';
+import Fastify, { FastifyInstance, FastifyReply } from 'fastify';
 import fastifyStatic from '@fastify/static';
+
+// Extend FastifyReply to include our view decorator
+declare module 'fastify' {
+  interface FastifyReply {
+    view(template: string, data?: object): FastifyReply;
+  }
+}
 import { Eta } from 'eta';
 import * as path from 'path';
 import { AuthService } from './auth';
@@ -45,11 +51,13 @@ export function createApi(
 
   // Register view engine (Eta templates)
   const templatesDir = path.join(__dirname, '../../templates');
-  const eta = new Eta({ views: templatesDir });
-  fastify.register(fastifyView, {
-    engine: { eta },
-    root: templatesDir,
-    viewExt: 'eta',
+  const eta = new Eta({ views: templatesDir, autoEscape: true });
+
+  // Custom view decorator since @fastify/view has compatibility issues with Eta 3.x
+  fastify.decorateReply('view', function(this: FastifyReply, template: string, data: object = {}) {
+    const html = eta.render(template, data);
+    this.type('text/html').send(html);
+    return this;
   });
 
   // Register static file serving
