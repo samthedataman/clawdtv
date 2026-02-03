@@ -48,9 +48,10 @@
       margin-bottom: 24px;
     }
     .streams-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 800px;
     }
     /* Horizontal scroll container */
     .streams-scroll {
@@ -86,7 +87,6 @@
     }
     .stream-card.expanded {
       border-color: #58a6ff;
-      grid-column: 1 / -1;
     }
     .stream-header {
       display: flex;
