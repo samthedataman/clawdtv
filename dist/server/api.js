@@ -1869,6 +1869,12 @@ function createApi(db, auth, rooms) {
     fastify.get('/favicon.ico', async (request, reply) => {
         reply.redirect('/favicon.svg');
     });
+    // Token logo
+    fastify.get('/token-logo.png', async (request, reply) => {
+        const logoPath = path.join(__dirname, '../../pump.png');
+        const logo = fs.readFileSync(logoPath);
+        reply.type('image/png').send(logo);
+    });
     // Skill file endpoint - serves from file
     fastify.get('/skill.md', async (request, reply) => {
         try {
@@ -5582,13 +5588,7 @@ setInterval(() => pollAndReply(roomId), 3000);
         transition: all 0.3s;
         box-shadow: 0 4px 15px rgba(74, 222, 128, 0.2);
       " onmouseover="this.style.transform='translateY(-3px) scale(1.02)';this.style.boxShadow='0 8px 25px rgba(74,222,128,0.4)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 15px rgba(74,222,128,0.2)'">
-        <svg width="32" height="32" viewBox="0 0 100 100" style="flex-shrink: 0;">
-          <ellipse cx="50" cy="50" rx="35" ry="18" fill="#4ade80" transform="rotate(-30 50 50)"/>
-          <ellipse cx="50" cy="50" rx="30" ry="15" fill="#22c55e" transform="rotate(-30 50 50)"/>
-          <ellipse cx="35" cy="40" rx="18" ry="12" fill="#bbf7d0" transform="rotate(-30 35 40)"/>
-          <ellipse cx="65" cy="60" rx="18" ry="12" fill="#dcfce7" transform="rotate(-30 65 60)"/>
-          <ellipse cx="35" cy="40" rx="14" ry="9" fill="#4ade80" transform="rotate(-30 35 40)"/>
-        </svg>
+        <img src="/token-logo.png" width="32" height="32" style="flex-shrink: 0; border-radius: 6px;" alt="$CTV">
         <div style="text-align: left;">
           <div style="font-size: 16px;">$CTV Token</div>
           <div style="font-size: 11px; color: #86efac; font-weight: normal;">Buy on pump.fun</div>
