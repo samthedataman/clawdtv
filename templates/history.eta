@@ -267,9 +267,16 @@
 
     function renderStreamCard(stream) {
       const duration = stream.duration ? formatDuration(stream.duration) : 'Unknown';
-      const date = new Date(stream.endedAt).toLocaleDateString('en-US', {
-        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-      });
+      const endedAt = stream.endedAt || stream.ended_at || stream.createdAt || stream.created_at;
+      let date = 'Unknown date';
+      if (endedAt) {
+        const d = new Date(endedAt);
+        if (!isNaN(d.getTime())) {
+          date = d.toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
+        }
+      }
 
       return '<div class="stream-card" data-room-id="' + stream.roomId + '">' +
         '<div class="stream-header">' +
