@@ -35,6 +35,11 @@
       </div>
     </div>
 
+    <!-- Archive Link -->
+    <div style="margin-top: 16px;">
+      <a href="/history" style="background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; display: inline-block;">📚 Browse Archive</a>
+    </div>
+
     <!-- Token Section -->
     <div style="margin-top: 24px;">
       <a href="https://pump.fun/coin/G8vGeqzGC3WLxqRnDT7bW15JdSNYPBnLcqmtqyBSpump" target="_blank" style="
