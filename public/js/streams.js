@@ -71,9 +71,12 @@
             </div>
           </div>
           <div class="cell-terminal" id="term-${escapeHtml(roomId)}"></div>
-          <div class="cell-chat">
-            <input type="text" id="chat-${escapeHtml(roomId)}" placeholder="💬 Chat with the agent...">
-            <button class="send-chat-btn" data-room-id="${escapeHtml(roomId)}">Send</button>
+          <div class="cell-chat-container">
+            <div class="cell-chat-messages" id="chat-messages-${escapeHtml(roomId)}"></div>
+            <div class="cell-chat-input">
+              <input type="text" id="chat-${escapeHtml(roomId)}" placeholder="💬 Chat with the agent...">
+              <button class="send-chat-btn" data-room-id="${escapeHtml(roomId)}">Send</button>
+            </div>
           </div>
         `;
         grid.appendChild(cell);
@@ -155,22 +158,30 @@
             if (msg.terminalBuffer) {
               term.write(msg.terminalBuffer);
             }
-            term.write('\x1b[32m✓ Connected to stream\x1b[0m\r\n');
+            addChatMessage(roomId, 'system', null, '✓ Connected to stream');
+            // Load recent messages if provided
+            if (msg.recentMessages && msg.recentMessages.length > 0) {
+              msg.recentMessages.forEach(m => {
+                addChatMessage(roomId, m.role || 'viewer', m.username, m.content, m.timestamp);
+              });
+            }
           } else {
-            term.write('\x1b[31m✗ Failed to join: ' + (msg.error || 'Unknown error') + '\x1b[0m\r\n');
+            addChatMessage(roomId, 'system', null, '✗ Failed to join: ' + (msg.error || 'Unknown error'));
           }
         } else if (msg.type === 'auth_response') {
           if (!msg.success) {
-            term.write('\x1b[31m✗ Auth failed: ' + (msg.error || 'Unknown error') + '\x1b[0m\r\n');
+            addChatMessage(roomId, 'system', null, '✗ Auth failed: ' + (msg.error || 'Unknown error'));
           }
         } else if (msg.type === 'error') {
-          term.write('\x1b[31m✗ Error: ' + (msg.message || msg.error || 'Unknown') + '\x1b[0m\r\n');
+          addChatMessage(roomId, 'system', null, '✗ ' + (msg.message || msg.error || 'Unknown error'));
         } else if (msg.type === 'chat') {
-          // Show incoming chat in terminal
-          const color = msg.role === 'broadcaster' ? '\x1b[33m' : '\x1b[32m';
-          term.write('\r\n' + color + '[' + msg.username + ']\x1b[0m ' + msg.content);
+          addChatMessage(roomId, msg.role || 'viewer', msg.username, msg.content);
         } else if (msg.type === 'system') {
-          term.write('\r\n\x1b[90m* ' + msg.content + '\x1b[0m');
+          addChatMessage(roomId, 'system', null, msg.content);
+        } else if (msg.type === 'viewer_join') {
+          addChatMessage(roomId, 'system', null, msg.username + ' joined');
+        } else if (msg.type === 'viewer_leave') {
+          addChatMessage(roomId, 'system', null, msg.username + ' left');
         }
       } catch (e) {
         console.error('WebSocket message parse error:', e);
@@ -206,6 +217,32 @@
   }
 
   /**
+   * Add a chat message to the chat container
+   */
+  function addChatMessage(roomId, role, username, content, timestamp) {
+    const container = document.getElementById('chat-messages-' + roomId);
+    if (!container) return;
+
+    const msgEl = document.createElement('div');
+    msgEl.className = 'chat-msg ' + (role || 'viewer');
+
+    const time = timestamp ? new Date(timestamp) : new Date();
+    const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (role === 'system') {
+      msgEl.innerHTML = '<span class="content">' + escapeHtml(content) + '</span>';
+    } else {
+      msgEl.innerHTML =
+        '<span class="username">' + escapeHtml(username || 'Anonymous') + '</span>' +
+        '<span class="content">' + escapeHtml(content) + '</span>' +
+        '<span class="time">' + timeStr + '</span>';
+    }
+
+    container.appendChild(msgEl);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  /**
    * Send chat message to a stream
    */
   function sendChat(roomId) {
@@ -216,8 +253,8 @@
     const stream = streams[roomId];
     if (stream && stream.ws && stream.ws.readyState === WebSocket.OPEN) {
       stream.ws.send(JSON.stringify({ type: 'send_chat', content: message }));
-      // Show sent message in terminal
-      stream.term.write('\r\n\x1b[36m[You]\x1b[0m ' + message + '\r\n');
+      // Show sent message in chat container
+      addChatMessage(roomId, 'viewer', stream.viewerName || 'You', message);
       input.value = '';
     }
   }

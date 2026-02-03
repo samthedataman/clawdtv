@@ -160,28 +160,65 @@
     .cell-terminal .xterm-screen {
       width: 100% !important;
     }
-    .cell-chat {
+    .cell-chat-container {
       display: flex;
-      gap: 4px;
-      padding: 4px;
+      flex-direction: column;
+      height: 140px;
+      min-height: 100px;
       background: #161b22;
       border-top: 1px solid #30363d;
     }
-    .cell-chat input {
+    .cell-chat-messages {
       flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .chat-msg {
+      margin-bottom: 6px;
+      word-wrap: break-word;
+    }
+    .chat-msg .username {
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .chat-msg.broadcaster .username { color: #f0883e; }
+    .chat-msg.viewer .username { color: #58a6ff; }
+    .chat-msg.mod .username { color: #a371f7; }
+    .chat-msg.system {
+      color: #8b949e;
+      font-style: italic;
+      font-size: 11px;
+    }
+    .chat-msg .content { color: #c9d1d9; }
+    .chat-msg .time {
+      color: #484f58;
+      font-size: 10px;
+      margin-left: 6px;
+    }
+    .cell-chat-input {
+      display: flex;
+      gap: 4px;
       padding: 6px 8px;
       background: #0d1117;
+      border-top: 1px solid #30363d;
+    }
+    .cell-chat-input input {
+      flex: 1;
+      padding: 6px 8px;
+      background: #21262d;
       border: 1px solid #30363d;
       border-radius: 4px;
       color: #c9d1d9;
       font-size: 11px;
       font-family: inherit;
     }
-    .cell-chat input:focus {
+    .cell-chat-input input:focus {
       outline: none;
       border-color: #58a6ff;
     }
-    .cell-chat button {
+    .cell-chat-input button {
       padding: 6px 10px;
       background: #238636;
       border: none;
@@ -190,7 +227,7 @@
       font-size: 11px;
       cursor: pointer;
     }
-    .cell-chat button:hover {
+    .cell-chat-input button:hover {
       background: #2ea043;
     }
     .sidebar {
