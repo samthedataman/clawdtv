@@ -11,8 +11,13 @@ export interface SSESubscriber {
 export declare class RoomManager {
     private rooms;
     private db;
+    private cleanupInterval;
     private sseSubscribers;
     constructor(db: DatabaseService);
+    private startCleanupInterval;
+    private cleanupInactiveRooms;
+    updateActivity(roomId: string): void;
+    stopCleanup(): void;
     addSSESubscriber(roomId: string, subscriber: SSESubscriber): void;
     removeSSESubscriber(roomId: string, agentId: string): void;
     broadcastSSE(roomId: string, eventType: string, data: any, excludeAgentId?: string): void;

@@ -74,7 +74,8 @@
     box-shadow: 0 4px 12px rgba(35, 134, 54, 0.4);
   }
   .main {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
@@ -83,15 +84,12 @@
     box-sizing: border-box;
   }
   .content {
-    flex: 1 1 0;
     min-width: 0;
-    max-width: calc(100% - 324px);
     overflow: hidden;
   }
   .sidebar {
-    width: 300px;
-    flex-shrink: 0;
-    flex-grow: 0;
+    min-width: 0;
+    overflow: hidden;
   }
   .card {
     background: #161b22;
@@ -115,6 +113,7 @@
     display: flex;
     gap: 20px;
     margin-bottom: 20px;
+    overflow: hidden;
   }
   .stat-box {
     background: #21262d;
@@ -122,6 +121,8 @@
     border-radius: 8px;
     text-align: center;
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
   }
   .stat-value {
     font-size: 32px;
@@ -183,6 +184,8 @@
     border-radius: 6px;
     margin-bottom: 4px;
     min-width: 0;
+    overflow: hidden;
+    max-width: 100%;
   }
   .agent-item.streaming {
     background: rgba(248, 81, 73, 0.1);
@@ -273,7 +276,7 @@
   /* Archive Bricks */
   .archive-bricks {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
     gap: 16px;
     margin-top: 16px;
   }
@@ -408,8 +411,11 @@
   .nav-links a:hover { color: #c9d1d9; }
   .nav-links a.active { color: #58a6ff; }
   @media (max-width: 900px) {
-    .main { flex-direction: column; }
-    .content { max-width: 100%; }
-    .sidebar { width: 100%; }
+    .main {
+      grid-template-columns: 1fr;
+    }
+    .sidebar {
+      width: 100%;
+    }
   }
 </style>

@@ -3,14 +3,63 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoomManager = void 0;
 const protocol_1 = require("../shared/protocol");
 const config_1 = require("../shared/config");
+// Inactivity timeout in milliseconds (15 seconds)
+const INACTIVITY_TIMEOUT_MS = 15000;
+// Cleanup check interval (5 seconds)
+const CLEANUP_INTERVAL_MS = 5000;
 class RoomManager {
     rooms = new Map();
     db;
+    cleanupInterval = null;
     // SSE subscribers for real-time agent communication
     // Map of roomId -> Map of agentId -> SSESubscriber
     sseSubscribers = new Map();
     constructor(db) {
         this.db = db;
+        this.startCleanupInterval();
+    }
+    // Start periodic cleanup of inactive streams
+    startCleanupInterval() {
+        this.cleanupInterval = setInterval(() => {
+            this.cleanupInactiveRooms();
+        }, CLEANUP_INTERVAL_MS);
+    }
+    // Clean up rooms with no activity or no agents
+    async cleanupInactiveRooms() {
+        const now = Date.now();
+        const roomsToEnd = [];
+        this.rooms.forEach((room, roomId) => {
+            const timeSinceActivity = now - room.lastActivity;
+            const hasSSESubscribers = this.sseSubscribers.has(roomId) && this.sseSubscribers.get(roomId).size > 0;
+            // Close immediately if no SSE subscribers and no activity for 5 seconds
+            if (!hasSSESubscribers && timeSinceActivity > 5000) {
+                console.log(`[RoomManager] Closing stream ${roomId} - no agents connected (${Math.round(timeSinceActivity / 1000)}s idle)`);
+                roomsToEnd.push(roomId);
+            }
+            // Close after full timeout regardless
+            else if (timeSinceActivity > INACTIVITY_TIMEOUT_MS) {
+                console.log(`[RoomManager] Closing inactive stream ${roomId} (${Math.round(timeSinceActivity / 1000)}s idle)`);
+                roomsToEnd.push(roomId);
+            }
+        });
+        // End inactive rooms
+        for (const roomId of roomsToEnd) {
+            await this.endRoom(roomId, 'timeout');
+        }
+    }
+    // Update activity timestamp for a room
+    updateActivity(roomId) {
+        const room = this.rooms.get(roomId);
+        if (room) {
+            room.lastActivity = Date.now();
+        }
+    }
+    // Stop cleanup interval (for shutdown)
+    stopCleanup() {
+        if (this.cleanupInterval) {
+            clearInterval(this.cleanupInterval);
+            this.cleanupInterval = null;
+        }
     }
     // ============================================
     // SSE SUBSCRIBER MANAGEMENT
@@ -96,6 +145,7 @@ class RoomManager {
             lastMessages: new Map(),
             terminalBuffer: '',
             recentContentHashes: new Map(),
+            lastActivity: Date.now(),
         };
         this.rooms.set(room.id, room);
         // Load existing mods and bans from DB
@@ -159,6 +209,8 @@ class RoomManager {
             ws,
             role,
         });
+        // Update activity on viewer join
+        room.lastActivity = Date.now();
         // Broadcast join event
         this.broadcastToRoom(roomId, (0, protocol_1.createMessage)({
             type: 'viewer_join',
@@ -247,6 +299,7 @@ class RoomManager {
             lastMessages: new Map(),
             terminalBuffer: '',
             recentContentHashes: new Map(),
+            lastActivity: Date.now(),
         };
         this.rooms.set(roomId, room);
         return room;
@@ -256,6 +309,8 @@ class RoomManager {
         const room = this.rooms.get(roomId);
         if (!room)
             return;
+        // Update activity timestamp
+        room.lastActivity = Date.now();
         // Store in buffer for replay (limit to ~100KB)
         const MAX_BUFFER_SIZE = 100000;
         room.terminalBuffer += data;
@@ -407,6 +462,7 @@ class RoomManager {
         const room = this.rooms.get(roomId);
         if (room) {
             room.lastMessages.set(userId, Date.now());
+            room.lastActivity = Date.now(); // Update activity on chat
         }
     }
     // Check if a message is a duplicate (same content sent recently)
