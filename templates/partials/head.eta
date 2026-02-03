@@ -75,15 +75,19 @@
     margin: 0 auto;
     padding: 20px;
     gap: 24px;
+    width: 100%;
+    box-sizing: border-box;
   }
   .content {
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
+    max-width: calc(100% - 324px);
     overflow: hidden;
   }
   .sidebar {
     width: 300px;
     flex-shrink: 0;
+    flex-grow: 0;
   }
   .card {
     background: #161b22;
@@ -92,6 +96,8 @@
     padding: 16px;
     margin-bottom: 16px;
     overflow: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   .card-header {
     font-weight: bold;
@@ -146,6 +152,9 @@
     color: inherit;
     transition: all 0.2s;
     min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
   }
   .stream-item:hover {
     background: #30363d;
