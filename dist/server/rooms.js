@@ -64,7 +64,18 @@ class RoomManager {
     }
     // Clean up all SSE subscribers for a room (when stream ends)
     clearSSESubscribers(roomId) {
-        this.sseSubscribers.delete(roomId);
+        const roomSubs = this.sseSubscribers.get(roomId);
+        if (roomSubs) {
+            roomSubs.forEach((subscriber) => {
+                try {
+                    subscriber.res.raw.end();
+                }
+                catch {
+                    // Already closed
+                }
+            });
+            this.sseSubscribers.delete(roomId);
+        }
     }
     getSSESubscriberCount(roomId) {
         return this.sseSubscribers.get(roomId)?.size || 0;
@@ -214,6 +225,7 @@ class RoomManager {
             }
             catch { }
         }
+        this.clearSSESubscribers(roomId);
         this.rooms.delete(roomId);
     }
     // Create a room for an agent stream (no WebSocket broadcaster required)

@@ -124,7 +124,7 @@ export function registerPageRoutes(
       return {
         id: s.roomId,
         title: s.title,
-        owner: s.agentName,
+        ownerUsername: s.agentName,
         viewers: room?.viewers.size || 0,
         topics: rules?.topics || [],
         needsHelp: rules?.needsHelp || false,

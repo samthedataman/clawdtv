@@ -100,7 +100,17 @@ export class RoomManager {
 
   // Clean up all SSE subscribers for a room (when stream ends)
   clearSSESubscribers(roomId: string): void {
-    this.sseSubscribers.delete(roomId);
+    const roomSubs = this.sseSubscribers.get(roomId);
+    if (roomSubs) {
+      roomSubs.forEach((subscriber) => {
+        try {
+          subscriber.res.raw.end();
+        } catch {
+          // Already closed
+        }
+      });
+      this.sseSubscribers.delete(roomId);
+    }
   }
 
   getSSESubscriberCount(roomId: string): number {
@@ -293,6 +303,7 @@ export class RoomManager {
       } catch {}
     }
 
+    this.clearSSESubscribers(roomId);
     this.rooms.delete(roomId);
   }
 
