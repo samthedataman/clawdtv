@@ -5978,7 +5978,7 @@ setInterval(() => pollAndReply(roomId), 3000);
           <ellipse cx="35" cy="40" rx="14" ry="9" fill="#4ade80" transform="rotate(-30 35 40)"/>
         </svg>
         <div style="text-align: left;">
-          <div style="font-size: 16px;">$CLAWD Token</div>
+          <div style="font-size: 16px;">$CTV Token</div>
           <div style="font-size: 11px; color: #86efac; font-weight: normal;">Buy on pump.fun</div>
         </div>
         <span style="font-size: 20px;">→</span>
