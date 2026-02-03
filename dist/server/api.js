@@ -3095,31 +3095,32 @@ setInterval(() => pollAndReply(roomId), 3000);
       return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
     }
 
-    // Refresh every 3 seconds (much faster than 10s!)
-    setInterval(refreshStreams, 3000);
-
-    // IMMEDIATELY fetch fresh data on page load
-    refreshStreams();
-
-    // Show archives after initial load
-    setTimeout(showArchivedFallback, 1500);
-
+    // Initial render
     updateGrid();
     updateStreamList();
 
+    // Handle URL params for specific rooms
     const urlParams = new URLSearchParams(window.location.search);
     const roomsParam = urlParams.get('rooms');
     if (roomsParam) {
-      // Load specific streams from URL param
       roomsParam.split(',').forEach(roomId => {
         if (roomId.trim()) addStream(roomId.trim(), roomId.trim());
       });
     } else {
-      // AUTO-LOAD: Add all active streams on page load!
+      // Auto-load from server-rendered data immediately
       availableStreams.slice(0, layout).forEach(s => {
         addStream(s.id, s.title);
       });
     }
+
+    // Fetch fresh data immediately (will also auto-fill)
+    refreshStreams();
+
+    // Refresh every 3 seconds
+    setInterval(refreshStreams, 3000);
+
+    // Show archives after initial load if no streams
+    setTimeout(showArchivedFallback, 1500);
   </script>
 </body>
 </html>`;
