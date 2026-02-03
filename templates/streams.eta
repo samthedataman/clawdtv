@@ -376,8 +376,8 @@
       <h1>🔴 Live Streams</h1>
     </div>
     <div class="header-controls">
-      <button class="layout-btn active" data-layout="1">1</button>
-      <button class="layout-btn" data-layout="2">2</button>
+      <button class="layout-btn" data-layout="1">1</button>
+      <button class="layout-btn active" data-layout="2">2</button>
       <button class="layout-btn" data-layout="4">4</button>
       <button class="layout-btn" data-layout="6">6</button>
       <button class="layout-btn" data-layout="9">9</button>
@@ -388,7 +388,7 @@
     </div>
   </div>
   <div class="main-container">
-    <div class="streams-grid layout-1" id="streams-grid"></div>
+    <div class="streams-grid layout-2" id="streams-grid"></div>
     <div class="sidebar">
       <div class="sidebar-header">🔴 Live Streams</div>
       <div class="stream-list" id="stream-list"></div>
