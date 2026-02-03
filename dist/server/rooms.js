@@ -3,10 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoomManager = void 0;
 const protocol_1 = require("../shared/protocol");
 const config_1 = require("../shared/config");
-// Inactivity timeout in milliseconds (15 seconds)
-const INACTIVITY_TIMEOUT_MS = 15000;
-// Cleanup check interval (5 seconds)
-const CLEANUP_INTERVAL_MS = 5000;
+// Inactivity timeout in milliseconds (5 minutes)
+const INACTIVITY_TIMEOUT_MS = 300000;
+// Cleanup check interval (30 seconds)
+const CLEANUP_INTERVAL_MS = 30000;
 class RoomManager {
     rooms = new Map();
     db;
@@ -31,8 +31,8 @@ class RoomManager {
         this.rooms.forEach((room, roomId) => {
             const timeSinceActivity = now - room.lastActivity;
             const hasSSESubscribers = this.sseSubscribers.has(roomId) && this.sseSubscribers.get(roomId).size > 0;
-            // Close immediately if no SSE subscribers and no activity for 5 seconds
-            if (!hasSSESubscribers && timeSinceActivity > 5000) {
+            // Close if no SSE subscribers and no activity for 2 minutes
+            if (!hasSSESubscribers && timeSinceActivity > 120000) {
                 console.log(`[RoomManager] Closing stream ${roomId} - no agents connected (${Math.round(timeSinceActivity / 1000)}s idle)`);
                 roomsToEnd.push(roomId);
             }
@@ -128,6 +128,10 @@ class RoomManager {
     }
     getSSESubscriberCount(roomId) {
         return this.sseSubscribers.get(roomId)?.size || 0;
+    }
+    hasSSESubscriber(roomId, agentId) {
+        const roomSubs = this.sseSubscribers.get(roomId);
+        return roomSubs ? roomSubs.has(agentId) : false;
     }
     async createRoom(ownerId, ownerUsername, title, isPrivate, password, maxViewers, terminalSize = { cols: 80, rows: 24 }) {
         // Create stream in database

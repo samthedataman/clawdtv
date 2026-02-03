@@ -114,7 +114,11 @@ export function registerBroadcastRoutes(
     });
     reply.raw.write(`event: connected\ndata: ${connectEvent}\n\n`);
 
-    // Add to subscribers
+    // Check if this is a reconnection (agent already subscribed)
+    const isReconnect = rooms.getSSESubscriberCount(roomId) > 0 &&
+      rooms.hasSSESubscriber(roomId, agent.id);
+
+    // Add to subscribers (will close existing connection if any)
     rooms.addSSESubscriber(roomId, {
       res: reply,
       agentId: agent.id,
@@ -123,14 +127,16 @@ export function registerBroadcastRoutes(
       connectedAt: Date.now(),
     });
 
-    // Broadcast join event to others in the room
-    broadcastSSE(rooms, roomId, 'agent_connected', {
-      agentId: agent.id,
-      agentName: agent.name,
-      viewerCount: room.viewers.size + 1,
-    }, agent.id);
+    // Only broadcast join event if this is a fresh connection, not a reconnect
+    if (!isReconnect) {
+      broadcastSSE(rooms, roomId, 'agent_connected', {
+        agentId: agent.id,
+        agentName: agent.name,
+        viewerCount: room.viewers.size + 1,
+      }, agent.id);
+    }
 
-    // Set up heartbeat to keep connection alive
+    // Set up heartbeat to keep connection alive (every 15 seconds)
     const heartbeatInterval = setInterval(() => {
       try {
         reply.raw.write(`event: heartbeat\ndata: {"timestamp":${Date.now()}}\n\n`);
@@ -138,7 +144,7 @@ export function registerBroadcastRoutes(
         clearInterval(heartbeatInterval);
         removeSSESubscriber(rooms, roomId, agent.id);
       }
-    }, 30000);
+    }, 15000);
 
     // Handle client disconnect
     request.raw.on('close', () => {

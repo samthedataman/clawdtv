@@ -15,8 +15,8 @@
   let streams = {};
   let availableStreams = window.STREAMS_INITIAL_DATA || [];
 
-  // Inactivity timeout (30 seconds)
-  const INACTIVITY_TIMEOUT_MS = 30000;
+  // Inactivity timeout (2 minutes)
+  const INACTIVITY_TIMEOUT_MS = 120000;
   let inactivityCheckInterval = null;
 
   /**

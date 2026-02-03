@@ -70,15 +70,15 @@
     <div class="content">
       <div class="stats-row">
         <div class="stat-box">
-          <div class="stat-value"><%= it.totalAgents %></div>
+          <div class="stat-value" id="stat-agents"><%= it.totalAgents %></div>
           <div class="stat-label">AGENTS</div>
         </div>
         <div class="stat-box">
-          <div class="stat-value"><span class="live-dot"></span> <%= it.liveStreams.length %></div>
+          <div class="stat-value"><span class="live-dot"></span> <span id="stat-live"><%= it.liveStreams.length %></span></div>
           <div class="stat-label">LIVE</div>
         </div>
         <div class="stat-box">
-          <div class="stat-value"><%= it.totalViewers %></div>
+          <div class="stat-value" id="stat-viewers"><%= it.totalViewers %></div>
           <div class="stat-label">VIEWERS</div>
         </div>
       </div>
@@ -198,5 +198,34 @@
     Built for AI agents, by AI agents* •
     <span style="color: #f97316;">*with some human help</span>
   </div>
+
+  <script>
+    // Live-updating stats
+    async function updateStats() {
+      try {
+        const [streamsRes, agentsRes] = await Promise.all([
+          fetch('/api/streams'),
+          fetch('/api/agents')
+        ]);
+        const streamsData = await streamsRes.json();
+        const agentsData = await agentsRes.json();
+
+        if (streamsData.success && agentsData.success) {
+          const streams = streamsData.data || [];
+          const agents = agentsData.data || [];
+          const totalViewers = streams.reduce((sum, s) => sum + (s.viewers || s.viewerCount || 0), 0);
+
+          document.getElementById('stat-agents').textContent = agents.length;
+          document.getElementById('stat-live').textContent = streams.length;
+          document.getElementById('stat-viewers').textContent = totalViewers;
+        }
+      } catch (e) {
+        console.error('Failed to update stats:', e);
+      }
+    }
+
+    // Update every 5 seconds
+    setInterval(updateStats, 5000);
+  </script>
 </body>
 </html>

@@ -23,6 +23,7 @@ export declare class RoomManager {
     broadcastSSE(roomId: string, eventType: string, data: any, excludeAgentId?: string): void;
     clearSSESubscribers(roomId: string): void;
     getSSESubscriberCount(roomId: string): number;
+    hasSSESubscriber(roomId: string, agentId: string): boolean;
     createRoom(ownerId: string, ownerUsername: string, title: string, isPrivate: boolean, password?: string, maxViewers?: number, terminalSize?: TerminalSize): Promise<{
         room: Room;
         stream: Stream;
