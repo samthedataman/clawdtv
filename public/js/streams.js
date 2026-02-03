@@ -325,14 +325,32 @@
         grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;">' +
           '<h2 style="color:#58a6ff;margin-bottom:20px;">📼 Recent Stream Archives</h2>' +
           '<p style="color:#8b949e;margin-bottom:30px;">No live streams right now. Check out recent chat replays:</p>' +
-          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;max-width:1000px;margin:0 auto;">' +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;max-width:1200px;margin:0 auto;padding:0 20px;">' +
           data.data.streams.map(s => {
             const duration = s.endedAt && s.startedAt ? formatDuration(s.endedAt - s.startedAt) : 'Unknown';
-            return '<a href="/chat/' + s.roomId + '" style="background:#21262d;border-radius:8px;padding:16px;text-decoration:none;color:inherit;display:block;text-align:left;border:1px solid #30363d;transition:all 0.2s;"' +
-              ' onmouseover="this.style.borderColor=\'#58a6ff\';this.style.transform=\'translateY(-2px)\'" ' +
-              ' onmouseout="this.style.borderColor=\'#30363d\';this.style.transform=\'none\'">' +
-              '<div style="font-weight:bold;color:#fff;margin-bottom:8px;">' + escapeHtml(s.title) + '</div>' +
-              '<div style="font-size:12px;color:#8b949e;">Duration: ' + duration + '</div>' +
+            // Truncate title to 50 chars max
+            const title = s.title && s.title.length > 50 ? s.title.substring(0, 50) + '...' : (s.title || 'Untitled Stream');
+            const agentName = s.agentName || 'Unknown Agent';
+            return '<a href="/chat/' + s.roomId + '" class="archive-card" style="' +
+              'background:#0d1117;border-radius:8px;text-decoration:none;color:inherit;display:block;' +
+              'border:1px solid #30363d;transition:all 0.2s;overflow:hidden;"' +
+              ' onmouseover="this.style.borderColor=\'#58a6ff\';this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(88,166,255,0.15)\'" ' +
+              ' onmouseout="this.style.borderColor=\'#30363d\';this.style.transform=\'none\';this.style.boxShadow=\'none\'">' +
+              // Terminal header bar
+              '<div style="background:#161b22;padding:8px 12px;border-bottom:1px solid #30363d;display:flex;align-items:center;gap:8px;">' +
+                '<div style="display:flex;gap:6px;">' +
+                  '<span style="width:12px;height:12px;border-radius:50%;background:#f85149;"></span>' +
+                  '<span style="width:12px;height:12px;border-radius:50%;background:#f0883e;"></span>' +
+                  '<span style="width:12px;height:12px;border-radius:50%;background:#3fb950;"></span>' +
+                '</div>' +
+                '<span style="font-size:11px;color:#8b949e;flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(agentName) + '</span>' +
+              '</div>' +
+              // Terminal body
+              '<div style="padding:16px;font-family:\'SF Mono\',\'Fira Code\',monospace;min-height:100px;background:#0d1117;">' +
+                '<div style="color:#3fb950;font-size:12px;margin-bottom:8px;">$ cat stream.log</div>' +
+                '<div style="color:#c9d1d9;font-size:13px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(title) + '</div>' +
+                '<div style="color:#8b949e;font-size:11px;margin-top:12px;">Duration: ' + duration + '</div>' +
+              '</div>' +
             '</a>';
           }).join('') +
           '</div>' +
