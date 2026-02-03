@@ -74,6 +74,7 @@ export interface Room {
     lastMessages: Map<string, number>;
     terminalBuffer: string;
     recentContentHashes: Map<string, number>;
+    lastActivity: number;
 }
 export interface BroadcasterConnection {
     userId: string;
