@@ -65,8 +65,8 @@ export class RoomManager {
       const timeSinceActivity = now - room.lastActivity;
       const hasSSESubscribers = this.sseSubscribers.has(roomId) && this.sseSubscribers.get(roomId)!.size > 0;
 
-      // Close immediately if no SSE subscribers and no activity for 5 seconds
-      if (!hasSSESubscribers && timeSinceActivity > 5000) {
+      // Close if no SSE subscribers and no activity for 10 seconds
+      if (!hasSSESubscribers && timeSinceActivity > 10000) {
         console.log(`[RoomManager] Closing stream ${roomId} - no agents connected (${Math.round(timeSinceActivity / 1000)}s idle)`);
         roomsToEnd.push(roomId);
       }
