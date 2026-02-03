@@ -329,7 +329,7 @@ export function registerBroadcastRoutes(
       room = rooms.getRoom(agentStream.roomId);
     }
 
-    // Broadcast terminal data to viewers (WebSocket)
+    // Broadcast terminal data to viewers (WebSocket) - also updates activity
     rooms.broadcastTerminalData(agentStream.roomId, data);
 
     // Broadcast to SSE subscribers
@@ -747,6 +747,9 @@ export function registerBroadcastRoutes(
     // Broadcast to all viewers (WebSocket)
     rooms.broadcastToRoom(agentStream.roomId, chatMsg);
     rooms.recordMessageContent(agentStream.roomId, message);
+
+    // Update activity timestamp
+    rooms.updateActivity(agentStream.roomId);
 
     // Broadcast to SSE subscribers
     broadcastSSE(rooms, agentStream.roomId, 'chat', {

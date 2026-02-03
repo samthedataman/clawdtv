@@ -30,9 +30,15 @@ export interface SSESubscriber {
   connectedAt: number;
 }
 
+// Inactivity timeout in milliseconds (15 seconds)
+const INACTIVITY_TIMEOUT_MS = 15000;
+// Cleanup check interval (5 seconds)
+const CLEANUP_INTERVAL_MS = 5000;
+
 export class RoomManager {
   private rooms: Map<string, Room> = new Map();
   private db: DatabaseService;
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   // SSE subscribers for real-time agent communication
   // Map of roomId -> Map of agentId -> SSESubscriber
@@ -40,6 +46,49 @@ export class RoomManager {
 
   constructor(db: DatabaseService) {
     this.db = db;
+    this.startCleanupInterval();
+  }
+
+  // Start periodic cleanup of inactive streams
+  private startCleanupInterval(): void {
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupInactiveRooms();
+    }, CLEANUP_INTERVAL_MS);
+  }
+
+  // Clean up rooms with no activity for INACTIVITY_TIMEOUT_MS
+  private async cleanupInactiveRooms(): Promise<void> {
+    const now = Date.now();
+    const roomsToEnd: string[] = [];
+
+    this.rooms.forEach((room, roomId) => {
+      const timeSinceActivity = now - room.lastActivity;
+      if (timeSinceActivity > INACTIVITY_TIMEOUT_MS) {
+        console.log(`[RoomManager] Closing inactive stream ${roomId} (${Math.round(timeSinceActivity / 1000)}s idle)`);
+        roomsToEnd.push(roomId);
+      }
+    });
+
+    // End inactive rooms
+    for (const roomId of roomsToEnd) {
+      await this.endRoom(roomId, 'timeout');
+    }
+  }
+
+  // Update activity timestamp for a room
+  updateActivity(roomId: string): void {
+    const room = this.rooms.get(roomId);
+    if (room) {
+      room.lastActivity = Date.now();
+    }
+  }
+
+  // Stop cleanup interval (for shutdown)
+  stopCleanup(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
   }
 
   // ============================================
@@ -142,6 +191,7 @@ export class RoomManager {
       lastMessages: new Map(),
       terminalBuffer: '',
       recentContentHashes: new Map(),
+      lastActivity: Date.now(),
     };
 
     this.rooms.set(room.id, room);
@@ -227,6 +277,9 @@ export class RoomManager {
       ws,
       role,
     });
+
+    // Update activity on viewer join
+    room.lastActivity = Date.now();
 
     // Broadcast join event
     this.broadcastToRoom(roomId, createMessage<ViewerJoinEvent>({
@@ -331,6 +384,7 @@ export class RoomManager {
       lastMessages: new Map(),
       terminalBuffer: '',
       recentContentHashes: new Map(),
+      lastActivity: Date.now(),
     };
 
     this.rooms.set(roomId, room);
@@ -341,6 +395,9 @@ export class RoomManager {
   broadcastTerminalData(roomId: string, data: string): void {
     const room = this.rooms.get(roomId);
     if (!room) return;
+
+    // Update activity timestamp
+    room.lastActivity = Date.now();
 
     // Store in buffer for replay (limit to ~100KB)
     const MAX_BUFFER_SIZE = 100000;
@@ -512,6 +569,7 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (room) {
       room.lastMessages.set(userId, Date.now());
+      room.lastActivity = Date.now(); // Update activity on chat
     }
   }
 
