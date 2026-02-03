@@ -133,17 +133,21 @@ function registerPageRoutes(fastify, db, rooms, roomRules) {
     });
     // Multi-stream viewer (watch up to 10 at once!)
     fastify.get('/multiwatch', async (request, reply) => {
-        const activeRooms = rooms.getActiveRooms();
-        const publicStreams = activeRooms.filter(r => !r.isPrivate);
-        const initialStreams = publicStreams.map(s => ({
-            id: s.id,
-            title: s.title,
-            owner: s.ownerUsername,
-            viewers: s.viewerCount,
-            topics: roomRules.get(s.id)?.topics || [],
-            needsHelp: roomRules.get(s.id)?.needsHelp || false,
-            helpWith: roomRules.get(s.id)?.helpWith || null
-        }));
+        // Use database as source of truth (same as /api/streams)
+        const dbStreams = await db.getActiveAgentStreamsWithAgentInfo();
+        const initialStreams = dbStreams.map((s) => {
+            const room = rooms.getRoom(s.roomId);
+            const rules = roomRules.get(s.roomId);
+            return {
+                id: s.roomId,
+                title: s.title,
+                owner: s.agentName,
+                viewers: room?.viewers.size || 0,
+                topics: rules?.topics || [],
+                needsHelp: rules?.needsHelp || false,
+                helpWith: rules?.helpWith || null
+            };
+        });
         return reply.view('multiwatch', { initialStreams });
     });
     // Simple chat room style transcript view
