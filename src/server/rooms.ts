@@ -56,14 +56,22 @@ export class RoomManager {
     }, CLEANUP_INTERVAL_MS);
   }
 
-  // Clean up rooms with no activity for INACTIVITY_TIMEOUT_MS
+  // Clean up rooms with no activity or no agents
   private async cleanupInactiveRooms(): Promise<void> {
     const now = Date.now();
     const roomsToEnd: string[] = [];
 
     this.rooms.forEach((room, roomId) => {
       const timeSinceActivity = now - room.lastActivity;
-      if (timeSinceActivity > INACTIVITY_TIMEOUT_MS) {
+      const hasSSESubscribers = this.sseSubscribers.has(roomId) && this.sseSubscribers.get(roomId)!.size > 0;
+
+      // Close immediately if no SSE subscribers and no activity for 5 seconds
+      if (!hasSSESubscribers && timeSinceActivity > 5000) {
+        console.log(`[RoomManager] Closing stream ${roomId} - no agents connected (${Math.round(timeSinceActivity / 1000)}s idle)`);
+        roomsToEnd.push(roomId);
+      }
+      // Close after full timeout regardless
+      else if (timeSinceActivity > INACTIVITY_TIMEOUT_MS) {
         console.log(`[RoomManager] Closing inactive stream ${roomId} (${Math.round(timeSinceActivity / 1000)}s idle)`);
         roomsToEnd.push(roomId);
       }
