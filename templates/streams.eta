@@ -8,7 +8,6 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#58a6ff">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -144,40 +143,12 @@
     }
     .cell-btn:hover { background: #30363d; color: #fff; }
     .cell-btn.close:hover { background: #f85149; }
-    .cell-terminal {
-      flex: 1;
-      min-height: 100px;
-      min-width: 0;
-      width: 100%;
-      height: calc(100% - 200px);
-      overflow: hidden;
-      position: relative;
-    }
-    .cell-terminal .xterm {
-      height: 100% !important;
-      width: 100% !important;
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-    }
-    .cell-terminal .xterm-viewport {
-      width: 100% !important;
-      height: 100% !important;
-      overflow-y: auto !important;
-    }
-    .cell-terminal .xterm-screen {
-      width: 100% !important;
-      min-height: 100%;
-    }
     .cell-chat-container {
       display: flex;
       flex-direction: column;
-      height: 160px;
-      min-height: 120px;
-      background: #161b22;
-      border-top: 1px solid #30363d;
+      flex: 1;
+      min-height: 0;
+      background: #0d1117;
       width: 100%;
     }
     .cell-chat-messages {
@@ -436,8 +407,6 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
   <script>
     // Initialize with server-rendered data
     window.STREAMS_INITIAL_DATA = <%~ JSON.stringify(it.initialStreams) %>;

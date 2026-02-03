@@ -70,7 +70,6 @@
               <button class="cell-btn close" data-room-id="${escapeHtml(roomId)}">×</button>
             </div>
           </div>
-          <div class="cell-terminal" id="term-${escapeHtml(roomId)}"></div>
           <div class="cell-chat-container">
             <div class="cell-chat-messages" id="chat-messages-${escapeHtml(roomId)}"></div>
             <div class="cell-chat-input">
@@ -95,37 +94,6 @@
           });
           sendBtn.addEventListener('click', () => sendChat(roomId));
         }
-
-        // Re-attach terminal to DOM with ResizeObserver for reliable sizing
-        requestAnimationFrame(() => {
-          const termContainer = document.getElementById('term-' + roomId);
-          if (termContainer && stream.term) {
-            termContainer.innerHTML = '';
-            stream.term.open(termContainer);
-
-            // Use ResizeObserver for reliable sizing
-            if (stream.resizeObserver) {
-              stream.resizeObserver.disconnect();
-            }
-            stream.resizeObserver = new ResizeObserver(() => {
-              if (stream.fitAddon && termContainer.offsetWidth > 0 && termContainer.offsetHeight > 0) {
-                try {
-                  stream.fitAddon.fit();
-                } catch (e) {
-                  // Ignore fit errors during resize
-                }
-              }
-            });
-            stream.resizeObserver.observe(termContainer);
-
-            // Initial fit after a short delay
-            setTimeout(() => {
-              if (stream.fitAddon) {
-                stream.fitAddon.fit();
-              }
-            }, 100);
-          }
-        });
       } else {
         cell.className = 'stream-cell empty';
         cell.onclick = () => showModal();
@@ -144,16 +112,6 @@
       return;
     }
 
-    // Create xterm instance
-    const term = new Terminal({
-      theme: { background: '#000000', foreground: '#c9d1d9' },
-      fontSize: 11,
-      fontFamily: 'SF Mono, Fira Code, monospace',
-      scrollback: 1000,
-    });
-    const fitAddon = new FitAddon.FitAddon();
-    term.loadAddon(fitAddon);
-
     // Generate viewer name before WebSocket connection
     const viewerName = 'web-viewer-' + Math.random().toString(36).slice(2, 6);
 
@@ -169,13 +127,8 @@
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.type === 'terminal') {
-          term.write(msg.data);
-        } else if (msg.type === 'join_stream_response') {
+        if (msg.type === 'join_stream_response') {
           if (msg.success) {
-            if (msg.terminalBuffer) {
-              term.write(msg.terminalBuffer);
-            }
             addChatMessage(roomId, 'system', null, '✓ Connected to stream');
             // Load recent messages if provided
             if (msg.recentMessages && msg.recentMessages.length > 0) {
@@ -208,7 +161,7 @@
 
     ws.onclose = () => {
       if (streams[roomId]) {
-        streams[roomId].term.write('\r\n\x1b[31m[Stream ended]\x1b[0m');
+        addChatMessage(roomId, 'system', null, '🔴 Stream ended');
       }
     };
 
@@ -216,7 +169,7 @@
       console.error('WebSocket error for room', roomId, error);
     };
 
-    streams[roomId] = { term, ws, fitAddon, title, viewerName };
+    streams[roomId] = { ws, title, viewerName };
     renderCells();
     updateStreamList();
   }
@@ -226,9 +179,7 @@
    */
   function removeStream(roomId) {
     if (streams[roomId]) {
-      if (streams[roomId].resizeObserver) streams[roomId].resizeObserver.disconnect();
       if (streams[roomId].ws) streams[roomId].ws.close();
-      if (streams[roomId].term) streams[roomId].term.dispose();
       delete streams[roomId];
       renderCells();
       updateStreamList();
@@ -468,14 +419,7 @@
    * Handle window resize
    */
   function handleResize() {
-    // Use RAF to ensure layout is complete
-    requestAnimationFrame(() => {
-      Object.values(streams).forEach(s => {
-        if (s.fitAddon) {
-          s.fitAddon.fit();
-        }
-      });
-    });
+    // No-op: terminal removed, chat handles its own sizing
   }
 
   /**
@@ -483,9 +427,8 @@
    */
   function cleanup() {
     Object.keys(streams).forEach(roomId => {
-      if (streams[roomId]) {
-        if (streams[roomId].ws) streams[roomId].ws.close();
-        if (streams[roomId].term) streams[roomId].term.dispose();
+      if (streams[roomId] && streams[roomId].ws) {
+        streams[roomId].ws.close();
       }
     });
   }
