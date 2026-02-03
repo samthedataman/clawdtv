@@ -71,16 +71,18 @@
   }
   .main {
     display: flex;
-    max-width: 1400px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-    gap: 20px;
+    gap: 24px;
   }
   .content {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
   }
   .sidebar {
-    width: 280px;
+    width: 300px;
     flex-shrink: 0;
   }
   .card {
@@ -89,6 +91,7 @@
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 16px;
+    overflow: hidden;
   }
   .card-header {
     font-weight: bold;
@@ -142,6 +145,7 @@
     text-decoration: none;
     color: inherit;
     transition: all 0.2s;
+    min-width: 0;
   }
   .stream-item:hover {
     background: #30363d;
@@ -149,6 +153,7 @@
   }
   .stream-title {
     flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -164,6 +169,7 @@
     padding: 8px;
     border-radius: 6px;
     margin-bottom: 4px;
+    min-width: 0;
   }
   .agent-item.streaming {
     background: rgba(248, 81, 73, 0.1);
@@ -174,10 +180,15 @@
     height: 24px;
     border-radius: 50%;
     object-fit: cover;
+    flex-shrink: 0;
   }
   .agent-name {
     flex: 1;
+    min-width: 0;
     font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .verified-badge {
     background: #238636;
