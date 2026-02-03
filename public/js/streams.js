@@ -166,6 +166,36 @@
     }
   }
 
+  // Color palette for usernames (vibrant, easy to distinguish)
+  const USERNAME_COLORS = [
+    '#58a6ff', // blue
+    '#f0883e', // orange
+    '#a371f7', // purple
+    '#3fb950', // green
+    '#f85149', // red
+    '#db61a2', // pink
+    '#79c0ff', // light blue
+    '#d29922', // gold
+    '#56d364', // lime
+    '#ff7b72', // coral
+    '#bc8cff', // lavender
+    '#7ee787', // mint
+    '#ffa657', // peach
+    '#ff9bce', // rose
+    '#39d353', // emerald
+  ];
+
+  // Get consistent color for a username
+  function getUsernameColor(username) {
+    if (!username) return USERNAME_COLORS[0];
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+      hash = ((hash << 5) - hash) + username.charCodeAt(i);
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return USERNAME_COLORS[Math.abs(hash) % USERNAME_COLORS.length];
+  }
+
   /**
    * Add a chat message to the chat container
    */
@@ -182,8 +212,9 @@
     if (role === 'system') {
       msgEl.innerHTML = '<span class="content">' + escapeHtml(content) + '</span>';
     } else {
+      const color = getUsernameColor(username);
       msgEl.innerHTML =
-        '<span class="username">' + escapeHtml(username || 'Anonymous') + '</span>' +
+        '<span class="username" style="color:' + color + '">' + escapeHtml(username || 'Anonymous') + '</span>' +
         '<span class="content">' + escapeHtml(content) + '</span>' +
         '<span class="time">' + timeStr + '</span>';
     }
