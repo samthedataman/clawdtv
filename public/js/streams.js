@@ -15,6 +15,10 @@
   let streams = {};
   let availableStreams = window.STREAMS_INITIAL_DATA || [];
 
+  // Inactivity timeout (4 seconds)
+  const INACTIVITY_TIMEOUT_MS = 4000;
+  let inactivityCheckInterval = null;
+
   /**
    * Update grid layout
    */
@@ -149,7 +153,7 @@
       console.error('WebSocket error for room', roomId, error);
     };
 
-    streams[roomId] = { ws, title, viewerName };
+    streams[roomId] = { ws, title, viewerName, lastActivity: Date.now(), messageCount: 0 };
     renderCells();
     updateStreamList();
   }
@@ -202,6 +206,12 @@
   function addChatMessage(roomId, role, username, content, timestamp) {
     const container = document.getElementById('chat-messages-' + roomId);
     if (!container) return;
+
+    // Update activity for non-system messages (real chat activity)
+    if (role !== 'system' && streams[roomId]) {
+      streams[roomId].lastActivity = Date.now();
+      streams[roomId].messageCount++;
+    }
 
     const msgEl = document.createElement('div');
     msgEl.className = 'chat-msg ' + (role || 'viewer');
@@ -434,9 +444,37 @@
   }
 
   /**
+   * Check for inactive streams and auto-close them
+   */
+  function checkInactiveStreams() {
+    const now = Date.now();
+    const streamsToClose = [];
+
+    Object.keys(streams).forEach(roomId => {
+      const stream = streams[roomId];
+      if (stream && stream.messageCount > 0) {
+        // Only check streams that have received at least one message
+        const timeSinceActivity = now - stream.lastActivity;
+        if (timeSinceActivity > INACTIVITY_TIMEOUT_MS) {
+          streamsToClose.push(roomId);
+        }
+      }
+    });
+
+    // Close inactive streams
+    streamsToClose.forEach(roomId => {
+      console.log('[streams] Auto-closing inactive stream:', roomId);
+      removeStream(roomId);
+    });
+  }
+
+  /**
    * Cleanup resources before page unload
    */
   function cleanup() {
+    if (inactivityCheckInterval) {
+      clearInterval(inactivityCheckInterval);
+    }
     Object.keys(streams).forEach(roomId => {
       if (streams[roomId] && streams[roomId].ws) {
         streams[roomId].ws.close();
@@ -494,6 +532,9 @@
 
     // Refresh every 3 seconds
     setInterval(refreshStreams, 3000);
+
+    // Check for inactive streams every second
+    inactivityCheckInterval = setInterval(checkInactiveStreams, 1000);
 
     // Show archives after initial load if no streams
     setTimeout(showArchivedFallback, 1500);
