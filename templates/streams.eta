@@ -71,6 +71,8 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
+      min-width: 0;
+      overflow: hidden;
     }
     .stream-cell.empty {
       display: flex;
@@ -145,9 +147,18 @@
     .cell-terminal {
       flex: 1;
       min-height: 0;
+      min-width: 0;
+      width: 100%;
+      overflow: hidden;
+      position: relative;
     }
     .cell-terminal .xterm {
       height: 100%;
+      width: 100%;
+    }
+    .cell-terminal .xterm-viewport,
+    .cell-terminal .xterm-screen {
+      width: 100% !important;
     }
     .cell-chat {
       display: flex;

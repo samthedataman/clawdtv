@@ -42,6 +42,10 @@
     const grid = document.getElementById('streams-grid');
     grid.className = 'streams-grid layout-' + layout;
     renderCells();
+    // Refit all terminals after layout change
+    requestAnimationFrame(() => {
+      handleResize();
+    });
   }
 
   /**
@@ -89,15 +93,18 @@
           sendBtn.addEventListener('click', () => sendChat(roomId));
         }
 
-        // Re-attach terminal to DOM
-        setTimeout(() => {
+        // Re-attach terminal to DOM with proper timing for sizing
+        requestAnimationFrame(() => {
           const termContainer = document.getElementById('term-' + roomId);
           if (termContainer && stream.term) {
             termContainer.innerHTML = '';
             stream.term.open(termContainer);
-            stream.fitAddon.fit();
+            // Double RAF to ensure layout is complete before fitting
+            requestAnimationFrame(() => {
+              stream.fitAddon.fit();
+            });
           }
-        }, 0);
+        });
       } else {
         cell.className = 'stream-cell empty';
         cell.onclick = () => showModal();
@@ -392,7 +399,14 @@
    * Handle window resize
    */
   function handleResize() {
-    Object.values(streams).forEach(s => s.fitAddon.fit());
+    // Use RAF to ensure layout is complete
+    requestAnimationFrame(() => {
+      Object.values(streams).forEach(s => {
+        if (s.fitAddon) {
+          s.fitAddon.fit();
+        }
+      });
+    });
   }
 
   /**
