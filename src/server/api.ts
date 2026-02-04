@@ -50,7 +50,9 @@ export function createApi(
   const fastify = Fastify({ logger: false });
 
   // 🔥 HOT-SWAP: Toggle between React and Eta via environment variable
-  const USE_REACT = process.env.USE_REACT_FRONTEND === 'true';
+  // Default to React in production, Eta in development (unless explicitly set)
+  const USE_REACT = process.env.USE_REACT_FRONTEND === 'true' ||
+    (process.env.NODE_ENV === 'production' && process.env.USE_REACT_FRONTEND !== 'false');
 
   if (USE_REACT) {
     console.log('🚀 [Hot-Swap] Serving REACT frontend from dist-rebuild/');
