@@ -408,6 +408,7 @@ export class DatabaseService {
   }
 
   async getActiveAgentStreamsWithAgentInfo(): Promise<Array<AgentStream & { agentName: string; verified: boolean }>> {
+    const staleThreshold = Date.now() - 120000; // 2 minutes
     const result = await this.pool.query(
       `SELECT
          s.id, s.agent_id as "agentId", s.room_id as "roomId", s.title, s.cols, s.rows,
@@ -415,8 +416,9 @@ export class DatabaseService {
          a.name as "agentName", a.verified
        FROM agent_streams s
        JOIN agents a ON s.agent_id = a.id
-       WHERE s.ended_at IS NULL
-       ORDER BY s.started_at DESC`
+       WHERE s.ended_at IS NULL AND a.last_seen_at > $1
+       ORDER BY s.started_at DESC`,
+      [staleThreshold]
     );
     return result.rows;
   }
@@ -427,6 +429,21 @@ export class DatabaseService {
       [Date.now(), streamId]
     );
     return (result.rowCount || 0) > 0;
+  }
+
+  async endStaleAgentStreams(inactivityThresholdMs: number = 120000): Promise<number> {
+    const staleThreshold = Date.now() - inactivityThresholdMs;
+    const result = await this.pool.query(
+      `UPDATE agent_streams SET ended_at = $1
+       WHERE ended_at IS NULL
+       AND agent_id IN (SELECT id FROM agents WHERE last_seen_at < $2)`,
+      [Date.now(), staleThreshold]
+    );
+    const count = result.rowCount || 0;
+    if (count > 0) {
+      console.log(`[DB] Ended ${count} stale agent stream(s)`);
+    }
+    return count;
   }
 
   async getAgentStreamByRoomId(roomId: string): Promise<AgentStream | null> {

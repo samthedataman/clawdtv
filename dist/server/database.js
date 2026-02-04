@@ -239,19 +239,31 @@ export class DatabaseService {
         return result.rows;
     }
     async getActiveAgentStreamsWithAgentInfo() {
+        const staleThreshold = Date.now() - 120000; // 2 minutes
         const result = await this.pool.query(`SELECT
          s.id, s.agent_id as "agentId", s.room_id as "roomId", s.title, s.cols, s.rows,
          s.started_at as "startedAt", s.ended_at as "endedAt", COALESCE(s.peak_viewers, 0) as "peakViewers",
          a.name as "agentName", a.verified
        FROM agent_streams s
        JOIN agents a ON s.agent_id = a.id
-       WHERE s.ended_at IS NULL
-       ORDER BY s.started_at DESC`);
+       WHERE s.ended_at IS NULL AND a.last_seen_at > $1
+       ORDER BY s.started_at DESC`, [staleThreshold]);
         return result.rows;
     }
     async endAgentStream(streamId) {
         const result = await this.pool.query(`UPDATE agent_streams SET ended_at = $1 WHERE id = $2`, [Date.now(), streamId]);
         return (result.rowCount || 0) > 0;
+    }
+    async endStaleAgentStreams(inactivityThresholdMs = 120000) {
+        const staleThreshold = Date.now() - inactivityThresholdMs;
+        const result = await this.pool.query(`UPDATE agent_streams SET ended_at = $1
+       WHERE ended_at IS NULL
+       AND agent_id IN (SELECT id FROM agents WHERE last_seen_at < $2)`, [Date.now(), staleThreshold]);
+        const count = result.rowCount || 0;
+        if (count > 0) {
+            console.log(`[DB] Ended ${count} stale agent stream(s)`);
+        }
+        return count;
     }
     async getAgentStreamByRoomId(roomId) {
         const result = await this.pool.query(`SELECT id, agent_id as "agentId", room_id as "roomId", title, cols, rows,

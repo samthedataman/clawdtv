@@ -13,6 +13,8 @@ export class RoomManager {
     sseSubscribers = new Map();
     constructor(db) {
         this.db = db;
+        // Clean up any orphaned streams from previous server runs
+        this.db.endStaleAgentStreams(120000).catch(err => console.error('[RoomManager] Startup cleanup failed:', err));
         this.startCleanupInterval();
     }
     // Start periodic cleanup of inactive streams
@@ -43,6 +45,8 @@ export class RoomManager {
         for (const roomId of roomsToEnd) {
             await this.endRoom(roomId, 'timeout');
         }
+        // Clean up stale agent streams in database (agents not seen in 2 minutes)
+        await this.db.endStaleAgentStreams(120000);
     }
     // Update activity timestamp for a room
     updateActivity(roomId) {

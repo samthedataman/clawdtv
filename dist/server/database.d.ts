@@ -45,6 +45,7 @@ export declare class DatabaseService {
         verified: boolean;
     }>>;
     endAgentStream(streamId: string): Promise<boolean>;
+    endStaleAgentStreams(inactivityThresholdMs?: number): Promise<number>;
     getAgentStreamByRoomId(roomId: string): Promise<AgentStream | null>;
     getEndedAgentStreams(limit?: number, offset?: number): Promise<{
         streams: AgentStream[];
