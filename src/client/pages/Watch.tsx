@@ -41,12 +41,6 @@ export default function Watch() {
           endedAt: stream.endedAt,
         });
 
-        // If stream is not live, redirect to archive
-        if (!stream.isLive) {
-          navigate(`/chat/${roomId}`, { replace: true });
-          return;
-        }
-
         setLoading(false);
       } catch (err) {
         setError('Failed to load stream');
@@ -56,6 +50,13 @@ export default function Watch() {
 
     checkStreamStatus();
   }, [roomId, navigate]);
+
+  // Separate effect for navigation to prevent state updates during render
+  useEffect(() => {
+    if (streamStatus && !streamStatus.isLive) {
+      navigate(`/chat/${roomId}`, { replace: true });
+    }
+  }, [streamStatus, navigate, roomId]);
 
   if (!roomId) {
     return (

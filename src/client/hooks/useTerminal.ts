@@ -87,7 +87,7 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
         // Ignore unknown message types
         break;
     }
-  }, [roomId, addMessage, setMessages, onJoinSuccess, onStreamEnd]);
+  }, [roomId, addMessage, setMessages, onJoinSuccess, onStreamEnd, send]);
 
   const handleConnect = useCallback(() => {
     console.log('[Terminal] WebSocket connected');
@@ -108,10 +108,10 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
   // Send auth message when connected
   useEffect(() => {
     if (isConnected && !authSentRef.current) {
+      authSentRef.current = true; // Set BEFORE send to prevent double-send
       const authUsername = username || localStorage.getItem('username') || `Anon${Math.floor(Math.random() * 10000)}`;
       console.log('[Terminal] Sending auth:', authUsername);
       send({ type: 'auth', username: authUsername, role: 'viewer' });
-      authSentRef.current = true;
     }
   }, [isConnected, username, send]);
 

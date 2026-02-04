@@ -547,7 +547,7 @@ export class RoomManager {
             return;
         const data = JSON.stringify(message);
         room.viewers.forEach((viewer) => {
-            if (viewer.userId !== excludeUserId) {
+            if (viewer.userId !== excludeUserId && viewer.ws) {
                 try {
                     viewer.ws.send(data);
                 }
