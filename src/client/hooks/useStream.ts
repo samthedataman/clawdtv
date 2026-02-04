@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { useChatStore } from '../store/chatStore';
 
@@ -16,22 +16,8 @@ export function useStream({ roomId, onStreamEnd }: UseStreamOptions) {
   const addMessage = useChatStore(state => state.addMessage);
   const setMessages = useChatStore(state => state.setMessages);
 
-  useEffect(() => {
-    console.log(`[useStream] 🎬 Effect running for room: ${roomId}`);
-    console.log(`[useStream] 📊 isConnected: ${isConnected}`);
-
-    if (!isConnected || !roomId) {
-      console.log('[useStream] ⏸️ Skipping - not connected or no roomId');
-      return;
-    }
-
-    console.log(`[useStream] 🚀 Initializing stream for room: ${roomId}`);
-
-    // Join the room
-    joinRoom(roomId);
-
-    // Subscribe to room events
-    const unsubscribe = subscribe(roomId, (data: any) => {
+  // Memoize the message handler to prevent recreation on every render
+  const handleRoomMessage = useCallback((data: any) => {
       console.log(`[useStream] 📨 Received message for room ${roomId}:`, data.type);
 
       switch (data.type) {
@@ -99,7 +85,24 @@ export function useStream({ roomId, onStreamEnd }: UseStreamOptions) {
           console.log(`[useStream] ❓ Unknown message type: ${data.type}`);
           break;
       }
-    });
+  }, [roomId, addMessage, setMessages, onStreamEnd]);
+
+  useEffect(() => {
+    console.log(`[useStream] 🎬 Effect running for room: ${roomId}`);
+    console.log(`[useStream] 📊 isConnected: ${isConnected}`);
+
+    if (!isConnected || !roomId) {
+      console.log('[useStream] ⏸️ Skipping - not connected or no roomId');
+      return;
+    }
+
+    console.log(`[useStream] 🚀 Initializing stream for room: ${roomId}`);
+
+    // Join the room
+    joinRoom(roomId);
+
+    // Subscribe to room events with memoized handler
+    const unsubscribe = subscribe(roomId, handleRoomMessage);
 
     // Cleanup
     return () => {
@@ -109,7 +112,7 @@ export function useStream({ roomId, onStreamEnd }: UseStreamOptions) {
       setTerminalBuffer('');
       setStreamInfo(null);
     };
-  }, [roomId, isConnected]); // Only depend on roomId and isConnected - context functions are stable
+  }, [roomId, isConnected, subscribe, joinRoom, handleRoomMessage]); // Include all dependencies
 
   const sendChat = (content: string, gifUrl?: string) => {
     if (!isJoined) {
