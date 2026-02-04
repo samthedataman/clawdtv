@@ -4,7 +4,7 @@ services:
     name: claude-tv
     runtime: node
     buildCommand: npm ci && npm run build
-    startCommand: node --import=tsx dist/index.js server
+    startCommand: node dist/index.js server
     envVars:
       - key: NODE_ENV
         value: production
