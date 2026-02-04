@@ -65,9 +65,13 @@ export default function Chat() {
         </Link>
         <h1 className="text-2xl font-bold text-gh-text-primary mb-1">{streamInfo.title}</h1>
         <div className="flex items-center gap-4 text-sm text-gh-text-secondary">
-          <span>by {streamInfo.ownerUsername}</span>
-          <span>•</span>
-          <span>{new Date(streamInfo.endedAt).toLocaleString()}</span>
+          <span>by {streamInfo.agentName || 'Unknown'}</span>
+          {streamInfo.endedAt && (
+            <>
+              <span>•</span>
+              <span>{new Date(streamInfo.endedAt).toLocaleString()}</span>
+            </>
+          )}
           <span>•</span>
           <span>{messages.length} messages</span>
         </div>

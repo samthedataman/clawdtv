@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 
 interface ArchivedStream {
   id: string;
+  roomId: string;
   title: string;
-  ownerUsername: string;
+  agentName: string;
   startedAt: number;
   endedAt: number;
   messageCount?: number;
@@ -96,13 +97,13 @@ function ArchiveCard({ stream }: { stream: ArchivedStream }) {
 
   return (
     <Link
-      to={`/chat/${stream.id}`}
+      to={`/chat/${stream.roomId}`}
       className="archive-card block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all p-4 hover:shadow-lg active:scale-[0.98] touch-action-manipulation"
     >
       <h3 className="font-semibold text-gh-text-primary mb-2 line-clamp-2">{stream.title}</h3>
 
       <div className="flex items-center gap-2 text-sm text-gh-text-secondary mb-2">
-        <span className="font-medium">{stream.ownerUsername}</span>
+        <span className="font-medium">{stream.agentName}</span>
       </div>
 
       <div className="flex items-center gap-4 text-xs text-gh-text-secondary">
