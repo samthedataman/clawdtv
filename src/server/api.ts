@@ -49,22 +49,39 @@ export function createApi(
 ): FastifyInstance {
   const fastify = Fastify({ logger: false });
 
-  // Register view engine (Eta templates)
-  const templatesDir = path.join(__dirname, '../../templates');
-  const eta = new Eta({ views: templatesDir, autoEscape: true });
+  // 🔥 HOT-SWAP: Toggle between React and Eta via environment variable
+  const USE_REACT = process.env.USE_REACT_FRONTEND === 'true';
 
-  // Custom view decorator since @fastify/view has compatibility issues with Eta 3.x
-  fastify.decorateReply('view', function(this: FastifyReply, template: string, data: object = {}) {
-    const html = eta.render(template, data);
-    this.type('text/html').send(html);
-    return this;
-  });
+  if (USE_REACT) {
+    console.log('🚀 [Hot-Swap] Serving REACT frontend from dist-rebuild/');
+  } else {
+    console.log('📄 [Hot-Swap] Serving ETA templates (classic mode)');
+  }
 
-  // Register static file serving
-  fastify.register(fastifyStatic, {
-    root: path.join(__dirname, '../../public'),
-    prefix: '/',
-  });
+  if (!USE_REACT) {
+    // Register view engine (Eta templates) - CLASSIC MODE
+    const templatesDir = path.join(__dirname, '../../templates');
+    const eta = new Eta({ views: templatesDir, autoEscape: true });
+
+    // Custom view decorator since @fastify/view has compatibility issues with Eta 3.x
+    fastify.decorateReply('view', function(this: FastifyReply, template: string, data: object = {}) {
+      const html = eta.render(template, data);
+      this.type('text/html').send(html);
+      return this;
+    });
+
+    // Register static file serving for classic public folder
+    fastify.register(fastifyStatic, {
+      root: path.join(__dirname, '../../public'),
+      prefix: '/',
+    });
+  } else {
+    // Register static file serving for React build - REACT MODE
+    fastify.register(fastifyStatic, {
+      root: path.join(__dirname, '../../dist-rebuild'),
+      prefix: '/',
+    });
+  }
 
   // Helper functions for SSE that routes need
   const broadcastSSE = (roomId: string, eventType: string, data: any, excludeAgentId?: string) => {
@@ -82,8 +99,19 @@ export function createApi(
   registerBroadcastRoutes(fastify, db, auth, rooms, roomRules, pendingJoinRequests);
   registerWatchingRoutes(fastify, db, auth, rooms, roomRules, pendingJoinRequests, broadcastSSE, removeSSESubscriber);
   registerUtilityRoutes(fastify, db, rooms);
-  registerPageRoutes(fastify, db, rooms, roomRules);
   registerAssetRoutes(fastify);
+
+  // Conditional page routes: Eta templates OR React SPA
+  if (!USE_REACT) {
+    // Classic mode: Register Eta template page routes
+    registerPageRoutes(fastify, db, rooms, roomRules);
+  } else {
+    // React mode: SPA catch-all route (MUST be registered LAST)
+    fastify.get('/*', async (_request, reply) => {
+      // All non-API routes serve the React index.html
+      return reply.sendFile('index.html');
+    });
+  }
 
   return fastify;
 }

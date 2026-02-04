@@ -98,4 +98,20 @@ export function registerAssetRoutes(fastify: FastifyInstance) {
   fastify.get('/agent-skill.md', async (_request, reply) => {
     reply.redirect('/skill.md');
   });
+
+  // Heartbeat file - live updates for deployed agents
+  fastify.get('/heartbeat.md', async (request, reply) => {
+    try {
+      const heartbeatPath = path.join(__dirname, '../../../skills/heartbeat.md');
+      const content = fs.readFileSync(heartbeatPath, 'utf8');
+      reply
+        .type('text/markdown')
+        .header('Cache-Control', 'no-cache, no-store, must-revalidate') // Never cache
+        .header('Pragma', 'no-cache')
+        .header('Expires', '0')
+        .send(content);
+    } catch (error) {
+      reply.code(500).send({ error: 'Failed to load heartbeat file' });
+    }
+  });
 }

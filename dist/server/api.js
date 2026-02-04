@@ -55,20 +55,37 @@ exports.roomRules = new Map();
 exports.pendingJoinRequests = new Map();
 function createApi(db, auth, rooms) {
     const fastify = (0, fastify_1.default)({ logger: false });
-    // Register view engine (Eta templates)
-    const templatesDir = path.join(__dirname, '../../templates');
-    const eta = new eta_1.Eta({ views: templatesDir, autoEscape: true });
-    // Custom view decorator since @fastify/view has compatibility issues with Eta 3.x
-    fastify.decorateReply('view', function (template, data = {}) {
-        const html = eta.render(template, data);
-        this.type('text/html').send(html);
-        return this;
-    });
-    // Register static file serving
-    fastify.register(static_1.default, {
-        root: path.join(__dirname, '../../public'),
-        prefix: '/',
-    });
+    // 🔥 HOT-SWAP: Toggle between React and Eta via environment variable
+    const USE_REACT = process.env.USE_REACT_FRONTEND === 'true';
+    if (USE_REACT) {
+        console.log('🚀 [Hot-Swap] Serving REACT frontend from dist-rebuild/');
+    }
+    else {
+        console.log('📄 [Hot-Swap] Serving ETA templates (classic mode)');
+    }
+    if (!USE_REACT) {
+        // Register view engine (Eta templates) - CLASSIC MODE
+        const templatesDir = path.join(__dirname, '../../templates');
+        const eta = new eta_1.Eta({ views: templatesDir, autoEscape: true });
+        // Custom view decorator since @fastify/view has compatibility issues with Eta 3.x
+        fastify.decorateReply('view', function (template, data = {}) {
+            const html = eta.render(template, data);
+            this.type('text/html').send(html);
+            return this;
+        });
+        // Register static file serving for classic public folder
+        fastify.register(static_1.default, {
+            root: path.join(__dirname, '../../public'),
+            prefix: '/',
+        });
+    }
+    else {
+        // Register static file serving for React build - REACT MODE
+        fastify.register(static_1.default, {
+            root: path.join(__dirname, '../../dist-rebuild'),
+            prefix: '/',
+        });
+    }
     // Helper functions for SSE that routes need
     const broadcastSSE = (roomId, eventType, data, excludeAgentId) => {
         rooms.broadcastSSE(roomId, eventType, data, excludeAgentId);
@@ -83,8 +100,19 @@ function createApi(db, auth, rooms) {
     (0, broadcast_1.registerBroadcastRoutes)(fastify, db, auth, rooms, exports.roomRules, exports.pendingJoinRequests);
     (0, watching_1.registerWatchingRoutes)(fastify, db, auth, rooms, exports.roomRules, exports.pendingJoinRequests, broadcastSSE, removeSSESubscriber);
     (0, utility_1.registerUtilityRoutes)(fastify, db, rooms);
-    (0, pages_1.registerPageRoutes)(fastify, db, rooms, exports.roomRules);
     (0, assets_1.registerAssetRoutes)(fastify);
+    // Conditional page routes: Eta templates OR React SPA
+    if (!USE_REACT) {
+        // Classic mode: Register Eta template page routes
+        (0, pages_1.registerPageRoutes)(fastify, db, rooms, exports.roomRules);
+    }
+    else {
+        // React mode: SPA catch-all route (MUST be registered LAST)
+        fastify.get('/*', async (_request, reply) => {
+            // All non-API routes serve the React index.html
+            return reply.sendFile('index.html');
+        });
+    }
     return fastify;
 }
 //# sourceMappingURL=api.js.map

@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom xterm.js styles */
+.xterm {
+  @apply h-full w-full;
+}
+
+.xterm-viewport {
+  @apply scrollbar-thin scrollbar-track-gh-bg-secondary scrollbar-thumb-gh-border;
+}
+
+/* Custom scrollbar for webkit browsers */
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-track-gh-bg-secondary::-webkit-scrollbar-track {
+    background: theme('colors.gh-bg-secondary');
+  }
+
+  .scrollbar-thumb-gh-border::-webkit-scrollbar-thumb {
+    background: theme('colors.gh-border');
+    border-radius: 4px;
+  }
+
+  .scrollbar-thumb-gh-border::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.gh-text-secondary');
+  }
+}
+
+/* Base styling for light mode */
+.light {
+  --gh-bg-primary: #ffffff;
+  --gh-bg-secondary: #f6f8fa;
+  --gh-bg-tertiary: #eaeef2;
+  --gh-border: #d0d7de;
+  --gh-text-primary: #24292f;
+  --gh-text-secondary: #57606a;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Disable transitions for terminal to prevent flickering */
+.xterm, .xterm * {
+  transition: none !important;
+}
+
+/* GitHub-style animations */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    theme('colors.gh-bg-secondary') 0%,
+    theme('colors.gh-bg-tertiary') 50%,
+    theme('colors.gh-bg-secondary') 100%
+  );
+  background-size: 1000px 100%;
+}

@@ -15,4 +15,6 @@ services:
         generateValue: true
       - key: CLAUDE_TV_DB_PATH
         value: /tmp/claude-tv.db
+      - key: USE_REACT_FRONTEND
+        value: "true"
     healthCheckPath: /api/health
