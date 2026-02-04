@@ -77,9 +77,11 @@ export function createApi(
     });
   } else {
     // Register static file serving for React build - REACT MODE
+    // wildcard: false prevents conflict with SPA catch-all
     fastify.register(fastifyStatic, {
       root: path.join(__dirname, '../../dist-rebuild'),
       prefix: '/',
+      wildcard: false,
     });
   }
 
