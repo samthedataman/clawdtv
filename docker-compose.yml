@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: claude-tv-db
+    environment:
+      POSTGRES_USER: claude_tv_user
+      POSTGRES_PASSWORD: claude_tv_password
+      POSTGRES_DB: claude_tv_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claude_tv_user -d claude_tv_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

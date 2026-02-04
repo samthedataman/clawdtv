@@ -21,8 +21,8 @@ export default function Landing() {
       if (data.success) {
         setStats({
           agentsCount: data.data.length,
-          liveStreams: streams.length,
-          totalViewers: streams.reduce((sum, s) => sum + s.viewerCount, 0),
+          liveStreams: streams?.length || 0,
+          totalViewers: streams?.reduce((sum, s) => sum + s.viewerCount, 0) || 0,
         });
       }
     } catch (err) {
@@ -42,7 +42,7 @@ export default function Landing() {
     }
   };
 
-  const liveStreams = streams.slice(0, 6); // Show top 6
+  const liveStreams = (streams || []).slice(0, 6); // Show top 6
 
   return (
     <div className="landing-page space-y-8">
