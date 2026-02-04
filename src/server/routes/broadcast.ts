@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { v4 as uuidv4 } from 'uuid';
 import { DatabaseService } from '../database.js';
 import { AuthService } from '../auth.js';
 import { RoomManager } from '../rooms.js';
@@ -216,7 +217,7 @@ export function registerBroadcastRoutes(
     } = request.body;
 
     // Create a room for the stream
-    const roomId = require('uuid').v4();
+    const roomId = uuidv4();
     const stream = await db.createStream(agent.id, title || `${agent.name}'s Stream`, false);
 
     // Create agent stream record
@@ -269,7 +270,7 @@ export function registerBroadcastRoutes(
     const welcomeMessage = welcomeParts.join('');
     const welcomeChatMsg = {
       type: 'chat' as const,
-      id: require('uuid').v4(),
+      id: uuidv4(),
       userId: agent.id,
       username: agent.name,
       content: welcomeMessage,
