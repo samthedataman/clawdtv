@@ -116,8 +116,20 @@ export function createApi(
     registerPageRoutes(fastify, db, rooms, roomRules);
   } else {
     // React mode: SPA catch-all route (MUST be registered LAST)
-    fastify.get('/*', async (_request, reply) => {
-      // All non-API routes serve the React index.html
+    // Exclude /assets/* which should be served by static handler
+    fastify.setNotFoundHandler((request, reply) => {
+      // Don't catch /api/* or /assets/* or *.md or *.json
+      if (request.url.startsWith('/api/') ||
+          request.url.startsWith('/assets/') ||
+          request.url.endsWith('.md') ||
+          request.url.endsWith('.json') ||
+          request.url.endsWith('.js') ||
+          request.url.endsWith('.css')) {
+        reply.code(404).send({ error: 'Not found' });
+        return;
+      }
+
+      // All other routes serve the React SPA
       return reply.sendFile('index.html');
     });
   }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { Terminal } from '../components/terminal/Terminal';
 import { ChatBox } from '../components/chat/ChatBox';
-import { useStream } from '../hooks/useStream';
+import { useChatStore } from '../store/chatStore';
 
 interface StreamStatus {
   isLive: boolean;
@@ -49,7 +50,7 @@ export default function Watch() {
     };
 
     checkStreamStatus();
-  }, [roomId, navigate]);
+  }, [roomId]);
 
   // Separate effect for navigation to prevent state updates during render
   useEffect(() => {
@@ -104,14 +105,108 @@ export default function Watch() {
 // Separate component for the actual live stream view
 function LiveStreamView({ roomId, initialTitle }: { roomId: string; initialTitle?: string }) {
   const navigate = useNavigate();
+  const [terminalBuffer, setTerminalBuffer] = useState('');
+  const [viewerCount, setViewerCount] = useState(0);
+  const [streamInfo, setStreamInfo] = useState<any>(null);
+  const [isJoined, setIsJoined] = useState(false);
+  const addMessage = useChatStore(state => state.addMessage);
+  const setMessages = useChatStore(state => state.setMessages);
 
-  const { isConnected, isJoined, terminalBuffer, viewerCount, streamInfo, sendChat } = useStream({
-    roomId,
-    onStreamEnd: () => {
-      // Navigate to chat archive when stream ends
-      navigate(`/chat/${roomId}`);
-    },
-  });
+  // Get WebSocket URL
+  const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = typeof window !== 'undefined' ? `${protocol}://${window.location.host}/ws` : null;
+
+  // Use the library - handles all the complex stuff for us!
+  const { sendJsonMessage, readyState } = useWebSocket(
+    wsUrl,
+    {
+      onOpen: () => {
+        console.log('✅ [WebSocket] Connected');
+
+        // Send auth
+        const username = localStorage.getItem('username') || `Anon${Math.floor(Math.random() * 10000)}`;
+        console.log('🔐 [WebSocket] Sending auth:', username);
+        sendJsonMessage({ type: 'auth', username, role: 'viewer' });
+
+        // Send join immediately (server processes in order)
+        console.log('🚪 [WebSocket] Joining room:', roomId);
+        sendJsonMessage({ type: 'join_stream', roomId });
+      },
+      onMessage: (event) => {
+        const data = JSON.parse(event.data);
+        console.log('📨 [WebSocket] Received:', data.type);
+
+        switch (data.type) {
+          case 'join_stream_response':
+            if (data.success && data.stream) {
+              console.log('✅ [Stream] Joined:', data.stream.title);
+              setIsJoined(true);
+              setStreamInfo(data.stream);
+              setViewerCount(data.stream.viewerCount || 0);
+
+              // Set initial terminal buffer
+              if (data.terminalBuffer) {
+                setTerminalBuffer(data.terminalBuffer);
+              }
+
+              // Set recent messages
+              if (Array.isArray(data.recentMessages)) {
+                setMessages(roomId, data.recentMessages);
+              }
+            }
+            break;
+
+          case 'terminal':
+            setTerminalBuffer(prev => {
+              const MAX_BUFFER = 100000;
+              const updated = prev + data.data;
+              return updated.length > MAX_BUFFER ? updated.slice(-MAX_BUFFER) : updated;
+            });
+            break;
+
+          case 'chat':
+            addMessage(roomId, {
+              id: data.id,
+              userId: data.userId || data.username,
+              username: data.username,
+              content: data.content,
+              role: data.role || 'viewer',
+              timestamp: data.timestamp,
+              gifUrl: data.gifUrl,
+            });
+            break;
+
+          case 'viewer_count':
+            setViewerCount(data.count);
+            break;
+
+          case 'stream_end':
+            console.log('🛑 [Stream] Stream ended');
+            navigate(`/chat/${roomId}`);
+            break;
+        }
+      },
+      onClose: () => {
+        console.log('🔌 [WebSocket] Disconnected');
+        setIsJoined(false);
+      },
+      shouldReconnect: () => true,
+      reconnectAttempts: 10,
+      reconnectInterval: (attemptNumber) =>
+        Math.min(Math.pow(2, attemptNumber) * 1000, 30000),
+    }
+  );
+
+  const isConnected = readyState === ReadyState.OPEN;
+
+  const sendChat = (content: string, gifUrl?: string) => {
+    if (!isJoined) {
+      console.warn('[Chat] Cannot send - not joined');
+      return false;
+    }
+    sendJsonMessage({ type: 'send_chat', content, gifUrl });
+    return true;
+  };
 
   return (
     <div className="watch-page">
