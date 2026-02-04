@@ -17,17 +17,32 @@ export function useStream({ roomId, onStreamEnd }: UseStreamOptions) {
   const setMessages = useChatStore(state => state.setMessages);
 
   useEffect(() => {
-    if (!isConnected || !roomId) return;
+    console.log(`[useStream] 🎬 Effect running for room: ${roomId}`);
+    console.log(`[useStream] 📊 isConnected: ${isConnected}`);
+
+    if (!isConnected || !roomId) {
+      console.log('[useStream] ⏸️ Skipping - not connected or no roomId');
+      return;
+    }
+
+    console.log(`[useStream] 🚀 Initializing stream for room: ${roomId}`);
 
     // Join the room
     joinRoom(roomId);
 
     // Subscribe to room events
     const unsubscribe = subscribe(roomId, (data: any) => {
+      console.log(`[useStream] 📨 Received message for room ${roomId}:`, data.type);
+
       switch (data.type) {
         case 'join_stream_response':
           if (data.success && data.stream) {
-            console.log('[Stream] Joined:', data.stream.title);
+            console.log('[useStream] ✅ Successfully joined stream:', data.stream.title);
+            console.log('[useStream] 📊 Stream data:', {
+              viewerCount: data.stream.viewerCount,
+              hasTerminalBuffer: !!data.terminalBuffer,
+              messageCount: data.recentMessages?.length || 0
+            });
             setIsJoined(true);
             setStreamInfo(data.stream);
             setViewerCount(data.stream.viewerCount || 0);
@@ -45,15 +60,19 @@ export function useStream({ roomId, onStreamEnd }: UseStreamOptions) {
           break;
 
         case 'terminal':
+          console.log('[useStream] 📟 Received terminal data:', data.data?.length, 'bytes');
           // Append terminal data with size limit
           setTerminalBuffer(prev => {
             const MAX_BUFFER = 100000; // 100KB max
             const updated = prev + data.data;
-            return updated.length > MAX_BUFFER ? updated.slice(-MAX_BUFFER) : updated;
+            const final = updated.length > MAX_BUFFER ? updated.slice(-MAX_BUFFER) : updated;
+            console.log(`[useStream] 📊 Terminal buffer: ${final.length} bytes`);
+            return final;
           });
           break;
 
         case 'chat':
+          console.log('[useStream] 💬 Received chat message:', data.username, ':', data.content?.substring(0, 50));
           // Add chat message
           addMessage(roomId, {
             id: data.id,
@@ -67,24 +86,30 @@ export function useStream({ roomId, onStreamEnd }: UseStreamOptions) {
           break;
 
         case 'viewer_count':
+          console.log('[useStream] 👥 Viewer count updated:', data.count);
           setViewerCount(data.count);
           break;
 
         case 'stream_end':
-          console.log('[Stream] Stream ended');
+          console.log('[useStream] 🛑 Stream ended - calling onStreamEnd callback');
           onStreamEnd?.();
+          break;
+
+        default:
+          console.log(`[useStream] ❓ Unknown message type: ${data.type}`);
           break;
       }
     });
 
     // Cleanup
     return () => {
+      console.log(`[useStream] 🧹 Cleaning up room: ${roomId}`);
       unsubscribe();
       setIsJoined(false);
       setTerminalBuffer('');
       setStreamInfo(null);
     };
-  }, [roomId, isConnected, subscribe, joinRoom, addMessage, setMessages, onStreamEnd]);
+  }, [roomId, isConnected]); // Only depend on roomId and isConnected - context functions are stable
 
   const sendChat = (content: string, gifUrl?: string) => {
     if (!isJoined) {

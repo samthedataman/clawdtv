@@ -55,16 +55,18 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
       ws.onopen = () => {
         if (!mountedRef.current) {
+          console.log('[WebSocket] ⚠️ Opened but component unmounted, closing');
           ws.close();
           return;
         }
 
-        console.log('[WebSocket] Connected');
+        console.log('[WebSocket] ✅ Connected successfully');
         setIsConnected(true);
         reconnectAttemptsRef.current = 0;
 
         // Send auth immediately
         const authUsername = username || localStorage.getItem('username') || `Anon${Math.floor(Math.random() * 10000)}`;
+        console.log('[WebSocket] 🔐 Sending auth for username:', authUsername);
         ws.send(JSON.stringify({ type: 'auth', username: authUsername, role: 'viewer' }));
 
         // Start heartbeat
@@ -79,14 +81,17 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         try {
           const data = JSON.parse(event.data);
 
+          console.log('[WebSocket] 📨 Received message:', data.type, data);
+
           // Handle auth response
           if (data.type === 'auth_response') {
             authCompletedRef.current = true;
-            console.log('[WebSocket] Authenticated as:', data.username);
+            console.log('[WebSocket] ✅ Authenticated as:', data.username);
+            console.log('[WebSocket] 📋 Queued rooms to join:', Array.from(joinedRoomsRef.current));
 
             // Auto-join any rooms that were requested during auth
             joinedRoomsRef.current.forEach(roomId => {
-              console.log('[WebSocket] Auto-joining room:', roomId);
+              console.log('[WebSocket] 🚪 Auto-joining room:', roomId);
               ws.send(JSON.stringify({ type: 'join_stream', roomId }));
             });
           }
@@ -95,17 +100,25 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
           if (data.type === 'heartbeat_ack') return;
 
           // Route message to all subscribers (global)
-          subscribersRef.current.forEach((callbacks) => {
+          const globalSubscriberCount = Array.from(subscribersRef.current.values()).reduce((sum, set) => sum + set.size, 0);
+          console.log('[WebSocket] 📡 Routing to', globalSubscriberCount, 'total subscribers');
+
+          subscribersRef.current.forEach((callbacks, subRoomId) => {
+            console.log(`[WebSocket]   → Room ${subRoomId}: ${callbacks.size} subscriber(s)`);
             callbacks.forEach(cb => cb(data));
           });
 
           // Route message to room-specific subscribers
           const roomId = getRoomIdFromMessage(data);
           if (roomId) {
-            subscribersRef.current.get(roomId)?.forEach(cb => cb(data));
+            const roomSubscribers = subscribersRef.current.get(roomId);
+            if (roomSubscribers) {
+              console.log(`[WebSocket] 🎯 Routing ${data.type} to room ${roomId}: ${roomSubscribers.size} subscriber(s)`);
+              roomSubscribers.forEach(cb => cb(data));
+            }
           }
         } catch (e) {
-          console.error('[WebSocket] Failed to parse message:', e);
+          console.error('[WebSocket] ❌ Failed to parse message:', e);
         }
       };
 
@@ -114,12 +127,19 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       };
 
       ws.onclose = () => {
-        console.log('[WebSocket] Disconnected');
+        console.log('[WebSocket] 🔌 Disconnected');
+        console.log('[WebSocket] 📊 State at disconnect:', {
+          mountedRef: mountedRef.current,
+          reconnectAttempts: reconnectAttemptsRef.current,
+          joinedRooms: Array.from(joinedRoomsRef.current),
+          subscribers: subscribersRef.current.size
+        });
         setIsConnected(false);
         authCompletedRef.current = false;
 
         // Clear heartbeat
         if (heartbeatIntervalRef.current) {
+          console.log('[WebSocket] 💓 Clearing heartbeat interval');
           clearInterval(heartbeatIntervalRef.current);
           heartbeatIntervalRef.current = null;
         }
@@ -128,13 +148,16 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         if (mountedRef.current && reconnectAttemptsRef.current < 10) {
           reconnectAttemptsRef.current += 1;
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
-          console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current}/10)`);
+          console.log(`[WebSocket] 🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current}/10)`);
 
           reconnectTimeoutRef.current = setTimeout(() => {
             if (mountedRef.current) {
+              console.log('[WebSocket] 🔄 Attempting reconnection now...');
               connect();
             }
           }, delay);
+        } else {
+          console.error('[WebSocket] ❌ Max reconnection attempts reached or component unmounted');
         }
       };
 
@@ -179,29 +202,43 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     // Add subscriber
     if (!subscribersRef.current.has(roomId)) {
       subscribersRef.current.set(roomId, new Set());
+      console.log(`[WebSocket] 📝 Creating new subscriber set for room: ${roomId}`);
     }
     subscribersRef.current.get(roomId)!.add(callback);
 
-    console.log(`[WebSocket] Subscribed to room: ${roomId}`);
+    const subscriberCount = subscribersRef.current.get(roomId)!.size;
+    console.log(`[WebSocket] ➕ Subscribed to room ${roomId} (${subscriberCount} total subscribers)`);
+    console.log(`[WebSocket] 📊 Total rooms with subscribers: ${subscribersRef.current.size}`);
 
     // Return cleanup function
     return () => {
       subscribersRef.current.get(roomId)?.delete(callback);
-      if (subscribersRef.current.get(roomId)?.size === 0) {
+      const remainingCount = subscribersRef.current.get(roomId)?.size || 0;
+      console.log(`[WebSocket] ➖ Unsubscribed from room ${roomId} (${remainingCount} remaining)`);
+
+      if (remainingCount === 0) {
         subscribersRef.current.delete(roomId);
-        console.log(`[WebSocket] Unsubscribed from room: ${roomId}`);
+        console.log(`[WebSocket] 🗑️ No more subscribers for room ${roomId}, removed from map`);
       }
     };
   }, []);
 
   const joinRoom = useCallback((roomId: string) => {
+    console.log(`[WebSocket] 🚪 joinRoom called for: ${roomId}`);
+    console.log(`[WebSocket] 📊 Connection state:`, {
+      authCompleted: authCompletedRef.current,
+      wsState: wsRef.current?.readyState,
+      isOpen: wsRef.current?.readyState === WebSocket.OPEN
+    });
+
     joinedRoomsRef.current.add(roomId);
 
     if (authCompletedRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('[WebSocket] Joining room:', roomId);
+      console.log(`[WebSocket] ✅ Sending join_stream for room: ${roomId}`);
       wsRef.current.send(JSON.stringify({ type: 'join_stream', roomId }));
     } else {
-      console.log('[WebSocket] Room join queued (waiting for auth):', roomId);
+      console.log(`[WebSocket] ⏳ Room join queued (waiting for auth): ${roomId}`);
+      console.log(`[WebSocket] 📋 Total queued rooms: ${joinedRoomsRef.current.size}`);
     }
   }, []);
 
@@ -211,11 +248,13 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   }, []);
 
   const send = useCallback((data: any) => {
+    console.log('[WebSocket] 📤 Attempting to send:', data.type);
     if (wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log('[WebSocket] ✅ Sending message:', data);
       wsRef.current.send(JSON.stringify(data));
       return true;
     }
-    console.warn('[WebSocket] Cannot send - not connected');
+    console.warn('[WebSocket] ⚠️ Cannot send - WebSocket not open. State:', wsRef.current?.readyState);
     return false;
   }, []);
 
