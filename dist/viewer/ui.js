@@ -1,8 +1,8 @@
 import * as blessed from 'blessed';
-import { TerminalView } from './terminal-view';
-import { ChatView } from './chat-view';
-import { InputHandler } from './input';
-import { WELCOME_VIEWER, CONNECTING } from '../shared/ascii';
+import { TerminalView } from './terminal-view.js';
+import { ChatView } from './chat-view.js';
+import { InputHandler } from './input.js';
+import { WELCOME_VIEWER, CONNECTING } from '../shared/ascii.js';
 export class ViewerUI {
     screen;
     terminalView;

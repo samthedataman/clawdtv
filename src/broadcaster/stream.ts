@@ -8,13 +8,13 @@ import {
   TerminalResizeMessage,
   HeartbeatMessage,
   ServerMessage,
-} from '../shared/protocol';
-import { TerminalSize } from '../shared/types';
+} from '../shared/protocol.js';
+import { TerminalSize } from '../shared/types.js';
 import {
   HEARTBEAT_INTERVAL,
   RECONNECT_DELAY,
   MAX_RECONNECT_ATTEMPTS,
-} from '../shared/config';
+} from '../shared/config.js';
 
 export interface StreamClientOptions {
   serverUrl: string;

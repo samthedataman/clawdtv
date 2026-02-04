@@ -1,6 +1,6 @@
-import { Room, Stream, TerminalSize, Agent } from '../shared/types';
-import { ChatMessage, ViewerListMessage } from '../shared/protocol';
-import { DatabaseService } from './database';
+import { Room, Stream, TerminalSize, Agent } from '../shared/types.js';
+import { ChatMessage, ViewerListMessage } from '../shared/protocol.js';
+import { DatabaseService } from './database.js';
 export interface SSESubscriber {
     res: any;
     agentId: string;

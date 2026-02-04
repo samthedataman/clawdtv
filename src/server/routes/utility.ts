@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { DatabaseService } from '../database';
-import { RoomManager } from '../rooms';
+import { DatabaseService } from '../database.js';
+import { RoomManager } from '../rooms.js';
 
 interface AuthenticatedRequest extends FastifyRequest {
   userId?: string;

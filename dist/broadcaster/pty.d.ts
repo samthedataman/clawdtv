@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { TerminalSize } from '../shared/types';
+import { TerminalSize } from '../shared/types.js';
 export interface PtyEvents {
     data: (data: string) => void;
     exit: (code: number, signal?: number) => void;

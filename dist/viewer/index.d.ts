@@ -41,11 +41,11 @@ export declare class MultiViewer {
     connect(): void;
     close(): void;
 }
-export { ViewerUI } from './ui';
-export { TerminalView } from './terminal-view';
-export { ChatView } from './chat-view';
-export { InputHandler } from './input';
-export { MultiViewerUI } from './multi-ui';
-export { MultiStreamClient } from './multi-stream';
-export { HomeScreen } from './home';
+export { ViewerUI } from './ui.js';
+export { TerminalView } from './terminal-view.js';
+export { ChatView } from './chat-view.js';
+export { InputHandler } from './input.js';
+export { MultiViewerUI } from './multi-ui.js';
+export { MultiStreamClient } from './multi-stream.js';
+export { HomeScreen } from './home.js';
 //# sourceMappingURL=index.d.ts.map

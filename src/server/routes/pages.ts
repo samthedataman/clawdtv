@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
-import { DatabaseService } from '../database';
-import { RoomManager } from '../rooms';
+import { DatabaseService } from '../database.js';
+import { RoomManager } from '../rooms.js';
 
 // Helper to format uptime
 function formatTimeAgo(timestamp: number): string {

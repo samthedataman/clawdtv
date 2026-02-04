@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { createServerCommand } from './cli/server';
-import { createStreamCommand } from './cli/stream';
-import { createWatchCommand } from './cli/watch';
-import { createListCommand } from './cli/list';
-import { createHomeCommand } from './cli/home';
-import { defaultClientConfig, getOrCreateUsername } from './shared/config';
+import { createServerCommand } from './cli/server.js';
+import { createStreamCommand } from './cli/stream.js';
+import { createWatchCommand } from './cli/watch.js';
+import { createListCommand } from './cli/list.js';
+import { createHomeCommand } from './cli/home.js';
+import { defaultClientConfig, getOrCreateUsername } from './shared/config.js';
 const program = new Command();
 program
     .name('claude-tv')
@@ -19,8 +19,8 @@ program.addCommand(createWatchCommand());
 program.addCommand(createListCommand());
 // Default action: show home screen
 program.action(async () => {
-    const { HomeScreen } = await import('./viewer/home');
-    const { parseServerUrl } = await import('./shared/config');
+    const { HomeScreen } = await import('./viewer/home.js');
+    const { parseServerUrl } = await import('./shared/config.js');
     const username = getOrCreateUsername();
     const serverUrl = defaultClientConfig.serverUrl;
     async function fetchStreams() {
@@ -43,7 +43,7 @@ program.action(async () => {
         onRefresh: fetchStreams,
         onWatch: async (roomId) => {
             home.destroy();
-            const { Viewer } = await import('./viewer');
+            const { Viewer } = await import('./viewer/index.js');
             const viewer = new Viewer({
                 serverUrl,
                 username,
@@ -55,7 +55,7 @@ program.action(async () => {
         },
         onStream: async () => {
             home.destroy();
-            const { Broadcaster } = await import('./broadcaster');
+            const { Broadcaster } = await import('./broadcaster/index.js');
             const broadcaster = new Broadcaster({
                 serverUrl,
                 username,

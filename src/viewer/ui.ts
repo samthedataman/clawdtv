@@ -1,7 +1,7 @@
 import * as blessed from 'blessed';
-import { TerminalView } from './terminal-view';
-import { ChatView } from './chat-view';
-import { InputHandler } from './input';
+import { TerminalView } from './terminal-view.js';
+import { ChatView } from './chat-view.js';
+import { InputHandler } from './input.js';
 import {
   ChatMessage,
   ActionMessage,
@@ -12,9 +12,9 @@ import {
   ViewerJoinEvent,
   ViewerLeaveEvent,
   StreamEndEvent,
-} from '../shared/protocol';
-import { TerminalSize } from '../shared/types';
-import { WELCOME_VIEWER, STREAM_ENDED, CONNECTING } from '../shared/ascii';
+} from '../shared/protocol.js';
+import { TerminalSize } from '../shared/types.js';
+import { WELCOME_VIEWER, STREAM_ENDED, CONNECTING } from '../shared/ascii.js';
 
 export interface ViewerUIOptions {
   showChat: boolean;

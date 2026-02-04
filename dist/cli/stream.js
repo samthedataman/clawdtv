@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { Broadcaster } from '../broadcaster';
-import { getOrCreateUsername, defaultClientConfig } from '../shared/config';
+import { Broadcaster } from '../broadcaster/index.js';
+import { getOrCreateUsername, defaultClientConfig } from '../shared/config.js';
 export function createStreamCommand() {
     const command = new Command('stream')
         .description('Start broadcasting your terminal')

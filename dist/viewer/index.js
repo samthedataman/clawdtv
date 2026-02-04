@@ -1,9 +1,9 @@
 import WebSocket from 'ws';
-import { ViewerUI } from './ui';
-import { MultiViewerUI } from './multi-ui';
-import { MultiStreamClient } from './multi-stream';
-import { createMessage, } from '../shared/protocol';
-import { parseServerUrl, HEARTBEAT_INTERVAL, RECONNECT_DELAY, MAX_RECONNECT_ATTEMPTS } from '../shared/config';
+import { ViewerUI } from './ui.js';
+import { MultiViewerUI } from './multi-ui.js';
+import { MultiStreamClient } from './multi-stream.js';
+import { createMessage, } from '../shared/protocol.js';
+import { parseServerUrl, HEARTBEAT_INTERVAL, RECONNECT_DELAY, MAX_RECONNECT_ATTEMPTS } from '../shared/config.js';
 // Single stream viewer (original)
 export class Viewer {
     ws = null;
@@ -205,11 +205,11 @@ export class MultiViewer {
         process.exit(0);
     }
 }
-export { ViewerUI } from './ui';
-export { TerminalView } from './terminal-view';
-export { ChatView } from './chat-view';
-export { InputHandler } from './input';
-export { MultiViewerUI } from './multi-ui';
-export { MultiStreamClient } from './multi-stream';
-export { HomeScreen } from './home';
+export { ViewerUI } from './ui.js';
+export { TerminalView } from './terminal-view.js';
+export { ChatView } from './chat-view.js';
+export { InputHandler } from './input.js';
+export { MultiViewerUI } from './multi-ui.js';
+export { MultiStreamClient } from './multi-stream.js';
+export { HomeScreen } from './home.js';
 //# sourceMappingURL=index.js.map

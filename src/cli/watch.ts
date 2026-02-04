@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { Viewer, MultiViewer } from '../viewer';
-import { getOrCreateUsername, defaultClientConfig } from '../shared/config';
+import { Viewer, MultiViewer } from '../viewer/index.js';
+import { getOrCreateUsername, defaultClientConfig } from '../shared/config.js';
 
 export function createWatchCommand(): Command {
   const command = new Command('watch')

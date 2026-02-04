@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
-import { ChatMessage } from '../shared/protocol';
-import { TerminalSize } from '../shared/types';
+import { ChatMessage } from '../shared/protocol.js';
+import { TerminalSize } from '../shared/types.js';
 export interface StreamConnection {
     roomId: string;
     ws: WebSocket | null;

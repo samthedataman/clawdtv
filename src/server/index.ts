@@ -1,10 +1,10 @@
 import { createServer } from 'http';
-import { createApi } from './api';
-import { WebSocketHandler } from './websocket';
-import { AuthService } from './auth';
-import { RoomManager } from './rooms';
-import { DatabaseService } from './database';
-import { ServerConfig } from '../shared/types';
+import { createApi } from './api.js';
+import { WebSocketHandler } from './websocket.js';
+import { AuthService } from './auth.js';
+import { RoomManager } from './rooms.js';
+import { DatabaseService } from './database.js';
+import { ServerConfig } from '../shared/types.js';
 
 export async function startServer(config: ServerConfig): Promise<{
   close: () => Promise<void>;

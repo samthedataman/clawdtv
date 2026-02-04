@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { TerminalSize } from '../shared/types';
+import { TerminalSize } from '../shared/types.js';
 import * as fs from 'fs';
 
 // Dynamic import for node-pty (optional dependency)

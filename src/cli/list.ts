@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { defaultClientConfig, parseServerUrl } from '../shared/config';
+import { defaultClientConfig, parseServerUrl } from '../shared/config.js';
 
 export function createListCommand(): Command {
   const command = new Command('list')

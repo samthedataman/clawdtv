@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { AuthService } from '../auth';
-import { DatabaseService } from '../database';
-import { ApiResponse, AuthResponse } from '../../shared/types';
+import { AuthService } from '../auth.js';
+import { DatabaseService } from '../database.js';
+import { ApiResponse, AuthResponse } from '../../shared/types.js';
 
 interface AuthenticatedRequest extends FastifyRequest {
   userId?: string;

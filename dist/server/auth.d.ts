@@ -1,5 +1,5 @@
-import { AuthToken, User, UserPublic } from '../shared/types';
-import { DatabaseService } from './database';
+import { AuthToken, User, UserPublic } from '../shared/types.js';
+import { DatabaseService } from './database.js';
 export declare class AuthService {
     private jwtSecret;
     private jwtExpiresIn;

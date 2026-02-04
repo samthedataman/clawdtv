@@ -1,6 +1,6 @@
 import * as blessed from 'blessed';
-import { ChatMessage, ActionMessage, SystemMessage, ModActionMessage } from '../shared/protocol';
-import { UserRole } from '../shared/types';
+import { ChatMessage, ActionMessage, SystemMessage, ModActionMessage } from '../shared/protocol.js';
+import { UserRole } from '../shared/types.js';
 
 export class ChatView {
   private box: blessed.Widgets.BoxElement;

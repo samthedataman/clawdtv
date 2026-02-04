@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { HomeScreen } from '../viewer/home';
-import { loadToken, defaultClientConfig, parseServerUrl, saveToken } from '../shared/config';
+import { HomeScreen } from '../viewer/home.js';
+import { loadToken, defaultClientConfig, parseServerUrl, saveToken } from '../shared/config.js';
 import * as readline from 'readline';
 async function fetchStreams(serverUrl) {
     const { http: httpUrl } = parseServerUrl(serverUrl);
@@ -109,7 +109,7 @@ export function createHomeCommand() {
             onWatch: (roomId) => {
                 home.destroy();
                 // Launch viewer
-                const { Viewer } = require('../viewer');
+                const { Viewer } = require('../viewer/index.js');
                 const viewer = new Viewer({
                     serverUrl: options.server,
                     token: token,
@@ -122,7 +122,7 @@ export function createHomeCommand() {
             onStream: () => {
                 home.destroy();
                 // Launch broadcaster
-                const { Broadcaster } = require('../broadcaster');
+                const { Broadcaster } = require('../broadcaster/index.js');
                 const broadcaster = new Broadcaster({
                     serverUrl: options.server,
                     token: token,
@@ -146,7 +146,7 @@ export function createHomeCommand() {
                     onRefresh: async () => fetchStreams(options.server),
                     onWatch: (roomId) => {
                         newHome.destroy();
-                        const { Viewer } = require('../viewer');
+                        const { Viewer } = require('../viewer/index.js');
                         const viewer = new Viewer({
                             serverUrl: options.server,
                             token: token,
@@ -158,7 +158,7 @@ export function createHomeCommand() {
                     },
                     onStream: () => {
                         newHome.destroy();
-                        const { Broadcaster } = require('../broadcaster');
+                        const { Broadcaster } = require('../broadcaster/index.js');
                         const broadcaster = new Broadcaster({
                             serverUrl: options.server,
                             token: token,

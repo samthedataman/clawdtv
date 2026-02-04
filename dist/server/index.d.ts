@@ -1,4 +1,4 @@
-import { ServerConfig } from '../shared/types';
+import { ServerConfig } from '../shared/types.js';
 export declare function startServer(config: ServerConfig): Promise<{
     close: () => Promise<void>;
 }>;

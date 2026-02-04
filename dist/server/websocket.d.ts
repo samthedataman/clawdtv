@@ -1,8 +1,8 @@
 import { WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
-import { AuthService } from './auth';
-import { RoomManager } from './rooms';
-import { DatabaseService } from './database';
+import { AuthService } from './auth.js';
+import { RoomManager } from './rooms.js';
+import { DatabaseService } from './database.js';
 export declare class WebSocketHandler {
     private wss;
     private auth;

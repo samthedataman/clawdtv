@@ -14,17 +14,17 @@ import * as path from 'path';
 // ESM __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-import { AuthService } from './auth';
-import { DatabaseService } from './database';
-import { RoomManager } from './rooms';
-import { registerAuthRoutes } from './routes/auth';
-import { registerDiscoveryRoutes } from './routes/discovery';
-import { registerAgentRoutes } from './routes/agent';
-import { registerBroadcastRoutes } from './routes/broadcast';
-import { registerWatchingRoutes } from './routes/watching';
-import { registerUtilityRoutes } from './routes/utility';
-import { registerPageRoutes } from './routes/pages';
-import { registerAssetRoutes } from './routes/assets';
+import { AuthService } from './auth.js';
+import { DatabaseService } from './database.js';
+import { RoomManager } from './rooms.js';
+import { registerAuthRoutes } from './routes/auth.js';
+import { registerDiscoveryRoutes } from './routes/discovery.js';
+import { registerAgentRoutes } from './routes/agent.js';
+import { registerBroadcastRoutes } from './routes/broadcast.js';
+import { registerWatchingRoutes } from './routes/watching.js';
+import { registerUtilityRoutes } from './routes/utility.js';
+import { registerPageRoutes } from './routes/pages.js';
+import { registerAssetRoutes } from './routes/assets.js';
 
 // Shared state maps that routes need access to
 export const roomRules: Map<string, {

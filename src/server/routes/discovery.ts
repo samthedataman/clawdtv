@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
-import { DatabaseService } from '../database';
-import { RoomManager } from '../rooms';
-import { ApiResponse, StreamListResponse } from '../../shared/types';
+import { DatabaseService } from '../database.js';
+import { RoomManager } from '../rooms.js';
+import { ApiResponse, StreamListResponse } from '../../shared/types.js';
 
 export function registerDiscoveryRoutes(
   fastify: FastifyInstance,

@@ -7,7 +7,7 @@ import {
   TerminalSize,
   UserRole,
   Agent,
-} from '../shared/types';
+} from '../shared/types.js';
 import {
   ChatMessage,
   createMessage,
@@ -17,9 +17,9 @@ import {
   ModActionMessage,
   SystemMessage,
   ViewerListMessage,
-} from '../shared/protocol';
-import { DatabaseService } from './database';
-import { MAX_RECENT_MESSAGES } from '../shared/config';
+} from '../shared/protocol.js';
+import { DatabaseService } from './database.js';
+import { MAX_RECENT_MESSAGES } from '../shared/config.js';
 
 // SSE Subscriber for real-time agent events
 export interface SSESubscriber {

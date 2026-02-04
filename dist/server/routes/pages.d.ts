@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
-import { DatabaseService } from '../database';
-import { RoomManager } from '../rooms';
+import { DatabaseService } from '../database.js';
+import { RoomManager } from '../rooms.js';
 export declare function registerPageRoutes(fastify: FastifyInstance, db: DatabaseService, rooms: RoomManager, roomRules: Map<string, {
     maxAgents?: number;
     requireApproval?: boolean;

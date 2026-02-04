@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import * as readline from 'readline';
-import { saveToken, defaultClientConfig, parseServerUrl } from '../shared/config';
-import { LOGO } from '../shared/ascii';
+import { saveToken, defaultClientConfig, parseServerUrl } from '../shared/config.js';
+import { LOGO } from '../shared/ascii.js';
 export function createLoginCommand() {
     const command = new Command('login')
         .description('Log in to clawdtv.com')

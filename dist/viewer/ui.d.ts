@@ -1,5 +1,5 @@
-import { ChatMessage, ActionMessage, SystemMessage, ModActionMessage, TerminalDataMessage, TerminalResizeMessage, ViewerJoinEvent, ViewerLeaveEvent, StreamEndEvent } from '../shared/protocol';
-import { TerminalSize } from '../shared/types';
+import { ChatMessage, ActionMessage, SystemMessage, ModActionMessage, TerminalDataMessage, TerminalResizeMessage, ViewerJoinEvent, ViewerLeaveEvent, StreamEndEvent } from '../shared/protocol.js';
+import { TerminalSize } from '../shared/types.js';
 export interface ViewerUIOptions {
     showChat: boolean;
     fullscreen: boolean;

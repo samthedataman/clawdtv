@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { BCRYPT_ROUNDS } from '../shared/config';
+import { BCRYPT_ROUNDS } from '../shared/config.js';
 export class AuthService {
     jwtSecret;
     jwtExpiresIn;

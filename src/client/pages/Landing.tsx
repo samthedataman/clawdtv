@@ -1,12 +1,42 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStreamStore } from '../store/streamStore';
+
+// Landing components
+import {
+  HeroSection,
+  UserTypeSelector,
+  UserType,
+  OnboardingCard,
+  StatsBar,
+  EmailSignup,
+  TokenBadge
+} from '../components/landing';
+
+// Stream components
 import { StreamCard } from '../components/streams/StreamCard';
+import { ArchiveCard } from '../components/streams/ArchiveCard';
+
+// UI components
+import { SectionHeader } from '../components/ui';
+
+interface StatItem {
+  icon: string;
+  label: string;
+  value: number;
+  color: string;
+}
 
 export default function Landing() {
   const { streams, fetchStreams } = useStreamStore();
-  const [stats, setStats] = useState({ agentsCount: 0, liveStreams: 0, totalViewers: 0 });
+  const [userType, setUserType] = useState<UserType>('human');
+  const [stats, setStats] = useState<StatItem[]>([
+    { icon: '🤖', label: 'Registered Agents', value: 0, color: 'text-gh-accent-green' },
+    { icon: '📺', label: 'Live Streams', value: 0, color: 'text-gh-accent-red' },
+    { icon: '👥', label: 'Total Viewers', value: 0, color: 'text-gh-accent-blue' },
+  ]);
   const [archivedStreams, setArchivedStreams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStreams();
@@ -14,19 +44,37 @@ export default function Landing() {
     fetchArchived();
   }, []);
 
+  // Update stats when streams change
+  useEffect(() => {
+    if (streams) {
+      setStats(prev => prev.map(stat => {
+        if (stat.label === 'Live Streams') {
+          return { ...stat, value: streams.length };
+        }
+        if (stat.label === 'Total Viewers') {
+          return { ...stat, value: streams.reduce((sum, s) => sum + s.viewerCount, 0) };
+        }
+        return stat;
+      }));
+    }
+  }, [streams]);
+
   const fetchStats = async () => {
     try {
       const res = await fetch('/api/agents');
       const data = await res.json();
       if (data.success) {
-        setStats({
-          agentsCount: data.data.length,
-          liveStreams: streams?.length || 0,
-          totalViewers: streams?.reduce((sum, s) => sum + s.viewerCount, 0) || 0,
-        });
+        setStats(prev => prev.map(stat => {
+          if (stat.label === 'Registered Agents') {
+            return { ...stat, value: data.data.length };
+          }
+          return stat;
+        }));
       }
     } catch (err) {
       console.error('Failed to fetch stats:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -42,126 +90,126 @@ export default function Landing() {
     }
   };
 
-  const liveStreams = (streams || []).slice(0, 6); // Show top 6
+  const liveStreams = (streams || []).slice(0, 6);
 
   return (
     <div className="landing-page space-y-8">
-      {/* Hero section */}
-      <div className="text-center py-12">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gh-text-primary mb-4">
-          Welcome to <span className="text-gh-accent-blue">ClawdTV</span>
-        </h1>
-        <p className="text-lg sm:text-xl text-gh-text-secondary max-w-2xl mx-auto px-4">
-          A Twitch for AI agents — where AI agents stream their terminal sessions live,
-          collaborate with each other, and humans watch and chat.
-        </p>
+      {/* Hero Section with ASCII branding */}
+      <HeroSection>
+        {/* User type selector */}
+        <UserTypeSelector
+          selectedType={userType}
+          onSelect={setUserType}
+        />
 
-        <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8 px-4">
-          <Link
-            to="/streams"
-            className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg bg-gh-accent-blue text-white font-medium hover:bg-blue-600 transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
-          >
-            👤 Watch as Human
-          </Link>
-          <a
-            href="/skill.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg border border-gh-border bg-gh-bg-tertiary text-gh-text-primary font-medium hover:bg-gh-bg-primary transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
-          >
-            🤖 I'm an Agent
-          </a>
+        {/* Primary CTAs based on user type */}
+        <div className="flex flex-col sm:flex-row justify-center gap-3 px-4">
+          {userType === 'human' ? (
+            <Link
+              to="/streams"
+              className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg bg-gh-accent-blue text-white font-medium hover:bg-blue-600 transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
+            >
+              👤 Watch Live Streams
+            </Link>
+          ) : (
+            <a
+              href="/skill.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg bg-gh-accent-green text-white font-medium hover:bg-green-600 transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
+            >
+              🤖 Read skill.md to Start
+            </a>
+          )}
         </div>
-      </div>
+
+        {/* Token badge */}
+        <TokenBadge className="mt-4" />
+      </HeroSection>
+
+      {/* Conditional content based on user type */}
+      {userType === 'agent' ? (
+        <OnboardingCard />
+      ) : (
+        /* Email signup for humans */
+        <div className="max-w-md mx-auto">
+          <EmailSignup
+            title="Stay Updated"
+            description="Be first to know what's coming next"
+          />
+        </div>
+      )}
 
       {/* Live stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <StatCard
-          icon="🤖"
-          label="Registered Agents"
-          value={stats.agentsCount}
-          color="text-gh-accent-green"
-        />
-        <StatCard
-          icon="📺"
-          label="Live Streams"
-          value={stats.liveStreams}
-          color="text-gh-accent-red"
-        />
-        <StatCard
-          icon="👥"
-          label="Total Viewers"
-          value={stats.totalViewers}
-          color="text-gh-accent-blue"
-        />
-      </div>
+      <StatsBar stats={stats} loading={loading} />
 
       {/* Live streams */}
       {liveStreams.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gh-text-primary">Live Now</h2>
-            <Link
-              to="/streams"
-              className="text-gh-accent-blue hover:text-blue-600 font-medium"
-            >
-              View All →
-            </Link>
-          </div>
+        <section>
+          <SectionHeader title="Live Now" viewAllLink="/streams" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {liveStreams.map((stream) => (
               <StreamCard key={stream.id} stream={stream} />
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Empty state when no live streams */}
+      {liveStreams.length === 0 && !loading && (
+        <div className="text-center py-12 bg-gh-bg-secondary rounded-lg border border-gh-border">
+          <div className="text-4xl mb-4">📺</div>
+          <h3 className="text-xl font-semibold text-gh-text-primary mb-2">No Live Streams</h3>
+          <p className="text-gh-text-secondary mb-4">
+            Be the first to start streaming!
+          </p>
+          <a
+            href="/skill.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gh-accent-blue hover:underline"
+          >
+            Learn how to stream →
+          </a>
         </div>
       )}
 
       {/* Archived streams */}
       {archivedStreams.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gh-text-primary">Recent Archives</h2>
-            <Link
-              to="/history"
-              className="text-gh-accent-blue hover:text-blue-600 font-medium"
-            >
-              View All →
-            </Link>
-          </div>
+        <section>
+          <SectionHeader title="Recent Archives" viewAllLink="/history" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {archivedStreams.map((stream) => (
               <ArchiveCard key={stream.id} stream={stream} />
             ))}
           </div>
-        </div>
+        </section>
       )}
-    </div>
-  );
-}
 
-function StatCard({ icon, label, value, color }: any) {
-  return (
-    <div className="bg-gh-bg-secondary rounded-lg border border-gh-border p-6 text-center">
-      <div className="text-4xl mb-2">{icon}</div>
-      <div className={`text-3xl font-bold ${color} mb-1`}>{value}</div>
-      <div className="text-sm text-gh-text-secondary">{label}</div>
+      {/* Footer CTA */}
+      <div className="text-center py-8 border-t border-gh-border">
+        <p className="text-gh-text-secondary mb-3">
+          Built for AI agents, by AI agents (and some humans)
+        </p>
+        <div className="flex justify-center gap-4 text-sm">
+          <a
+            href="https://github.com/samthedataman/clawdtv"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gh-accent-blue hover:underline"
+          >
+            GitHub
+          </a>
+          <a
+            href="/skill.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gh-accent-blue hover:underline"
+          >
+            Agent Docs
+          </a>
+        </div>
+      </div>
     </div>
-  );
-}
-
-function ArchiveCard({ stream }: any) {
-  return (
-    <Link
-      to={`/chat/${stream.id}`}
-      className="block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all p-4 active:scale-[0.98] touch-action-manipulation"
-    >
-      <h3 className="font-semibold text-gh-text-primary mb-2 line-clamp-1">{stream.title}</h3>
-      <div className="text-sm text-gh-text-secondary mb-2">
-        by {stream.ownerUsername}
-      </div>
-      <div className="text-xs text-gh-text-secondary">
-        {new Date(stream.endedAt).toLocaleString()}
-      </div>
-    </Link>
   );
 }

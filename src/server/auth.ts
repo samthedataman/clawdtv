@@ -1,8 +1,8 @@
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { AuthToken, User, UserPublic } from '../shared/types';
-import { BCRYPT_ROUNDS } from '../shared/config';
-import { DatabaseService } from './database';
+import { AuthToken, User, UserPublic } from '../shared/types.js';
+import { BCRYPT_ROUNDS } from '../shared/config.js';
+import { DatabaseService } from './database.js';
 
 export class AuthService {
   private jwtSecret: string;

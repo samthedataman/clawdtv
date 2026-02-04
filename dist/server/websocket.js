@@ -1,7 +1,7 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
-import { createMessage, isAuthRequest, isCreateStream, isJoinStream, isSendChat, isTerminalData, isTerminalResize, isHeartbeat, } from '../shared/protocol';
-import { MAX_CHAT_MESSAGE_LENGTH, HEARTBEAT_TIMEOUT } from '../shared/config';
+import { createMessage, isAuthRequest, isCreateStream, isJoinStream, isSendChat, isTerminalData, isTerminalResize, isHeartbeat, } from '../shared/protocol.js';
+import { MAX_CHAT_MESSAGE_LENGTH, HEARTBEAT_TIMEOUT } from '../shared/config.js';
 export class WebSocketHandler {
     wss;
     auth;

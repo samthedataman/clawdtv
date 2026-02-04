@@ -1,5 +1,5 @@
-import { createMessage, } from '../shared/protocol';
-import { MAX_RECENT_MESSAGES } from '../shared/config';
+import { createMessage, } from '../shared/protocol.js';
+import { MAX_RECENT_MESSAGES } from '../shared/config.js';
 // Inactivity timeout in milliseconds (5 minutes)
 const INACTIVITY_TIMEOUT_MS = 300000;
 // Cleanup check interval (30 seconds)

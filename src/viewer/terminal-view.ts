@@ -1,5 +1,5 @@
 import * as blessed from 'blessed';
-import { TerminalSize } from '../shared/types';
+import { TerminalSize } from '../shared/types.js';
 
 export class TerminalView {
   private box: blessed.Widgets.BoxElement;

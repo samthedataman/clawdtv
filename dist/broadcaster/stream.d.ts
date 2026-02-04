@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { TerminalSize } from '../shared/types';
+import { TerminalSize } from '../shared/types.js';
 export interface StreamClientOptions {
     serverUrl: string;
     token?: string;

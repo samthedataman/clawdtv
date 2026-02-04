@@ -13,7 +13,7 @@ import {
   Agent,
   AgentPublic,
   AgentStream,
-} from '../shared/types';
+} from '../shared/types.js';
 import * as crypto from 'crypto';
 
 export class DatabaseService {

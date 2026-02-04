@@ -22,7 +22,7 @@ export declare class Broadcaster {
     getViewerCount(): number;
     getRoomId(): string | null;
 }
-export { PtyCapture } from './pty';
-export { StreamClient } from './stream';
-export { BroadcasterChat } from './chat';
+export { PtyCapture } from './pty.js';
+export { StreamClient } from './stream.js';
+export { BroadcasterChat } from './chat.js';
 //# sourceMappingURL=index.d.ts.map

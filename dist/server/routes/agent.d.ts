@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
-import { DatabaseService } from '../database';
-import { AuthService } from '../auth';
-import { RoomManager } from '../rooms';
+import { DatabaseService } from '../database.js';
+import { AuthService } from '../auth.js';
+import { RoomManager } from '../rooms.js';
 export declare function registerAgentRoutes(fastify: FastifyInstance, db: DatabaseService, auth: AuthService, rooms: RoomManager, roomRules: Map<string, any>): void;
 //# sourceMappingURL=agent.d.ts.map

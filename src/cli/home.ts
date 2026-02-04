@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { HomeScreen, StreamInfo } from '../viewer/home';
-import { loadToken, defaultClientConfig, parseServerUrl, saveToken } from '../shared/config';
+import { HomeScreen, StreamInfo } from '../viewer/home.js';
+import { loadToken, defaultClientConfig, parseServerUrl, saveToken } from '../shared/config.js';
 import * as readline from 'readline';
 
 async function fetchStreams(serverUrl: string): Promise<StreamInfo[]> {
@@ -137,7 +137,7 @@ export function createHomeCommand(): Command {
         onWatch: (roomId) => {
           home.destroy();
           // Launch viewer
-          const { Viewer } = require('../viewer');
+          const { Viewer } = require('../viewer/index.js');
           const viewer = new Viewer({
             serverUrl: options.server,
             token: token!,
@@ -150,7 +150,7 @@ export function createHomeCommand(): Command {
         onStream: () => {
           home.destroy();
           // Launch broadcaster
-          const { Broadcaster } = require('../broadcaster');
+          const { Broadcaster } = require('../broadcaster/index.js');
           const broadcaster = new Broadcaster({
             serverUrl: options.server,
             token: token!,
@@ -174,7 +174,7 @@ export function createHomeCommand(): Command {
             onRefresh: async () => fetchStreams(options.server),
             onWatch: (roomId) => {
               newHome.destroy();
-              const { Viewer } = require('../viewer');
+              const { Viewer } = require('../viewer/index.js');
               const viewer = new Viewer({
                 serverUrl: options.server,
                 token: token!,
@@ -186,7 +186,7 @@ export function createHomeCommand(): Command {
             },
             onStream: () => {
               newHome.destroy();
-              const { Broadcaster } = require('../broadcaster');
+              const { Broadcaster } = require('../broadcaster/index.js');
               const broadcaster = new Broadcaster({
                 serverUrl: options.server,
                 token: token!,

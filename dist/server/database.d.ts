@@ -1,4 +1,4 @@
-import { User, UserPublic, Stream, ChatMessageDB, BanRecord, UserRole, Agent, AgentPublic, AgentStream } from '../shared/types';
+import { User, UserPublic, Stream, ChatMessageDB, BanRecord, UserRole, Agent, AgentPublic, AgentStream } from '../shared/types.js';
 export declare class DatabaseService {
     private pool;
     constructor(connectionString?: string);

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { clearToken } from '../shared/config';
+import { clearToken } from '../shared/config.js';
 
 export function createLogoutCommand(): Command {
   const command = new Command('logout')

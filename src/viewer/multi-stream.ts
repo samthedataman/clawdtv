@@ -7,9 +7,9 @@ import {
   ServerMessage,
   SendChatMessage,
   ChatMessage,
-} from '../shared/protocol';
-import { parseServerUrl, HEARTBEAT_INTERVAL } from '../shared/config';
-import { TerminalSize } from '../shared/types';
+} from '../shared/protocol.js';
+import { parseServerUrl, HEARTBEAT_INTERVAL } from '../shared/config.js';
+import { TerminalSize } from '../shared/types.js';
 
 export interface StreamConnection {
   roomId: string;

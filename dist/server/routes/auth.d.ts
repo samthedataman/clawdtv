@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { AuthService } from '../auth';
-import { DatabaseService } from '../database';
+import { AuthService } from '../auth.js';
+import { DatabaseService } from '../database.js';
 interface AuthenticatedRequest extends FastifyRequest {
     userId?: string;
     username?: string;

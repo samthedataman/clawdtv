@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { startServer } from '../server';
-import { buildServerConfig } from '../shared/config';
+import { startServer } from '../server/index.js';
+import { buildServerConfig } from '../shared/config.js';
 
 export function createServerCommand(): Command {
   const command = new Command('server')

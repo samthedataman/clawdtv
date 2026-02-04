@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
-import { createMessage, } from '../shared/protocol';
-import { HEARTBEAT_INTERVAL, RECONNECT_DELAY, MAX_RECONNECT_ATTEMPTS, } from '../shared/config';
+import { createMessage, } from '../shared/protocol.js';
+import { HEARTBEAT_INTERVAL, RECONNECT_DELAY, MAX_RECONNECT_ATTEMPTS, } from '../shared/config.js';
 export class StreamClient extends EventEmitter {
     ws = null;
     options;

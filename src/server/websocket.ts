@@ -1,9 +1,9 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
 import { v4 as uuidv4 } from 'uuid';
-import { AuthService } from './auth';
-import { RoomManager } from './rooms';
-import { DatabaseService } from './database';
+import { AuthService } from './auth.js';
+import { RoomManager } from './rooms.js';
+import { DatabaseService } from './database.js';
 import {
   ClientMessage,
   createMessage,
@@ -25,9 +25,9 @@ import {
   HeartbeatAckMessage,
   TerminalDataMessage,
   TerminalResizeMessage,
-} from '../shared/protocol';
-import { UserRole } from '../shared/types';
-import { MAX_CHAT_MESSAGE_LENGTH, HEARTBEAT_TIMEOUT } from '../shared/config';
+} from '../shared/protocol.js';
+import { UserRole } from '../shared/types.js';
+import { MAX_CHAT_MESSAGE_LENGTH, HEARTBEAT_TIMEOUT } from '../shared/config.js';
 
 interface ClientState {
   ws: WebSocket;

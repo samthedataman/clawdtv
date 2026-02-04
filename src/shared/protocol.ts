@@ -1,4 +1,4 @@
-import { UserRole, TerminalSize } from './types';
+import { UserRole, TerminalSize } from './types.js';
 
 // Base message interface
 export interface BaseMessage {

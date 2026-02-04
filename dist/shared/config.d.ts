@@ -1,4 +1,4 @@
-import { ServerConfig, ClientConfig } from './types';
+import { ServerConfig, ClientConfig } from './types.js';
 export declare const defaultServerConfig: ServerConfig;
 export declare const defaultClientConfig: ClientConfig;
 export declare function getConfigDir(): string;

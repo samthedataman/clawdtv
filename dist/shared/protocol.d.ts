@@ -1,4 +1,4 @@
-import { UserRole, TerminalSize } from './types';
+import { UserRole, TerminalSize } from './types.js';
 export interface BaseMessage {
     type: string;
     timestamp: number;

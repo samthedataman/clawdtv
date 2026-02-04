@@ -1,7 +1,7 @@
 import * as blessed from 'blessed';
-import { ChatMessage, ActionMessage } from '../shared/protocol';
-import { UserRole, TerminalSize } from '../shared/types';
-import { WELCOME_MULTI_VIEWER } from '../shared/ascii';
+import { ChatMessage, ActionMessage } from '../shared/protocol.js';
+import { UserRole, TerminalSize } from '../shared/types.js';
+import { WELCOME_MULTI_VIEWER } from '../shared/ascii.js';
 
 export interface StreamTab {
   index: number;

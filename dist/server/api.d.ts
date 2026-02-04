@@ -4,9 +4,9 @@ declare module 'fastify' {
         view(template: string, data?: object): FastifyReply;
     }
 }
-import { AuthService } from './auth';
-import { DatabaseService } from './database';
-import { RoomManager } from './rooms';
+import { AuthService } from './auth.js';
+import { DatabaseService } from './database.js';
+import { RoomManager } from './rooms.js';
 export declare const roomRules: Map<string, {
     maxAgents?: number;
     requireApproval?: boolean;

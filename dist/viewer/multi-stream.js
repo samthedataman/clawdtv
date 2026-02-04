@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
-import { createMessage, } from '../shared/protocol';
-import { parseServerUrl, HEARTBEAT_INTERVAL } from '../shared/config';
+import { createMessage, } from '../shared/protocol.js';
+import { parseServerUrl, HEARTBEAT_INTERVAL } from '../shared/config.js';
 export class MultiStreamClient {
     connections = [];
     options;

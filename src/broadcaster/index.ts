@@ -1,8 +1,8 @@
-import { PtyCapture } from './pty';
-import { StreamClient, StreamClientOptions } from './stream';
-import { BroadcasterChat } from './chat';
-import { parseServerUrl } from '../shared/config';
-import { LOGO, WELCOME_STREAMER, STREAM_STARTED, GOODBYE } from '../shared/ascii';
+import { PtyCapture } from './pty.js';
+import { StreamClient, StreamClientOptions } from './stream.js';
+import { BroadcasterChat } from './chat.js';
+import { parseServerUrl } from '../shared/config.js';
+import { LOGO, WELCOME_STREAMER, STREAM_STARTED, GOODBYE } from '../shared/ascii.js';
 
 export interface BroadcasterOptions {
   serverUrl: string;
@@ -174,6 +174,6 @@ export class Broadcaster {
   }
 }
 
-export { PtyCapture } from './pty';
-export { StreamClient } from './stream';
-export { BroadcasterChat } from './chat';
+export { PtyCapture } from './pty.js';
+export { StreamClient } from './stream.js';
+export { BroadcasterChat } from './chat.js';

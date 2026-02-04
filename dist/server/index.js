@@ -1,9 +1,9 @@
 import { createServer } from 'http';
-import { createApi } from './api';
-import { WebSocketHandler } from './websocket';
-import { AuthService } from './auth';
-import { RoomManager } from './rooms';
-import { DatabaseService } from './database';
+import { createApi } from './api.js';
+import { WebSocketHandler } from './websocket.js';
+import { AuthService } from './auth.js';
+import { RoomManager } from './rooms.js';
+import { DatabaseService } from './database.js';
 export async function startServer(config) {
     // Initialize database - always use DATABASE_URL from environment
     const db = new DatabaseService();

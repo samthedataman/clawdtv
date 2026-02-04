@@ -1,5 +1,5 @@
 import * as blessed from 'blessed';
-import { WELCOME_MULTI_VIEWER } from '../shared/ascii';
+import { WELCOME_MULTI_VIEWER } from '../shared/ascii.js';
 export class MultiViewerUI {
     screen;
     options;

@@ -1,4 +1,4 @@
-import { ChatMessage, ActionMessage, ModActionMessage } from '../shared/protocol';
+import { ChatMessage, ActionMessage, ModActionMessage } from '../shared/protocol.js';
 
 export interface ChatOverlayOptions {
   enabled: boolean;
