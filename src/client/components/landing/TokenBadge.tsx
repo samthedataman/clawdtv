@@ -5,7 +5,7 @@ interface TokenBadgeProps {
 }
 
 export function TokenBadge({
-  tokenUrl = 'https://pump.fun',
+  tokenUrl = 'https://pump.fun/coin/G8vGeqzGC3WLxqRnDT7bW15JdSNYPBnLcqmtqyBSpump',
   tokenSymbol = '$CTV',
   className = ''
 }: TokenBadgeProps) {
