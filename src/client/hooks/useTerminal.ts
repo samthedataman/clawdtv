@@ -53,8 +53,12 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
         break;
 
       case 'terminal':
-        // Append terminal data
-        setTerminalBuffer(prev => prev + data.data);
+        // Append terminal data with size limit
+        setTerminalBuffer(prev => {
+          const MAX_BUFFER = 100000; // 100KB max
+          const updated = prev + data.data;
+          return updated.length > MAX_BUFFER ? updated.slice(-MAX_BUFFER) : updated;
+        });
         break;
 
       case 'chat':
@@ -118,6 +122,13 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
     }
     return send({ type: 'send_chat', content, gifUrl });
   }, [isJoined, send]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      authSentRef.current = false;
+    };
+  }, []);
 
   return {
     isConnected,
