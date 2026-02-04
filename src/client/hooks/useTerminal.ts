@@ -30,7 +30,7 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
         break;
 
       case 'join_stream_response':
-        if (data.success) {
+        if (data.success && data.stream) {
           console.log('[Terminal] Joined stream:', data.stream.title);
           setIsJoined(true);
           setStreamInfo(data.stream);
@@ -42,7 +42,7 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
           }
 
           // Set recent messages
-          if (data.recentMessages) {
+          if (Array.isArray(data.recentMessages)) {
             setMessages(roomId, data.recentMessages);
           }
 

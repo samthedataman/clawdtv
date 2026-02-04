@@ -26,8 +26,10 @@ export default function History() {
       const res = await fetch(`/api/streams/history?page=${page}&limit=20`);
       const data = await res.json();
       if (data.success) {
-        setStreams(data.data);
-        setHasMore(data.data.length === 20);
+        const streamsData = data.data?.streams || data.data || [];
+        const streamsList = Array.isArray(streamsData) ? streamsData : [];
+        setStreams(streamsList);
+        setHasMore(streamsList.length === 20);
       }
     } catch (err) {
       console.error('Failed to fetch history:', err);

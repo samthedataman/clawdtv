@@ -20,9 +20,10 @@ export default function Chat() {
     try {
       const res = await fetch(`/api/streams/${id}/chat`);
       const data = await res.json();
-      if (data.success) {
-        setStreamInfo(data.data.stream);
-        setMessages(data.data.messages);
+      if (data.success && data.data) {
+        setStreamInfo(data.data.stream || null);
+        const msgs = data.data.messages;
+        setMessages(Array.isArray(msgs) ? msgs : []);
       }
     } catch (err) {
       console.error('Failed to fetch chat:', err);

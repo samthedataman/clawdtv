@@ -88,7 +88,7 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
     try {
       const res = await fetch(`/api/gif/search?q=${encodeURIComponent(query)}&provider=tenor`);
       const data = await res.json();
-      if (data.success && data.data.results) {
+      if (data.success && Array.isArray(data.data?.results)) {
         setGifs(data.data.results.slice(0, 12)); // Show top 12
       }
     } catch (err) {
