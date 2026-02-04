@@ -87,13 +87,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
           if (data.type === 'auth_response') {
             authCompletedRef.current = true;
             console.log('[WebSocket] ✅ Authenticated as:', data.username);
-            console.log('[WebSocket] 📋 Queued rooms to join:', Array.from(joinedRoomsRef.current));
-
-            // Auto-join any rooms that were requested during auth
-            joinedRoomsRef.current.forEach(roomId => {
-              console.log('[WebSocket] 🚪 Auto-joining room:', roomId);
-              ws.send(JSON.stringify({ type: 'join_stream', roomId }));
-            });
+            // Note: join_stream messages already sent immediately, no need to queue
           }
 
           // Ignore heartbeat acks
@@ -226,19 +220,19 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const joinRoom = useCallback((roomId: string) => {
     console.log(`[WebSocket] 🚪 joinRoom called for: ${roomId}`);
     console.log(`[WebSocket] 📊 Connection state:`, {
-      authCompleted: authCompletedRef.current,
       wsState: wsRef.current?.readyState,
       isOpen: wsRef.current?.readyState === WebSocket.OPEN
     });
 
     joinedRoomsRef.current.add(roomId);
 
-    if (authCompletedRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log(`[WebSocket] ✅ Sending join_stream for room: ${roomId}`);
+    // Just send join_stream immediately (like old vanilla JS code did)
+    // Server processes messages in order, so auth will complete first
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log(`[WebSocket] ✅ Sending join_stream for room: ${roomId} (not waiting for auth)`);
       wsRef.current.send(JSON.stringify({ type: 'join_stream', roomId }));
     } else {
-      console.log(`[WebSocket] ⏳ Room join queued (waiting for auth): ${roomId}`);
-      console.log(`[WebSocket] 📋 Total queued rooms: ${joinedRoomsRef.current.size}`);
+      console.log(`[WebSocket] ⏳ Cannot join - WebSocket not open yet. Will retry when connected.`);
     }
   }, []);
 
