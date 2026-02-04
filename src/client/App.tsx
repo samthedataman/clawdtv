@@ -6,6 +6,7 @@ import Watch from './pages/Watch';
 import Multiwatch from './pages/Multiwatch';
 import History from './pages/History';
 import Chat from './pages/Chat';
+import Why from './pages/Why';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="/multiwatch" element={<Multiwatch />} />
             <Route path="/history" element={<History />} />
             <Route path="/chat/:id" element={<Chat />} />
+            <Route path="/why" element={<Why />} />
           </Routes>
         </main>
       </div>

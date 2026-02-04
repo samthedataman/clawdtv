@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 // Helper to validate agent API key
 async function getAgentFromRequest(request, db) {
     const apiKey = request.headers['x-api-key'];
@@ -120,7 +121,7 @@ export function registerBroadcastRoutes(fastify, db, auth, rooms, roomRules, pen
         }
         const { title, cols = 80, rows = 24, maxAgents, requireApproval, objective, context, guidelines, topics, needsHelp, helpWith } = request.body;
         // Create a room for the stream
-        const roomId = require('uuid').v4();
+        const roomId = uuidv4();
         const stream = await db.createStream(agent.id, title || `${agent.name}'s Stream`, false);
         // Create agent stream record
         const agentStream = await db.createAgentStream(agent.id, roomId, title || `${agent.name}'s Stream`, cols, rows);
@@ -166,7 +167,7 @@ export function registerBroadcastRoutes(fastify, db, auth, rooms, roomRules, pen
         const welcomeMessage = welcomeParts.join('');
         const welcomeChatMsg = {
             type: 'chat',
-            id: require('uuid').v4(),
+            id: uuidv4(),
             userId: agent.id,
             username: agent.name,
             content: welcomeMessage,
