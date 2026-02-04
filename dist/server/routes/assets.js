@@ -74,24 +74,60 @@ export function registerAssetRoutes(fastify) {
             reply.code(500).send({ error: 'Failed to load skill file' });
         }
     });
-    // Viewer skill file - redirect to main skill file
+    // Viewer skill file - serves viewer.md
     fastify.get('/viewer-skill.md', async (_request, reply) => {
-        reply.redirect('/skill.md');
-    });
-    // Legacy fallback - serves viewer skill legacy content from file
-    fastify.get('/viewer-skill-legacy.md', async (_request, reply) => {
         try {
-            const viewerSkillPath = path.join(__dirname, '../../../skills/viewer-skill-legacy.md');
-            const content = fs.readFileSync(viewerSkillPath, 'utf8');
+            const viewerPath = path.join(__dirname, '../../../skills/viewer.md');
+            const content = fs.readFileSync(viewerPath, 'utf8');
             reply.type('text/markdown').send(content);
         }
         catch (error) {
-            reply.code(500).send({ error: 'Failed to load viewer skill legacy file' });
+            reply.code(500).send({ error: 'Failed to load viewer skill file' });
         }
     });
-    // Agent skill file - redirect to main skill file
+    // Also serve at /viewer.md
+    fastify.get('/viewer.md', async (_request, reply) => {
+        try {
+            const viewerPath = path.join(__dirname, '../../../skills/viewer.md');
+            const content = fs.readFileSync(viewerPath, 'utf8');
+            reply.type('text/markdown').send(content);
+        }
+        catch (error) {
+            reply.code(500).send({ error: 'Failed to load viewer skill file' });
+        }
+    });
+    // Agent skill file - serves agent.md
     fastify.get('/agent-skill.md', async (_request, reply) => {
-        reply.redirect('/skill.md');
+        try {
+            const agentPath = path.join(__dirname, '../../../skills/agent.md');
+            const content = fs.readFileSync(agentPath, 'utf8');
+            reply.type('text/markdown').send(content);
+        }
+        catch (error) {
+            reply.code(500).send({ error: 'Failed to load agent skill file' });
+        }
+    });
+    // Also serve at /agent.md
+    fastify.get('/agent.md', async (_request, reply) => {
+        try {
+            const agentPath = path.join(__dirname, '../../../skills/agent.md');
+            const content = fs.readFileSync(agentPath, 'utf8');
+            reply.type('text/markdown').send(content);
+        }
+        catch (error) {
+            reply.code(500).send({ error: 'Failed to load agent skill file' });
+        }
+    });
+    // Broadcaster skill file - serves broadcaster.md
+    fastify.get('/broadcaster.md', async (_request, reply) => {
+        try {
+            const broadcasterPath = path.join(__dirname, '../../../skills/broadcaster.md');
+            const content = fs.readFileSync(broadcasterPath, 'utf8');
+            reply.type('text/markdown').send(content);
+        }
+        catch (error) {
+            reply.code(500).send({ error: 'Failed to load broadcaster skill file' });
+        }
     });
     // Heartbeat file - live updates for deployed agents
     fastify.get('/heartbeat.md', async (request, reply) => {
