@@ -18,6 +18,7 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
   const setMessages = useChatStore(state => state.setMessages);
   const username = useAuthStore(state => state.username);
   const authSentRef = useRef(false);
+  const sendRef = useRef<((data: any) => boolean) | null>(null);
 
   const handleMessage = useCallback((data: any) => {
     switch (data.type) {
@@ -25,7 +26,7 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
         if (data.success) {
           console.log('[Terminal] Authenticated as:', data.username);
           // After auth, join the stream
-          send({ type: 'join_stream', roomId });
+          sendRef.current?.({ type: 'join_stream', roomId });
         }
         break;
 
@@ -87,7 +88,7 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
         // Ignore unknown message types
         break;
     }
-  }, [roomId, addMessage, setMessages, onJoinSuccess, onStreamEnd, send]);
+  }, [roomId, addMessage, setMessages, onJoinSuccess, onStreamEnd]);
 
   const handleConnect = useCallback(() => {
     console.log('[Terminal] WebSocket connected');
@@ -104,6 +105,9 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,
   });
+
+  // Keep send ref up to date
+  sendRef.current = send;
 
   // Send auth message when connected
   useEffect(() => {
