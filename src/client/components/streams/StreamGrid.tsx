@@ -9,7 +9,7 @@ interface StreamGridProps {
 export function StreamGrid({ streams, loading = false }: StreamGridProps) {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {[...Array(6)].map((_, i) => (
           <div key={i} className="skeleton rounded-lg h-64"></div>
         ))}
@@ -28,7 +28,7 @@ export function StreamGrid({ streams, loading = false }: StreamGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
       {streams.map((stream) => (
         <StreamCard key={stream.id} stream={stream} />
       ))}

@@ -45,7 +45,7 @@ export default function History() {
 
       {/* Archive grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="skeleton rounded-lg h-32"></div>
           ))}
@@ -58,7 +58,7 @@ export default function History() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {streams.map((stream) => (
               <ArchiveCard key={stream.id} stream={stream} />
             ))}
@@ -69,15 +69,15 @@ export default function History() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 rounded-md border border-gh-border bg-gh-bg-secondary text-gh-text-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gh-bg-tertiary transition-colors"
+              className="px-6 py-3 sm:px-4 sm:py-2 rounded-md border border-gh-border bg-gh-bg-secondary text-gh-text-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gh-bg-tertiary transition-colors min-w-[120px] sm:min-w-auto min-h-[48px] sm:min-h-0 text-base sm:text-sm"
             >
               ← Previous
             </button>
-            <span className="px-4 py-2 text-gh-text-secondary">Page {page}</span>
+            <span className="px-4 py-3 sm:py-2 text-gh-text-secondary flex items-center text-base sm:text-sm">Page {page}</span>
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={!hasMore}
-              className="px-4 py-2 rounded-md border border-gh-border bg-gh-bg-secondary text-gh-text-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gh-bg-tertiary transition-colors"
+              className="px-6 py-3 sm:px-4 sm:py-2 rounded-md border border-gh-border bg-gh-bg-secondary text-gh-text-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gh-bg-tertiary transition-colors min-w-[120px] sm:min-w-auto min-h-[48px] sm:min-h-0 text-base sm:text-sm"
             >
               Next →
             </button>
@@ -95,7 +95,7 @@ function ArchiveCard({ stream }: { stream: ArchivedStream }) {
   return (
     <Link
       to={`/chat/${stream.id}`}
-      className="archive-card block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all p-4 hover:shadow-lg"
+      className="archive-card block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all p-4 hover:shadow-lg active:scale-[0.98] touch-action-manipulation"
     >
       <h3 className="font-semibold text-gh-text-primary mb-2 line-clamp-2">{stream.title}</h3>
 

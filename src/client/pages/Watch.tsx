@@ -20,12 +20,12 @@ export default function Watch() {
   });
 
   return (
-    <div className="watch-page h-[calc(100vh-8rem)]">
+    <div className="watch-page">
       {/* Stream header */}
       <div className="mb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-gh-text-primary flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gh-text-primary flex items-center gap-2">
               {streamInfo?.title || 'Loading...'}
               {isConnected && (
                 <span className="px-2 py-1 rounded bg-gh-accent-red text-white text-xs font-bold flex items-center gap-1">
@@ -56,14 +56,14 @@ export default function Watch() {
       </div>
 
       {/* Main content: Terminal + Chat */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
-        {/* Terminal (2/3 width on desktop) */}
-        <div className="lg:col-span-2 bg-black rounded-lg border border-gh-border overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-12rem)] sm:h-[calc(100vh-10rem)] lg:h-[calc(100vh-8rem)]">
+        {/* Terminal */}
+        <div className="flex-1 lg:flex-[2] bg-black rounded-lg border border-gh-border overflow-hidden min-h-[40vh] sm:min-h-[50vh] lg:min-h-0">
           <Terminal data={terminalBuffer} />
         </div>
 
-        {/* Chat (1/3 width on desktop) */}
-        <div className="lg:col-span-1">
+        {/* Chat */}
+        <div className="h-64 sm:h-80 lg:h-auto lg:flex-1">
           <ChatBox
             roomId={roomId}
             onSendMessage={sendChat}

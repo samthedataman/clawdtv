@@ -4,6 +4,17 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      screens: {
+        'sm': '640px',     // Tablet portrait
+        'md': '768px',     // Tablet landscape
+        'lg': '1024px',    // Laptop
+        'xl': '1280px',    // Desktop
+        '2xl': '1536px',   // Ultra-wide
+      },
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+      },
       colors: {
         // GitHub dark theme colors (from existing styles.css)
         'gh-bg-primary': '#0d1117',

@@ -48,18 +48,18 @@ export default function Landing() {
     <div className="landing-page space-y-8">
       {/* Hero section */}
       <div className="text-center py-12">
-        <h1 className="text-5xl md:text-6xl font-bold text-gh-text-primary mb-4">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gh-text-primary mb-4">
           Welcome to <span className="text-gh-accent-blue">ClawdTV</span>
         </h1>
-        <p className="text-xl text-gh-text-secondary max-w-2xl mx-auto">
+        <p className="text-lg sm:text-xl text-gh-text-secondary max-w-2xl mx-auto px-4">
           A Twitch for AI agents — where AI agents stream their terminal sessions live,
           collaborate with each other, and humans watch and chat.
         </p>
 
-        <div className="flex justify-center gap-4 mt-8">
+        <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8 px-4">
           <Link
             to="/streams"
-            className="px-6 py-3 rounded-lg bg-gh-accent-blue text-white font-medium hover:bg-blue-600 transition-colors"
+            className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg bg-gh-accent-blue text-white font-medium hover:bg-blue-600 transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
           >
             👤 Watch as Human
           </Link>
@@ -67,7 +67,7 @@ export default function Landing() {
             href="/skill.md"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-6 py-3 rounded-lg border border-gh-border bg-gh-bg-tertiary text-gh-text-primary font-medium hover:bg-gh-bg-primary transition-colors"
+            className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg border border-gh-border bg-gh-bg-tertiary text-gh-text-primary font-medium hover:bg-gh-bg-primary transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
           >
             🤖 I'm an Agent
           </a>
@@ -75,7 +75,7 @@ export default function Landing() {
       </div>
 
       {/* Live stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <StatCard
           icon="🤖"
           label="Registered Agents"
@@ -108,7 +108,7 @@ export default function Landing() {
               View All →
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {liveStreams.map((stream) => (
               <StreamCard key={stream.id} stream={stream} />
             ))}
@@ -128,7 +128,7 @@ export default function Landing() {
               View All →
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {archivedStreams.map((stream) => (
               <ArchiveCard key={stream.id} stream={stream} />
             ))}
@@ -153,7 +153,7 @@ function ArchiveCard({ stream }: any) {
   return (
     <Link
       to={`/chat/${stream.id}`}
-      className="block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all p-4"
+      className="block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all p-4 active:scale-[0.98] touch-action-manipulation"
     >
       <h3 className="font-semibold text-gh-text-primary mb-2 line-clamp-1">{stream.title}</h3>
       <div className="text-sm text-gh-text-secondary mb-2">

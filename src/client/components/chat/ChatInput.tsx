@@ -33,10 +33,10 @@ export function ChatInput({ onSend, disabled = false, placeholder = 'Type a mess
 
   return (
     <div className="chat-input border-t border-gh-border bg-gh-bg-secondary">
-      <div className="flex items-center gap-2 p-3">
+      <div className="flex items-center gap-2 p-3 sm:p-4">
         <button
           onClick={() => setShowGifPicker(!showGifPicker)}
-          className="px-3 py-2 rounded-md border border-gh-border bg-gh-bg-tertiary text-gh-text-primary hover:bg-gh-bg-primary transition-colors"
+          className="px-3 py-3 sm:py-2 rounded-md border border-gh-border bg-gh-bg-tertiary text-gh-text-primary hover:bg-gh-bg-primary transition-colors min-h-[44px] sm:min-h-0 text-base sm:text-sm"
           title="Add GIF"
           disabled={disabled}
         >
@@ -49,13 +49,13 @@ export function ChatInput({ onSend, disabled = false, placeholder = 'Type a mess
           onKeyPress={handleKeyPress}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 px-3 py-2 rounded-md border border-gh-border bg-gh-bg-tertiary text-gh-text-primary placeholder-gh-text-secondary focus:outline-none focus:ring-2 focus:ring-gh-accent-blue disabled:opacity-50"
+          className="flex-1 px-4 py-3 sm:py-2 rounded-md border border-gh-border bg-gh-bg-tertiary text-gh-text-primary placeholder-gh-text-secondary focus:outline-none focus:ring-2 focus:ring-gh-accent-blue disabled:opacity-50 min-h-[44px] sm:min-h-0 text-base sm:text-sm"
           maxLength={500}
         />
         <button
           onClick={handleSend}
           disabled={disabled || !message.trim()}
-          className="px-4 py-2 rounded-md bg-gh-accent-blue text-white font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-3 sm:py-2 rounded-md bg-gh-accent-blue text-white font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] sm:min-h-0 text-base sm:text-sm"
         >
           Send
         </button>
@@ -106,17 +106,17 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && searchGifs()}
           placeholder="Search GIFs..."
-          className="flex-1 px-3 py-2 rounded-md border border-gh-border bg-gh-bg-tertiary text-gh-text-primary placeholder-gh-text-secondary focus:outline-none focus:ring-2 focus:ring-gh-accent-blue"
+          className="flex-1 px-3 py-3 sm:py-2 rounded-md border border-gh-border bg-gh-bg-tertiary text-gh-text-primary placeholder-gh-text-secondary focus:outline-none focus:ring-2 focus:ring-gh-accent-blue min-h-[44px] sm:min-h-0 text-base sm:text-sm"
         />
         <button
           onClick={searchGifs}
-          className="px-4 py-2 rounded-md bg-gh-accent-blue text-white hover:bg-blue-600"
+          className="px-4 py-3 sm:py-2 rounded-md bg-gh-accent-blue text-white hover:bg-blue-600 min-h-[44px] sm:min-h-0 text-base sm:text-sm"
         >
           Search
         </button>
         <button
           onClick={onClose}
-          className="px-3 py-2 rounded-md border border-gh-border hover:bg-gh-bg-primary"
+          className="px-3 py-3 sm:py-2 rounded-md border border-gh-border hover:bg-gh-bg-primary min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
         >
           ✕
         </button>
@@ -125,13 +125,13 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
       {loading && <div className="text-center text-gh-text-secondary">Searching...</div>}
 
       {gifs.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
           {gifs.map((gif, i) => (
             <img
               key={i}
               src={gif.media_formats?.tinygif?.url || gif.url}
               alt={gif.content_description}
-              className="w-full h-24 object-cover rounded cursor-pointer hover:opacity-80 border border-gh-border"
+              className="w-full h-24 object-cover rounded cursor-pointer hover:opacity-80 border border-gh-border active:scale-95 transition-transform"
               onClick={() => onSelect(gif.media_formats?.gif?.url || gif.url)}
             />
           ))}

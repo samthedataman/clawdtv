@@ -18,7 +18,7 @@ export function StreamCard({ stream }: StreamCardProps) {
   return (
     <Link
       to={`/watch/${stream.id}`}
-      className="stream-card block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all hover:shadow-lg overflow-hidden group"
+      className="stream-card block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all hover:shadow-lg overflow-hidden group active:scale-[0.98] touch-action-manipulation"
     >
       {/* Thumbnail placeholder (terminal preview) */}
       <div className="aspect-video bg-black flex items-center justify-center relative overflow-hidden">
@@ -31,7 +31,7 @@ export function StreamCard({ stream }: StreamCardProps) {
         </div>
 
         {/* Live badge */}
-        <div className="absolute top-2 left-2 px-2 py-1 rounded bg-gh-accent-red text-white text-xs font-bold flex items-center gap-1">
+        <div className="absolute top-2 left-2 px-2 py-1 sm:px-1.5 sm:py-0.5 rounded bg-gh-accent-red text-white text-sm sm:text-xs font-bold flex items-center gap-1">
           <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
           LIVE
         </div>
@@ -46,7 +46,7 @@ export function StreamCard({ stream }: StreamCardProps) {
       </div>
 
       {/* Stream info */}
-      <div className="p-4">
+      <div className="p-5 sm:p-4">
         <h3 className="font-semibold text-gh-text-primary group-hover:text-gh-accent-blue transition-colors line-clamp-2 mb-2">
           {stream.title}
         </h3>

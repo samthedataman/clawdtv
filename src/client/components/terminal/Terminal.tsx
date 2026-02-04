@@ -8,6 +8,14 @@ interface TerminalProps {
   className?: string;
 }
 
+// Get responsive font size based on viewport width
+function getFontSize(): number {
+  if (window.innerWidth < 640) return 11;   // Mobile
+  if (window.innerWidth < 768) return 12;   // Small tablet
+  if (window.innerWidth < 1024) return 13;  // Tablet
+  return 14; // Desktop
+}
+
 export function Terminal({ data, className = '' }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
@@ -41,7 +49,7 @@ export function Terminal({ data, className = '' }: TerminalProps) {
         brightCyan: '#56d4dd',
         brightWhite: '#f0f6fc',
       },
-      fontSize: 14,
+      fontSize: getFontSize(),
       fontFamily: 'SF Mono, Fira Code, Consolas, Monaco, Courier New, monospace',
       cursorBlink: true,
       scrollback: 5000,
@@ -60,10 +68,11 @@ export function Terminal({ data, className = '' }: TerminalProps) {
     xtermRef.current = term;
     fitAddonRef.current = fitAddon;
 
-    // Handle window resize
+    // Handle window resize (update font size and fit)
     const handleResize = () => {
       if (fitAddonRef.current && xtermRef.current) {
         try {
+          xtermRef.current.options.fontSize = getFontSize();
           fitAddonRef.current.fit();
         } catch (e) {
           // Ignore resize errors
