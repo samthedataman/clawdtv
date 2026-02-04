@@ -22,7 +22,7 @@
     "build:client": "vite build",
     "start": "node dist/index.js",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "ts-node --project tsconfig.server.json src/index.ts",
+    "dev:server": "tsx src/index.ts",
     "dev:client": "vite",
     "test": "jest",
     "db:test": "node scripts/test-db-connection.js",
@@ -87,6 +87,7 @@
     "tailwindcss": "^3.4.1",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.3.3",
     "vite": "^7.3.1"
   },
