@@ -1,45 +1,9 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ViewerUI = void 0;
-const blessed = __importStar(require("blessed"));
-const terminal_view_1 = require("./terminal-view");
-const chat_view_1 = require("./chat-view");
-const input_1 = require("./input");
-const ascii_1 = require("../shared/ascii");
-class ViewerUI {
+import * as blessed from 'blessed';
+import { TerminalView } from './terminal-view';
+import { ChatView } from './chat-view';
+import { InputHandler } from './input';
+import { WELCOME_VIEWER, CONNECTING } from '../shared/ascii';
+export class ViewerUI {
     screen;
     terminalView;
     chatView = null;
@@ -56,12 +20,12 @@ class ViewerUI {
             fullUnicode: true,
         });
         // Create terminal view
-        this.terminalView = new terminal_view_1.TerminalView(this.screen);
+        this.terminalView = new TerminalView(this.screen);
         // Create chat view if enabled
         if (options.showChat) {
-            this.chatView = new chat_view_1.ChatView(this.screen);
+            this.chatView = new ChatView(this.screen);
             // Create input handler
-            this.inputHandler = new input_1.InputHandler(this.screen, {
+            this.inputHandler = new InputHandler(this.screen, {
                 onSubmit: (text) => {
                     options.onSendMessage(text);
                 },
@@ -219,12 +183,12 @@ class ViewerUI {
         this.chatView?.loadMessages(messages);
     }
     showConnecting() {
-        this.terminalView.appendData(ascii_1.CONNECTING);
+        this.terminalView.appendData(CONNECTING);
     }
     showConnected() {
         this.terminalView.showConnected();
         this.terminalView.clear();
-        this.terminalView.appendData(ascii_1.WELCOME_VIEWER);
+        this.terminalView.appendData(WELCOME_VIEWER);
         this.terminalView.appendData('\n\x1b[90m─────────────────────────────────────────────────────────────────────\x1b[0m\n\n');
         if (this.inputHandler) {
             this.inputHandler.focus();
@@ -243,5 +207,4 @@ class ViewerUI {
         this.screen.render();
     }
 }
-exports.ViewerUI = ViewerUI;
 //# sourceMappingURL=ui.js.map

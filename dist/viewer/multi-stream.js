@@ -1,13 +1,7 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MultiStreamClient = void 0;
-const ws_1 = __importDefault(require("ws"));
-const protocol_1 = require("../shared/protocol");
-const config_1 = require("../shared/config");
-class MultiStreamClient {
+import WebSocket from 'ws';
+import { createMessage, } from '../shared/protocol';
+import { parseServerUrl, HEARTBEAT_INTERVAL } from '../shared/config';
+export class MultiStreamClient {
     connections = [];
     options;
     heartbeatIntervals = new Map();
@@ -25,14 +19,14 @@ class MultiStreamClient {
         }
     }
     connect() {
-        const { ws: wsUrl } = (0, config_1.parseServerUrl)(this.options.serverUrl);
+        const { ws: wsUrl } = parseServerUrl(this.options.serverUrl);
         this.connections.forEach((conn, index) => {
             this.connectStream(index, wsUrl);
         });
     }
     connectStream(index, wsUrl) {
         const conn = this.connections[index];
-        conn.ws = new ws_1.default(`${wsUrl}/ws`);
+        conn.ws = new WebSocket(`${wsUrl}/ws`);
         conn.ws.on('open', () => {
             this.authenticate(index);
             this.startHeartbeat(index);
@@ -52,7 +46,7 @@ class MultiStreamClient {
     }
     authenticate(index) {
         const conn = this.connections[index];
-        this.send(index, (0, protocol_1.createMessage)({
+        this.send(index, createMessage({
             type: 'auth',
             token: this.options.token,
             username: this.options.username,
@@ -150,7 +144,7 @@ class MultiStreamClient {
     joinStream(index) {
         const conn = this.connections[index];
         const password = this.options.passwords?.get(conn.roomId);
-        this.send(index, (0, protocol_1.createMessage)({
+        this.send(index, createMessage({
             type: 'join_stream',
             roomId: conn.roomId,
             password,
@@ -158,8 +152,8 @@ class MultiStreamClient {
     }
     sendChat(index, content) {
         const conn = this.connections[index];
-        if (conn.ws?.readyState === ws_1.default.OPEN) {
-            this.send(index, (0, protocol_1.createMessage)({
+        if (conn.ws?.readyState === WebSocket.OPEN) {
+            this.send(index, createMessage({
                 type: 'send_chat',
                 content,
             }));
@@ -167,14 +161,14 @@ class MultiStreamClient {
     }
     send(index, message) {
         const conn = this.connections[index];
-        if (conn.ws?.readyState === ws_1.default.OPEN) {
+        if (conn.ws?.readyState === WebSocket.OPEN) {
             conn.ws.send(JSON.stringify(message));
         }
     }
     startHeartbeat(index) {
         const interval = setInterval(() => {
-            this.send(index, (0, protocol_1.createMessage)({ type: 'heartbeat' }));
-        }, config_1.HEARTBEAT_INTERVAL);
+            this.send(index, createMessage({ type: 'heartbeat' }));
+        }, HEARTBEAT_INTERVAL);
         this.heartbeatIntervals.set(index, interval);
     }
     stopHeartbeat(index) {
@@ -203,5 +197,4 @@ class MultiStreamClient {
         });
     }
 }
-exports.MultiStreamClient = MultiStreamClient;
 //# sourceMappingURL=multi-stream.js.map

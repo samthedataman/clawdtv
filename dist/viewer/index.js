@@ -1,17 +1,11 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.HomeScreen = exports.MultiStreamClient = exports.MultiViewerUI = exports.InputHandler = exports.ChatView = exports.TerminalView = exports.ViewerUI = exports.MultiViewer = exports.Viewer = void 0;
-const ws_1 = __importDefault(require("ws"));
-const ui_1 = require("./ui");
-const multi_ui_1 = require("./multi-ui");
-const multi_stream_1 = require("./multi-stream");
-const protocol_1 = require("../shared/protocol");
-const config_1 = require("../shared/config");
+import WebSocket from 'ws';
+import { ViewerUI } from './ui';
+import { MultiViewerUI } from './multi-ui';
+import { MultiStreamClient } from './multi-stream';
+import { createMessage, } from '../shared/protocol';
+import { parseServerUrl, HEARTBEAT_INTERVAL, RECONNECT_DELAY, MAX_RECONNECT_ATTEMPTS } from '../shared/config';
 // Single stream viewer (original)
-class Viewer {
+export class Viewer {
     ws = null;
     ui;
     options;
@@ -26,13 +20,13 @@ class Viewer {
             onSendMessage: (message) => this.sendChat(message),
             onQuit: () => this.close(),
         };
-        this.ui = new ui_1.ViewerUI(uiOptions);
+        this.ui = new ViewerUI(uiOptions);
     }
     connect() {
         this.isClosing = false;
-        const { ws: wsUrl } = (0, config_1.parseServerUrl)(this.options.serverUrl);
+        const { ws: wsUrl } = parseServerUrl(this.options.serverUrl);
         this.ui.showConnecting();
-        this.ws = new ws_1.default(`${wsUrl}/ws`);
+        this.ws = new WebSocket(`${wsUrl}/ws`);
         this.ws.on('open', () => {
             this.reconnectAttempts = 0;
             this.authenticate();
@@ -44,9 +38,9 @@ class Viewer {
         this.ws.on('close', () => {
             this.stopHeartbeat();
             this.ui.showDisconnected();
-            if (!this.isClosing && this.reconnectAttempts < config_1.MAX_RECONNECT_ATTEMPTS) {
+            if (!this.isClosing && this.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                 this.reconnectAttempts++;
-                setTimeout(() => this.connect(), config_1.RECONNECT_DELAY);
+                setTimeout(() => this.connect(), RECONNECT_DELAY);
             }
         });
         this.ws.on('error', (error) => {
@@ -54,7 +48,7 @@ class Viewer {
         });
     }
     authenticate() {
-        this.send((0, protocol_1.createMessage)({
+        this.send(createMessage({
             type: 'auth',
             token: this.options.token,
             username: this.options.username,
@@ -126,29 +120,29 @@ class Viewer {
         }
     }
     joinStream() {
-        this.send((0, protocol_1.createMessage)({
+        this.send(createMessage({
             type: 'join_stream',
             roomId: this.options.roomId,
             password: this.options.password,
         }));
     }
     sendChat(content) {
-        if (this.ws?.readyState === ws_1.default.OPEN) {
-            this.send((0, protocol_1.createMessage)({
+        if (this.ws?.readyState === WebSocket.OPEN) {
+            this.send(createMessage({
                 type: 'send_chat',
                 content,
             }));
         }
     }
     send(message) {
-        if (this.ws?.readyState === ws_1.default.OPEN) {
+        if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(message));
         }
     }
     startHeartbeat() {
         this.heartbeatInterval = setInterval(() => {
-            this.send((0, protocol_1.createMessage)({ type: 'heartbeat' }));
-        }, config_1.HEARTBEAT_INTERVAL);
+            this.send(createMessage({ type: 'heartbeat' }));
+        }, HEARTBEAT_INTERVAL);
     }
     stopHeartbeat() {
         if (this.heartbeatInterval) {
@@ -167,23 +161,22 @@ class Viewer {
         process.exit(0);
     }
 }
-exports.Viewer = Viewer;
 // Multi-stream viewer (new)
-class MultiViewer {
+export class MultiViewer {
     client;
     ui;
     options;
     constructor(options) {
         this.options = options;
         // Create UI
-        this.ui = new multi_ui_1.MultiViewerUI({
+        this.ui = new MultiViewerUI({
             roomIds: options.roomIds,
             showChat: options.showChat,
             onSendMessage: (index, message) => this.client.sendChat(index, message),
             onQuit: () => this.close(),
         });
         // Create multi-stream client
-        this.client = new multi_stream_1.MultiStreamClient({
+        this.client = new MultiStreamClient({
             serverUrl: options.serverUrl,
             token: options.token,
             username: options.username,
@@ -212,19 +205,11 @@ class MultiViewer {
         process.exit(0);
     }
 }
-exports.MultiViewer = MultiViewer;
-var ui_2 = require("./ui");
-Object.defineProperty(exports, "ViewerUI", { enumerable: true, get: function () { return ui_2.ViewerUI; } });
-var terminal_view_1 = require("./terminal-view");
-Object.defineProperty(exports, "TerminalView", { enumerable: true, get: function () { return terminal_view_1.TerminalView; } });
-var chat_view_1 = require("./chat-view");
-Object.defineProperty(exports, "ChatView", { enumerable: true, get: function () { return chat_view_1.ChatView; } });
-var input_1 = require("./input");
-Object.defineProperty(exports, "InputHandler", { enumerable: true, get: function () { return input_1.InputHandler; } });
-var multi_ui_2 = require("./multi-ui");
-Object.defineProperty(exports, "MultiViewerUI", { enumerable: true, get: function () { return multi_ui_2.MultiViewerUI; } });
-var multi_stream_2 = require("./multi-stream");
-Object.defineProperty(exports, "MultiStreamClient", { enumerable: true, get: function () { return multi_stream_2.MultiStreamClient; } });
-var home_1 = require("./home");
-Object.defineProperty(exports, "HomeScreen", { enumerable: true, get: function () { return home_1.HomeScreen; } });
+export { ViewerUI } from './ui';
+export { TerminalView } from './terminal-view';
+export { ChatView } from './chat-view';
+export { InputHandler } from './input';
+export { MultiViewerUI } from './multi-ui';
+export { MultiStreamClient } from './multi-stream';
+export { HomeScreen } from './home';
 //# sourceMappingURL=index.js.map

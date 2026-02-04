@@ -1,5 +1,6 @@
 import Fastify, { FastifyInstance, FastifyReply } from 'fastify';
 import fastifyStatic from '@fastify/static';
+import { fileURLToPath } from 'url';
 
 // Extend FastifyReply to include our view decorator
 declare module 'fastify' {
@@ -9,6 +10,10 @@ declare module 'fastify' {
 }
 import { Eta } from 'eta';
 import * as path from 'path';
+
+// ESM __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { AuthService } from './auth';
 import { DatabaseService } from './database';
 import { RoomManager } from './rooms';

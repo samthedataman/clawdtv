@@ -1,11 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebSocketHandler = void 0;
-const ws_1 = require("ws");
-const uuid_1 = require("uuid");
-const protocol_1 = require("../shared/protocol");
-const config_1 = require("../shared/config");
-class WebSocketHandler {
+import { WebSocket, WebSocketServer } from 'ws';
+import { v4 as uuidv4 } from 'uuid';
+import { createMessage, isAuthRequest, isCreateStream, isJoinStream, isSendChat, isTerminalData, isTerminalResize, isHeartbeat, } from '../shared/protocol';
+import { MAX_CHAT_MESSAGE_LENGTH, HEARTBEAT_TIMEOUT } from '../shared/config';
+export class WebSocketHandler {
     wss;
     auth;
     rooms;
@@ -16,19 +13,19 @@ class WebSocketHandler {
         this.auth = auth;
         this.rooms = rooms;
         this.db = db;
-        this.wss = new ws_1.WebSocketServer({ noServer: true });
+        this.wss = new WebSocketServer({ noServer: true });
         this.setupHeartbeat();
     }
     setupHeartbeat() {
         this.heartbeatInterval = setInterval(() => {
             const now = Date.now();
             this.clients.forEach((state, ws) => {
-                if (now - state.lastHeartbeat > config_1.HEARTBEAT_TIMEOUT) {
+                if (now - state.lastHeartbeat > HEARTBEAT_TIMEOUT) {
                     this.handleDisconnect(ws);
                     ws.terminate();
                 }
             });
-        }, config_1.HEARTBEAT_TIMEOUT / 2);
+        }, HEARTBEAT_TIMEOUT / 2);
     }
     getServer() {
         return this.wss;
@@ -62,11 +59,11 @@ class WebSocketHandler {
             this.sendError(ws, 'INVALID_MESSAGE', 'Invalid JSON');
             return;
         }
-        if ((0, protocol_1.isHeartbeat)(message)) {
-            this.send(ws, (0, protocol_1.createMessage)({ type: 'heartbeat_ack' }));
+        if (isHeartbeat(message)) {
+            this.send(ws, createMessage({ type: 'heartbeat_ack' }));
             return;
         }
-        if ((0, protocol_1.isAuthRequest)(message)) {
+        if (isAuthRequest(message)) {
             this.handleAuth(ws, state, message);
             return;
         }
@@ -74,19 +71,19 @@ class WebSocketHandler {
             this.sendError(ws, 'NOT_AUTHENTICATED', 'Please authenticate first');
             return;
         }
-        if ((0, protocol_1.isCreateStream)(message)) {
+        if (isCreateStream(message)) {
             this.handleCreateStream(ws, state, message);
         }
-        else if ((0, protocol_1.isJoinStream)(message)) {
+        else if (isJoinStream(message)) {
             await this.handleJoinStream(ws, state, message);
         }
-        else if ((0, protocol_1.isSendChat)(message)) {
+        else if (isSendChat(message)) {
             await this.handleSendChat(ws, state, message);
         }
-        else if ((0, protocol_1.isTerminalData)(message)) {
+        else if (isTerminalData(message)) {
             this.handleTerminalData(ws, state, message);
         }
-        else if ((0, protocol_1.isTerminalResize)(message)) {
+        else if (isTerminalResize(message)) {
             this.handleTerminalResize(ws, state, message);
         }
     }
@@ -95,7 +92,7 @@ class WebSocketHandler {
         if (message.token) {
             const result = this.auth.validateToken(message.token);
             if (!result.valid) {
-                this.send(ws, (0, protocol_1.createMessage)({
+                this.send(ws, createMessage({
                     type: 'auth_response',
                     success: false,
                     error: 'Invalid token',
@@ -111,7 +108,7 @@ class WebSocketHandler {
             state.username = message.username;
         }
         else {
-            this.send(ws, (0, protocol_1.createMessage)({
+            this.send(ws, createMessage({
                 type: 'auth_response',
                 success: false,
                 error: 'Username required',
@@ -120,7 +117,7 @@ class WebSocketHandler {
         }
         state.authenticated = true;
         state.role = message.role;
-        this.send(ws, (0, protocol_1.createMessage)({
+        this.send(ws, createMessage({
             type: 'auth_response',
             success: true,
             userId: state.userId,
@@ -149,7 +146,7 @@ class WebSocketHandler {
             }
         }
         if (!room) {
-            this.send(ws, (0, protocol_1.createMessage)({
+            this.send(ws, createMessage({
                 type: 'join_stream_response',
                 success: false,
                 error: 'Stream not found',
@@ -158,7 +155,7 @@ class WebSocketHandler {
         }
         // Check password
         if (room.stream.password && room.stream.password !== message.password) {
-            this.send(ws, (0, protocol_1.createMessage)({
+            this.send(ws, createMessage({
                 type: 'join_stream_response',
                 success: false,
                 error: 'Invalid password',
@@ -168,7 +165,7 @@ class WebSocketHandler {
         // Add viewer
         const result = this.rooms.addViewer(message.roomId, state.userId, state.username, ws);
         if (!result.success) {
-            this.send(ws, (0, protocol_1.createMessage)({
+            this.send(ws, createMessage({
                 type: 'join_stream_response',
                 success: false,
                 error: result.error,
@@ -180,7 +177,7 @@ class WebSocketHandler {
         const recentMessages = await this.rooms.getRecentMessages(message.roomId);
         // Get terminal buffer for replay
         const terminalBuffer = this.rooms.getTerminalBuffer(message.roomId);
-        this.send(ws, (0, protocol_1.createMessage)({
+        this.send(ws, createMessage({
             type: 'join_stream_response',
             success: true,
             stream: {
@@ -225,8 +222,8 @@ class WebSocketHandler {
             return;
         }
         // Truncate if too long
-        if (content.length > config_1.MAX_CHAT_MESSAGE_LENGTH) {
-            content = content.slice(0, config_1.MAX_CHAT_MESSAGE_LENGTH);
+        if (content.length > MAX_CHAT_MESSAGE_LENGTH) {
+            content = content.slice(0, MAX_CHAT_MESSAGE_LENGTH);
         }
         // Determine role
         const room = this.rooms.getRoom(state.roomId);
@@ -241,7 +238,7 @@ class WebSocketHandler {
         }
         // Save and broadcast message
         const dbMsg = await this.db.saveMessage(state.roomId, state.userId, state.username, content, role);
-        const chatMsg = (0, protocol_1.createMessage)({
+        const chatMsg = createMessage({
             type: 'chat',
             id: dbMsg.id,
             userId: state.userId,
@@ -281,9 +278,9 @@ class WebSocketHandler {
                 if (!action)
                     return;
                 const role = this.getUserRole(state.userId, room);
-                const msg = (0, protocol_1.createMessage)({
+                const msg = createMessage({
                     type: 'action',
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     userId: state.userId,
                     username: state.username,
                     content: action,
@@ -300,14 +297,14 @@ class WebSocketHandler {
             }
             case 'uptime': {
                 const duration = Math.floor((Date.now() - room.stream.startedAt) / 1000);
-                this.send(ws, (0, protocol_1.createMessage)({
+                this.send(ws, createMessage({
                     type: 'system',
                     content: `Stream uptime: ${formatDuration(duration)}`,
                 }));
                 break;
             }
             case 'help': {
-                this.send(ws, (0, protocol_1.createMessage)({
+                this.send(ws, createMessage({
                     type: 'system',
                     content: 'Commands: /me, /viewers, /uptime, /help' +
                         (this.rooms.canModerate(state.roomId, state.userId)
@@ -463,12 +460,12 @@ class WebSocketHandler {
         this.clients.delete(ws);
     }
     send(ws, message) {
-        if (ws.readyState === ws_1.WebSocket.OPEN) {
+        if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify(message));
         }
     }
     sendError(ws, code, message) {
-        this.send(ws, (0, protocol_1.createMessage)({
+        this.send(ws, createMessage({
             type: 'error',
             code,
             message,
@@ -493,7 +490,7 @@ class WebSocketHandler {
         return null;
     }
     broadcastModAction(roomId, action, targetUserId, targetUsername, moderator, duration) {
-        const msg = (0, protocol_1.createMessage)({
+        const msg = createMessage({
             type: 'mod_action',
             action,
             targetUserId,
@@ -514,7 +511,6 @@ class WebSocketHandler {
         this.wss.close();
     }
 }
-exports.WebSocketHandler = WebSocketHandler;
 function formatDuration(seconds) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);

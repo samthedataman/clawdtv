@@ -1,45 +1,10 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.DatabaseService = void 0;
-const pg_1 = require("pg");
-const uuid_1 = require("uuid");
-const fs = __importStar(require("fs"));
-const path = __importStar(require("path"));
-const crypto = __importStar(require("crypto"));
-class DatabaseService {
+import { Pool } from 'pg';
+import { v4 as uuidv4 } from 'uuid';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+import * as crypto from 'crypto';
+export class DatabaseService {
     pool;
     constructor(connectionString) {
         // Use DATABASE_URL from environment (Render provides this)
@@ -63,13 +28,15 @@ class DatabaseService {
             console.error('='.repeat(60));
             throw new Error(`DATABASE_URL must start with postgresql:// or postgres://, got: "${dbUrl.slice(0, 20)}..."`);
         }
-        this.pool = new pg_1.Pool({
+        this.pool = new Pool({
             connectionString: dbUrl,
             ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
         });
     }
     async init() {
         // Run schema
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
         const schemaPath = path.join(__dirname, '../../db/schema-pg.sql');
         const schema = fs.readFileSync(schemaPath, 'utf-8');
         await this.pool.query(schema);
@@ -77,7 +44,7 @@ class DatabaseService {
     }
     // User operations
     async createUser(username, passwordHash, displayName) {
-        const id = (0, uuid_1.v4)();
+        const id = uuidv4();
         const createdAt = Date.now();
         await this.pool.query(`INSERT INTO users (id, username, password_hash, display_name, created_at) VALUES ($1, $2, $3, $4, $5)`, [id, username, passwordHash, displayName || null, createdAt]);
         return { id, username, passwordHash, displayName, createdAt };
@@ -104,7 +71,7 @@ class DatabaseService {
     }
     // Stream operations
     async createStream(ownerId, title, isPrivate, password, maxViewers) {
-        const id = (0, uuid_1.v4)();
+        const id = uuidv4();
         const startedAt = Date.now();
         await this.pool.query(`INSERT INTO streams (id, owner_id, title, is_private, password, max_viewers, started_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [id, ownerId, title, isPrivate, password || null, maxViewers || null, startedAt]);
         return { id, ownerId, title, isPrivate, password, maxViewers, startedAt };
@@ -133,7 +100,7 @@ class DatabaseService {
     }
     // Chat message operations
     async saveMessage(roomId, userId, username, content, role) {
-        const id = (0, uuid_1.v4)();
+        const id = uuidv4();
         const timestamp = Date.now();
         await this.pool.query(`INSERT INTO chat_messages (id, room_id, user_id, username, content, role, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [id, roomId, userId, username, content, role, timestamp]);
         return { id, roomId, userId, username, content, role, timestamp };
@@ -149,7 +116,7 @@ class DatabaseService {
     }
     // Moderation operations
     async addBan(roomId, userId, type, createdBy, duration) {
-        const id = (0, uuid_1.v4)();
+        const id = uuidv4();
         const createdAt = Date.now();
         const expiresAt = duration ? createdAt + duration * 1000 : undefined;
         await this.pool.query(`INSERT INTO moderation (id, room_id, user_id, type, expires_at, created_at, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [id, roomId, userId, type, expiresAt || null, createdAt, createdBy]);
@@ -196,7 +163,7 @@ class DatabaseService {
     }
     // Agent operations
     async createAgent(name) {
-        const id = (0, uuid_1.v4)();
+        const id = uuidv4();
         const apiKey = 'ctv_' + crypto.randomBytes(32).toString('hex');
         const now = Date.now();
         await this.pool.query(`INSERT INTO agents (id, name, api_key, verified, stream_count, total_viewers, last_seen_at, created_at) VALUES ($1, $2, $3, false, 0, 0, $4, $5)`, [id, name, apiKey, now, now]);
@@ -254,7 +221,7 @@ class DatabaseService {
     }
     // Agent stream operations
     async createAgentStream(agentId, roomId, title, cols = 80, rows = 24) {
-        const id = (0, uuid_1.v4)();
+        const id = uuidv4();
         const startedAt = Date.now();
         await this.pool.query(`INSERT INTO agent_streams (id, agent_id, room_id, title, cols, rows, started_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [id, agentId, roomId, title, cols, rows, startedAt]);
         return { id, agentId, roomId, title, cols, rows, startedAt, peakViewers: 0 };
@@ -343,5 +310,4 @@ class DatabaseService {
         await this.pool.end();
     }
 }
-exports.DatabaseService = DatabaseService;
 //# sourceMappingURL=database.js.map

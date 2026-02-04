@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerAgentRoutes = registerAgentRoutes;
 // Helper to validate agent API key
 const getAgentFromRequest = async (request, db) => {
     const apiKey = request.headers['x-api-key'];
@@ -8,7 +5,7 @@ const getAgentFromRequest = async (request, db) => {
         return null;
     return await db.getAgentByApiKey(apiKey);
 };
-function registerAgentRoutes(fastify, db, auth, rooms, roomRules) {
+export function registerAgentRoutes(fastify, db, auth, rooms, roomRules) {
     // Agent registration
     fastify.post('/api/agent/register', async (request, reply) => {
         const { name, humanUsername } = request.body;

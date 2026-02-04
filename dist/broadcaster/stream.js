@@ -1,14 +1,8 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.StreamClient = void 0;
-const ws_1 = __importDefault(require("ws"));
-const events_1 = require("events");
-const protocol_1 = require("../shared/protocol");
-const config_1 = require("../shared/config");
-class StreamClient extends events_1.EventEmitter {
+import WebSocket from 'ws';
+import { EventEmitter } from 'events';
+import { createMessage, } from '../shared/protocol';
+import { HEARTBEAT_INTERVAL, RECONNECT_DELAY, MAX_RECONNECT_ATTEMPTS, } from '../shared/config';
+export class StreamClient extends EventEmitter {
     ws = null;
     options;
     heartbeatInterval = null;
@@ -21,7 +15,7 @@ class StreamClient extends events_1.EventEmitter {
     }
     connect() {
         this.isClosing = false;
-        this.ws = new ws_1.default(this.options.serverUrl);
+        this.ws = new WebSocket(this.options.serverUrl);
         this.ws.on('open', () => {
             this.reconnectAttempts = 0;
             this.authenticate();
@@ -33,9 +27,9 @@ class StreamClient extends events_1.EventEmitter {
         this.ws.on('close', () => {
             this.stopHeartbeat();
             this.emit('disconnected');
-            if (!this.isClosing && this.reconnectAttempts < config_1.MAX_RECONNECT_ATTEMPTS) {
+            if (!this.isClosing && this.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                 this.reconnectAttempts++;
-                setTimeout(() => this.connect(), config_1.RECONNECT_DELAY);
+                setTimeout(() => this.connect(), RECONNECT_DELAY);
             }
         });
         this.ws.on('error', (error) => {
@@ -43,7 +37,7 @@ class StreamClient extends events_1.EventEmitter {
         });
     }
     authenticate() {
-        this.send((0, protocol_1.createMessage)({
+        this.send(createMessage({
             type: 'auth',
             token: this.options.token,
             username: this.options.username,
@@ -94,7 +88,7 @@ class StreamClient extends events_1.EventEmitter {
         }
     }
     createStream() {
-        this.send((0, protocol_1.createMessage)({
+        this.send(createMessage({
             type: 'create_stream',
             title: this.options.title,
             isPrivate: this.options.isPrivate,
@@ -104,23 +98,23 @@ class StreamClient extends events_1.EventEmitter {
         }));
     }
     sendTerminalData(data) {
-        if (this.ws?.readyState === ws_1.default.OPEN) {
-            this.send((0, protocol_1.createMessage)({
+        if (this.ws?.readyState === WebSocket.OPEN) {
+            this.send(createMessage({
                 type: 'terminal',
                 data,
             }));
         }
     }
     sendTerminalResize(size) {
-        if (this.ws?.readyState === ws_1.default.OPEN) {
-            this.send((0, protocol_1.createMessage)({
+        if (this.ws?.readyState === WebSocket.OPEN) {
+            this.send(createMessage({
                 type: 'terminal_resize',
                 size,
             }));
         }
     }
     sendChat(content) {
-        if (this.ws?.readyState === ws_1.default.OPEN) {
+        if (this.ws?.readyState === WebSocket.OPEN) {
             this.send({
                 type: 'send_chat',
                 content,
@@ -129,14 +123,14 @@ class StreamClient extends events_1.EventEmitter {
         }
     }
     send(message) {
-        if (this.ws?.readyState === ws_1.default.OPEN) {
+        if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(message));
         }
     }
     startHeartbeat() {
         this.heartbeatInterval = setInterval(() => {
-            this.send((0, protocol_1.createMessage)({ type: 'heartbeat' }));
-        }, config_1.HEARTBEAT_INTERVAL);
+            this.send(createMessage({ type: 'heartbeat' }));
+        }, HEARTBEAT_INTERVAL);
     }
     stopHeartbeat() {
         if (this.heartbeatInterval) {
@@ -156,5 +150,4 @@ class StreamClient extends events_1.EventEmitter {
         }
     }
 }
-exports.StreamClient = StreamClient;
 //# sourceMappingURL=stream.js.map

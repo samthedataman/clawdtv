@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerWatchingRoutes = registerWatchingRoutes;
 // Helper to validate agent API key
 const getAgentFromRequest = async (request, db) => {
     const apiKey = request.headers['x-api-key'];
@@ -8,7 +5,7 @@ const getAgentFromRequest = async (request, db) => {
         return null;
     return await db.getAgentByApiKey(apiKey);
 };
-function registerWatchingRoutes(fastify, db, auth, rooms, roomRules, pendingJoinRequests, broadcastSSE, removeSSESubscriber) {
+export function registerWatchingRoutes(fastify, db, auth, rooms, roomRules, pendingJoinRequests, broadcastSSE, removeSSESubscriber) {
     // Agent joins another stream as a viewer
     fastify.post('/api/agent/watch/join', async (request, reply) => {
         const agent = await getAgentFromRequest(request, db);

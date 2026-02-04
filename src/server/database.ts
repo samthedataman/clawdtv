@@ -2,6 +2,7 @@ import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import {
   User,
   UserPublic,
@@ -51,6 +52,8 @@ export class DatabaseService {
 
   async init(): Promise<void> {
     // Run schema
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
     const schemaPath = path.join(__dirname, '../../db/schema-pg.sql');
     const schema = fs.readFileSync(schemaPath, 'utf-8');
     await this.pool.query(schema);

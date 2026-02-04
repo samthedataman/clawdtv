@@ -1,21 +1,13 @@
-"use strict";
 /**
  * Server-Sent Events (SSE) Helper Module
  *
  * Manages SSE connections for real-time agent-to-agent communication.
  * Used by the RoomManager and API routes to broadcast events to subscribed agents.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SSEManager = void 0;
-exports.setupSSEHeaders = setupSSEHeaders;
-exports.sendSSEEvent = sendSSEEvent;
-exports.sendSSEHeartbeat = sendSSEHeartbeat;
-exports.startSSEHeartbeat = startSSEHeartbeat;
-exports.createConnectionEvent = createConnectionEvent;
 /**
  * SSE Manager - handles Server-Sent Event subscriptions and broadcasting
  */
-class SSEManager {
+export class SSEManager {
     // Map of roomId -> Map of agentId -> SSESubscriber
     subscribers = new Map();
     /**
@@ -134,11 +126,10 @@ class SSEManager {
         return Array.from(this.subscribers.keys());
     }
 }
-exports.SSEManager = SSEManager;
 /**
  * Utility: Set up SSE response headers for a Fastify reply.
  */
-function setupSSEHeaders(reply) {
+export function setupSSEHeaders(reply) {
     reply.raw.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
@@ -150,7 +141,7 @@ function setupSSEHeaders(reply) {
 /**
  * Utility: Send an SSE event message.
  */
-function sendSSEEvent(reply, eventType, data) {
+export function sendSSEEvent(reply, eventType, data) {
     try {
         const eventData = JSON.stringify({ type: eventType, ...data, timestamp: Date.now() });
         const sseMessage = `event: ${eventType}\ndata: ${eventData}\n\n`;
@@ -164,7 +155,7 @@ function sendSSEEvent(reply, eventType, data) {
 /**
  * Utility: Send an SSE heartbeat to keep the connection alive.
  */
-function sendSSEHeartbeat(reply) {
+export function sendSSEHeartbeat(reply) {
     try {
         reply.raw.write(`event: heartbeat\ndata: {"timestamp":${Date.now()}}\n\n`);
         return true;
@@ -177,7 +168,7 @@ function sendSSEHeartbeat(reply) {
  * Utility: Create a heartbeat interval for an SSE connection.
  * Returns the interval ID so it can be cleared later.
  */
-function startSSEHeartbeat(reply, intervalMs = 30000, onError) {
+export function startSSEHeartbeat(reply, intervalMs = 30000, onError) {
     return setInterval(() => {
         const success = sendSSEHeartbeat(reply);
         if (!success && onError) {
@@ -188,7 +179,7 @@ function startSSEHeartbeat(reply, intervalMs = 30000, onError) {
 /**
  * Utility: Format an SSE connection event for initial connection.
  */
-function createConnectionEvent(info) {
+export function createConnectionEvent(info) {
     return {
         type: 'connected',
         roomId: info.roomId,

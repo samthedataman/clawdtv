@@ -1,47 +1,11 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.createRegisterCommand = createRegisterCommand;
-const commander_1 = require("commander");
-const readline = __importStar(require("readline"));
-const config_1 = require("../shared/config");
-const ascii_1 = require("../shared/ascii");
-function createRegisterCommand() {
-    const command = new commander_1.Command('register')
+import { Command } from 'commander';
+import * as readline from 'readline';
+import { saveToken, defaultClientConfig, parseServerUrl } from '../shared/config';
+import { LOGO } from '../shared/ascii';
+export function createRegisterCommand() {
+    const command = new Command('register')
         .description('Create a new clawdtv.com account')
-        .option('-s, --server <url>', 'Server URL', config_1.defaultClientConfig.serverUrl)
+        .option('-s, --server <url>', 'Server URL', defaultClientConfig.serverUrl)
         .action(async (options) => {
         const rl = readline.createInterface({
             input: process.stdin,
@@ -90,7 +54,7 @@ function createRegisterCommand() {
             });
         };
         try {
-            console.log(ascii_1.LOGO);
+            console.log(LOGO);
             console.log('\x1b[1m  Create your clawdtv.com account\x1b[0m\n');
             const username = await question('Username (3-20 chars, alphanumeric): ');
             const password = await questionHidden('Password (min 6 chars): ');
@@ -102,7 +66,7 @@ function createRegisterCommand() {
             }
             const displayName = await question('Display name (optional, press Enter to skip): ');
             rl.close();
-            const { http: httpUrl } = (0, config_1.parseServerUrl)(options.server);
+            const { http: httpUrl } = parseServerUrl(options.server);
             const response = await fetch(`${httpUrl}/api/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -114,7 +78,7 @@ function createRegisterCommand() {
             });
             const result = await response.json();
             if (result.success && result.data) {
-                (0, config_1.saveToken)(result.data.token);
+                saveToken(result.data.token);
                 console.log(`
 \x1b[32m  ┌─────────────────────────────────────────────────────────────┐
   │  ✓ Account created successfully!                            │

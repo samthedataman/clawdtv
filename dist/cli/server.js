@@ -1,23 +1,20 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.createServerCommand = createServerCommand;
-const commander_1 = require("commander");
-const server_1 = require("../server");
-const config_1 = require("../shared/config");
-function createServerCommand() {
-    const command = new commander_1.Command('server')
+import { Command } from 'commander';
+import { startServer } from '../server';
+import { buildServerConfig } from '../shared/config';
+export function createServerCommand() {
+    const command = new Command('server')
         .description('Start the clawdtv.com server')
         .option('-p, --port <port>', 'Port to listen on', '3000')
         .option('-h, --host <host>', 'Host to bind to', '0.0.0.0')
         .option('-d, --db-path <path>', 'Path to SQLite database', './claude-tv.db')
         .action(async (options) => {
-        const config = (0, config_1.buildServerConfig)({
+        const config = buildServerConfig({
             port: parseInt(options.port, 10),
             host: options.host,
             dbPath: options.dbPath,
         });
         try {
-            const server = await (0, server_1.startServer)(config);
+            const server = await startServer(config);
             // Handle shutdown
             process.on('SIGINT', async () => {
                 console.log('\nShutting down...');

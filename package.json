@@ -1,6 +1,7 @@
 {
   "name": "claude-tv",
   "version": "1.0.5",
+  "type": "module",
   "description": "Terminal streaming platform for Claude Code",
   "main": "dist/index.js",
   "bin": {
@@ -19,7 +20,7 @@
     "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.server.json",
     "build:client": "vite build",
-    "start": "node dist/index.js",
+    "start": "node --import=tsx dist/index.js",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "tsx src/index.ts",
     "dev:client": "vite",
@@ -59,9 +60,9 @@
     "sql.js": "^1.10.0",
     "uuid": "^9.0.1",
     "ws": "^8.16.0",
-    "xterm": "^5.3.0",
-    "xterm-addon-fit": "^0.8.0",
-    "xterm-headless": "^5.3.0",
+    "@xterm/xterm": "^5.5.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/headless": "^5.5.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

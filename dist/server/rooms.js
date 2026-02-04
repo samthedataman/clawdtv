@@ -1,13 +1,10 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RoomManager = void 0;
-const protocol_1 = require("../shared/protocol");
-const config_1 = require("../shared/config");
+import { createMessage, } from '../shared/protocol';
+import { MAX_RECENT_MESSAGES } from '../shared/config';
 // Inactivity timeout in milliseconds (5 minutes)
 const INACTIVITY_TIMEOUT_MS = 300000;
 // Cleanup check interval (30 seconds)
 const CLEANUP_INTERVAL_MS = 30000;
-class RoomManager {
+export class RoomManager {
     rooms = new Map();
     db;
     cleanupInterval = null;
@@ -216,7 +213,7 @@ class RoomManager {
         // Update activity on viewer join
         room.lastActivity = Date.now();
         // Broadcast join event
-        this.broadcastToRoom(roomId, (0, protocol_1.createMessage)({
+        this.broadcastToRoom(roomId, createMessage({
             type: 'viewer_join',
             userId,
             username,
@@ -233,7 +230,7 @@ class RoomManager {
             return;
         room.viewers.delete(userId);
         // Broadcast leave event
-        this.broadcastToRoom(roomId, (0, protocol_1.createMessage)({
+        this.broadcastToRoom(roomId, createMessage({
             type: 'viewer_leave',
             userId,
             username: viewer.username,
@@ -246,7 +243,7 @@ class RoomManager {
             return;
         room.broadcaster = null;
         // Broadcast stream end
-        this.broadcastToRoom(roomId, (0, protocol_1.createMessage)({
+        this.broadcastToRoom(roomId, createMessage({
             type: 'stream_end',
             streamId: room.stream.id,
             reason: 'disconnected',
@@ -263,7 +260,7 @@ class RoomManager {
             ? reason
             : 'ended';
         // Broadcast end event
-        this.broadcastToRoom(roomId, (0, protocol_1.createMessage)({
+        this.broadcastToRoom(roomId, createMessage({
             type: 'stream_end',
             streamId: room.stream.id,
             reason: protocolReason,
@@ -502,7 +499,7 @@ class RoomManager {
     getViewerList(roomId) {
         const room = this.rooms.get(roomId);
         if (!room) {
-            return (0, protocol_1.createMessage)({
+            return createMessage({
                 type: 'viewer_list',
                 viewers: [],
                 count: 0,
@@ -513,7 +510,7 @@ class RoomManager {
             username: v.username,
             role: v.role,
         }));
-        return (0, protocol_1.createMessage)({
+        return createMessage({
             type: 'viewer_list',
             viewers,
             count: viewers.length,
@@ -564,7 +561,7 @@ class RoomManager {
     }
     // Get recent messages for a room
     async getRecentMessages(roomId) {
-        const dbMessages = await this.db.getRecentMessages(roomId, config_1.MAX_RECENT_MESSAGES);
+        const dbMessages = await this.db.getRecentMessages(roomId, MAX_RECENT_MESSAGES);
         return dbMessages.map((msg) => ({
             type: 'chat',
             id: msg.id,
@@ -588,7 +585,7 @@ class RoomManager {
             role: 'viewer',
         });
         // Broadcast join event
-        this.broadcastToRoom(roomId, (0, protocol_1.createMessage)({
+        this.broadcastToRoom(roomId, createMessage({
             type: 'viewer_join',
             userId: agentId,
             username: agentName,
@@ -606,7 +603,7 @@ class RoomManager {
             return;
         room.viewers.delete(agentId);
         // Broadcast leave event
-        this.broadcastToRoom(roomId, (0, protocol_1.createMessage)({
+        this.broadcastToRoom(roomId, createMessage({
             type: 'viewer_leave',
             userId: agentId,
             username: viewer.username,
@@ -614,5 +611,4 @@ class RoomManager {
         }));
     }
 }
-exports.RoomManager = RoomManager;
 //# sourceMappingURL=rooms.js.map

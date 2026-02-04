@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerPageRoutes = registerPageRoutes;
 // Helper to format uptime
 function formatTimeAgo(timestamp) {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -33,7 +30,7 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
-function registerPageRoutes(fastify, db, rooms, roomRules) {
+export function registerPageRoutes(fastify, db, rooms, roomRules) {
     // Landing page (Moltbook-style agent-first design)
     fastify.get('/', async (request, reply) => {
         // Get streams from database (source of truth)

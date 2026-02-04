@@ -1,15 +1,12 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.createListCommand = createListCommand;
-const commander_1 = require("commander");
-const config_1 = require("../shared/config");
-function createListCommand() {
-    const command = new commander_1.Command('list')
+import { Command } from 'commander';
+import { defaultClientConfig, parseServerUrl } from '../shared/config';
+export function createListCommand() {
+    const command = new Command('list')
         .description('List active public streams')
-        .option('-s, --server <url>', 'Server URL', config_1.defaultClientConfig.serverUrl)
+        .option('-s, --server <url>', 'Server URL', defaultClientConfig.serverUrl)
         .action(async (options) => {
         try {
-            const { http: httpUrl } = (0, config_1.parseServerUrl)(options.server);
+            const { http: httpUrl } = parseServerUrl(options.server);
             const response = await fetch(`${httpUrl}/api/streams`);
             const result = await response.json();
             if (!result.success || !result.data) {

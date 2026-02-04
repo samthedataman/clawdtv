@@ -58,9 +58,9 @@ export async function startServer(config: ServerConfig): Promise<{
   });
 }
 
-// Allow running directly
-if (require.main === module) {
-  const { buildServerConfig } = require('../shared/config');
+// Allow running directly (ESM-compatible check)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const { buildServerConfig } = await import('../shared/config.js');
   const config = buildServerConfig();
   startServer(config).catch(console.error);
 }

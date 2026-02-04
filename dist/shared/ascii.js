@@ -1,8 +1,5 @@
-"use strict";
 // ASCII Art for clawdtv.com
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GOODBYE = exports.CONNECTION_ERROR = exports.CONNECTING = exports.STREAM_ENDED = exports.STREAM_STARTED = exports.WELCOME_MULTI_VIEWER = exports.WELCOME_VIEWER = exports.WELCOME_STREAMER = exports.LOGO = void 0;
-exports.LOGO = `
+export const LOGO = `
 \x1b[36m\x1b[1m
      ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗   ████████╗██╗   ██╗
     ██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝   ╚══██╔══╝██║   ██║
@@ -11,7 +8,7 @@ exports.LOGO = `
     ╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗██╗   ██║    ╚████╔╝
      ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝     ╚═══╝
 \x1b[0m`;
-exports.WELCOME_STREAMER = `
+export const WELCOME_STREAMER = `
 \x1b[35m\x1b[1m
     ╔═══════════════════════════════════════════════════════════════════╗
     ║                                                                   ║
@@ -31,7 +28,7 @@ exports.WELCOME_STREAMER = `
     ║                                                                   ║
     ╚═══════════════════════════════════════════════════════════════════╝
 \x1b[0m`;
-exports.WELCOME_VIEWER = `
+export const WELCOME_VIEWER = `
 \x1b[32m\x1b[1m
     ╔═══════════════════════════════════════════════════════════════════╗
     ║                                                                   ║
@@ -55,7 +52,7 @@ exports.WELCOME_VIEWER = `
     ║                                                                   ║
     ╚═══════════════════════════════════════════════════════════════════╝
 \x1b[0m`;
-exports.WELCOME_MULTI_VIEWER = `
+export const WELCOME_MULTI_VIEWER = `
 \x1b[32m\x1b[1m
     ╔═══════════════════════════════════════════════════════════════════╗
     ║                                                                   ║
@@ -76,7 +73,7 @@ exports.WELCOME_MULTI_VIEWER = `
     ║                                                                   ║
     ╚═══════════════════════════════════════════════════════════════════╝
 \x1b[0m`;
-const STREAM_STARTED = (roomId, title) => `
+export const STREAM_STARTED = (roomId, title) => `
 \x1b[32m
     ┌─────────────────────────────────────────────────────────────┐
     │  \x1b[1m✓ Stream started successfully!\x1b[0m\x1b[32m                             │
@@ -88,8 +85,7 @@ const STREAM_STARTED = (roomId, title) => `
     │  \x1b[33m$ npx claude-tv watch ${roomId.slice(0, 8)}...\x1b[32m                       │
     └─────────────────────────────────────────────────────────────┘
 \x1b[0m`;
-exports.STREAM_STARTED = STREAM_STARTED;
-exports.STREAM_ENDED = `
+export const STREAM_ENDED = `
 \x1b[33m
     ┌─────────────────────────────────────────────────────────────┐
     │                                                             │
@@ -99,7 +95,7 @@ exports.STREAM_ENDED = `
     │                                                             │
     └─────────────────────────────────────────────────────────────┘
 \x1b[0m`;
-exports.CONNECTING = `
+export const CONNECTING = `
 \x1b[36m
     ┌─────────────────────────────────────────────────────────────┐
     │                                                             │
@@ -107,7 +103,7 @@ exports.CONNECTING = `
     │                                                             │
     └─────────────────────────────────────────────────────────────┘
 \x1b[0m`;
-const CONNECTION_ERROR = (error) => `
+export const CONNECTION_ERROR = (error) => `
 \x1b[31m
     ┌─────────────────────────────────────────────────────────────┐
     │                                                             │
@@ -119,8 +115,7 @@ const CONNECTION_ERROR = (error) => `
     │                                                             │
     └─────────────────────────────────────────────────────────────┘
 \x1b[0m`;
-exports.CONNECTION_ERROR = CONNECTION_ERROR;
-exports.GOODBYE = `
+export const GOODBYE = `
 \x1b[35m
     ┌─────────────────────────────────────────────────────────────┐
     │                                                             │

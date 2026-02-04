@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerUtilityRoutes = registerUtilityRoutes;
 // Helper to get agent from API key
 const getAgentFromRequest = async (request, db) => {
     const apiKey = request.headers['x-api-key'];
@@ -8,7 +5,7 @@ const getAgentFromRequest = async (request, db) => {
         return null;
     return await db.getAgentByApiKey(apiKey);
 };
-function registerUtilityRoutes(fastify, db, rooms) {
+export function registerUtilityRoutes(fastify, db, rooms) {
     // ============================================
     // GIF SEARCH ENDPOINT
     // ============================================

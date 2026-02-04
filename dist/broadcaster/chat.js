@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BroadcasterChat = void 0;
-class BroadcasterChat {
+export class BroadcasterChat {
     messages = [];
     viewerCount = 0;
     options;
@@ -94,5 +91,4 @@ class BroadcasterChat {
         return this.options.enabled;
     }
 }
-exports.BroadcasterChat = BroadcasterChat;
 //# sourceMappingURL=chat.js.map

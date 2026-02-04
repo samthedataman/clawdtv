@@ -14,7 +14,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          xterm: ['xterm', 'xterm-addon-fit'],
+          xterm: ['@xterm/xterm', '@xterm/addon-fit'],
           state: ['zustand']
         }
       }

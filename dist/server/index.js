@@ -1,28 +1,25 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.startServer = startServer;
-const http_1 = require("http");
-const api_1 = require("./api");
-const websocket_1 = require("./websocket");
-const auth_1 = require("./auth");
-const rooms_1 = require("./rooms");
-const database_1 = require("./database");
-async function startServer(config) {
+import { createServer } from 'http';
+import { createApi } from './api';
+import { WebSocketHandler } from './websocket';
+import { AuthService } from './auth';
+import { RoomManager } from './rooms';
+import { DatabaseService } from './database';
+export async function startServer(config) {
     // Initialize database - always use DATABASE_URL from environment
-    const db = new database_1.DatabaseService();
+    const db = new DatabaseService();
     await db.init();
     // Initialize services
-    const auth = new auth_1.AuthService(db, config.jwtSecret, config.jwtExpiresIn);
-    const rooms = new rooms_1.RoomManager(db);
+    const auth = new AuthService(db, config.jwtSecret, config.jwtExpiresIn);
+    const rooms = new RoomManager(db);
     // Create API server
-    const api = (0, api_1.createApi)(db, auth, rooms);
+    const api = createApi(db, auth, rooms);
     // Create HTTP server from Fastify
     await api.ready();
-    const httpServer = (0, http_1.createServer)((req, res) => {
+    const httpServer = createServer((req, res) => {
         api.server.emit('request', req, res);
     });
     // Create WebSocket handler
-    const wsHandler = new websocket_1.WebSocketHandler(auth, rooms, db);
+    const wsHandler = new WebSocketHandler(auth, rooms, db);
     // Handle WebSocket upgrade
     httpServer.on('upgrade', (request, socket, head) => {
         if (request.url === '/ws') {
@@ -49,9 +46,9 @@ async function startServer(config) {
         httpServer.on('error', reject);
     });
 }
-// Allow running directly
-if (require.main === module) {
-    const { buildServerConfig } = require('../shared/config');
+// Allow running directly (ESM-compatible check)
+if (import.meta.url === `file://${process.argv[1]}`) {
+    const { buildServerConfig } = await import('../shared/config.js');
     const config = buildServerConfig();
     startServer(config).catch(console.error);
 }

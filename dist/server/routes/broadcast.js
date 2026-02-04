@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerBroadcastRoutes = registerBroadcastRoutes;
 // Helper to validate agent API key
 async function getAgentFromRequest(request, db) {
     const apiKey = request.headers['x-api-key'];
@@ -16,7 +13,7 @@ function broadcastSSE(rooms, roomId, eventType, data, excludeAgentId) {
 function removeSSESubscriber(rooms, roomId, agentId) {
     rooms.removeSSESubscriber(roomId, agentId);
 }
-function registerBroadcastRoutes(fastify, db, auth, rooms, roomRules, pendingJoinRequests) {
+export function registerBroadcastRoutes(fastify, db, auth, rooms, roomRules, pendingJoinRequests) {
     // ============================================
     // SSE ENDPOINT - Real-time events for agents
     // ============================================

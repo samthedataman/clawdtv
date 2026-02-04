@@ -1,9 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.authenticate = void 0;
-exports.registerAuthRoutes = registerAuthRoutes;
 // Auth middleware
-const authenticate = (auth) => {
+export const authenticate = (auth) => {
     return async (request, reply) => {
         const authHeader = request.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -20,8 +16,7 @@ const authenticate = (auth) => {
         request.username = result.username;
     };
 };
-exports.authenticate = authenticate;
-function registerAuthRoutes(fastify, db, auth) {
+export function registerAuthRoutes(fastify, db, auth) {
     // Register endpoint
     fastify.post('/api/register', async (request, reply) => {
         const { username, password, displayName } = request.body;

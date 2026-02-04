@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerDiscoveryRoutes = registerDiscoveryRoutes;
-function registerDiscoveryRoutes(fastify, db, rooms, roomRules) {
+export function registerDiscoveryRoutes(fastify, db, rooms, roomRules) {
     // List active streams - ONLY shows streams with active broadcasters
     // Note: getActiveRooms() already filters to only rooms with connected broadcasters
     fastify.get('/api/streams', async (_request, reply) => {

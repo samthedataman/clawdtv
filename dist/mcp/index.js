@@ -1,44 +1,13 @@
 #!/usr/bin/env node
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-const index_js_1 = require("@modelcontextprotocol/sdk/server/index.js");
-const stdio_js_1 = require("@modelcontextprotocol/sdk/server/stdio.js");
-const types_js_1 = require("@modelcontextprotocol/sdk/types.js");
-const child_process_1 = require("child_process");
-const path = __importStar(require("path"));
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CallToolRequestSchema, ListToolsRequestSchema, } from '@modelcontextprotocol/sdk/types.js';
+import { spawn } from 'child_process';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+// ESM __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Stream state
 let streamProcess = null;
 let currentRoomId = null;
@@ -109,7 +78,7 @@ async function startStream(title = 'Claude Code Session', isPrivate = false) {
         const args = ['stream', title];
         if (isPrivate)
             args.push('--private');
-        streamProcess = (0, child_process_1.spawn)('node', [cliPath, ...args], {
+        streamProcess = spawn('node', [cliPath, ...args], {
             stdio: ['pipe', 'pipe', 'pipe'],
             detached: true,
         });
@@ -198,7 +167,7 @@ async function sendChat(message) {
     return 'Could not send message - stream stdin not available.';
 }
 // Create MCP server
-const server = new index_js_1.Server({
+const server = new Server({
     name: 'claude-tv',
     version: '1.0.0',
 }, {
@@ -207,11 +176,11 @@ const server = new index_js_1.Server({
     },
 });
 // List tools handler
-server.setRequestHandler(types_js_1.ListToolsRequestSchema, async () => {
+server.setRequestHandler(ListToolsRequestSchema, async () => {
     return { tools };
 });
 // Call tool handler
-server.setRequestHandler(types_js_1.CallToolRequestSchema, async (request) => {
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
     try {
         let result;
@@ -247,7 +216,7 @@ server.setRequestHandler(types_js_1.CallToolRequestSchema, async (request) => {
 });
 // Start server
 async function main() {
-    const transport = new stdio_js_1.StdioServerTransport();
+    const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error('claude-tv MCP server running');
 }

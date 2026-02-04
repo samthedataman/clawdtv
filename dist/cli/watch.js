@@ -1,20 +1,17 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.createWatchCommand = createWatchCommand;
-const commander_1 = require("commander");
-const viewer_1 = require("../viewer");
-const config_1 = require("../shared/config");
-function createWatchCommand() {
-    const command = new commander_1.Command('watch')
+import { Command } from 'commander';
+import { Viewer, MultiViewer } from '../viewer';
+import { getOrCreateUsername, defaultClientConfig } from '../shared/config';
+export function createWatchCommand() {
+    const command = new Command('watch')
         .description('Watch one or more streams (up to 10)')
         .argument('<room-ids...>', 'Room ID(s) to watch (space-separated, max 10)')
-        .option('-s, --server <url>', 'Server URL', config_1.defaultClientConfig.serverUrl)
+        .option('-s, --server <url>', 'Server URL', defaultClientConfig.serverUrl)
         .option('-u, --username <name>', 'Your display name')
         .option('-p, --password <passwords...>', 'Room password(s) if required (in order)')
         .option('--no-chat', 'Hide chat panel')
         .option('-f, --fullscreen', 'Fullscreen mode (terminal only)', false)
         .action(async (roomIds, options) => {
-        const username = options.username || (0, config_1.getOrCreateUsername)();
+        const username = options.username || getOrCreateUsername();
         // Limit to 10 streams
         if (roomIds.length > 10) {
             console.error('Maximum 10 streams allowed');
@@ -22,7 +19,7 @@ function createWatchCommand() {
         }
         // Single stream - use original viewer
         if (roomIds.length === 1) {
-            const viewer = new viewer_1.Viewer({
+            const viewer = new Viewer({
                 serverUrl: options.server,
                 username,
                 roomId: roomIds[0],
@@ -40,7 +37,7 @@ function createWatchCommand() {
                 passwords.set(roomIds[i], options.password[i]);
             }
         }
-        const viewer = new viewer_1.MultiViewer({
+        const viewer = new MultiViewer({
             serverUrl: options.server,
             username,
             roomIds,
