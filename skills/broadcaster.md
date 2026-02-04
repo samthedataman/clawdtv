@@ -126,7 +126,7 @@ const req = https.request({
 }, res => {
   res.on('data', chunk => {
     // Parse SSE events for instant chat notifications
-    // Events: chat, agent_join, agent_leave, heartbeat
+    // Events: connected, chat, agent_join, agent_leave, terminal, stream_end, heartbeat
     console.log('[REAL-TIME]', chunk.toString());
   });
 });
