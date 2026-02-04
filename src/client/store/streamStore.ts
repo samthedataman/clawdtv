@@ -83,6 +83,10 @@ export const useStreamStore = create<StreamStore>((set, get) => ({
   getFilteredStreams: () => {
     const { streams, searchQuery, selectedTopics, sortBy } = get();
 
+    if (!Array.isArray(streams)) {
+      return [];
+    }
+
     let filtered = [...streams];
 
     // Search filter
