@@ -317,6 +317,64 @@ export class DatabaseService {
             createdAt: agent.createdAt,
         };
     }
+    // ============================================
+    // CLEANUP JOBS
+    // ============================================
+    /**
+     * Delete old ended streams and their associated chat messages.
+     * @param maxAgeDays - Delete streams ended more than this many days ago (default: 30)
+     */
+    async cleanupOldStreams(maxAgeDays = 30) {
+        const cutoffTime = Date.now() - (maxAgeDays * 24 * 60 * 60 * 1000);
+        // First, get room IDs of old agent streams to delete their messages
+        const oldAgentStreams = await this.pool.query(`SELECT room_id FROM agent_streams WHERE ended_at IS NOT NULL AND ended_at < $1`, [cutoffTime]);
+        const oldRoomIds = oldAgentStreams.rows.map((r) => r.room_id);
+        // Delete chat messages for old streams
+        let messagesDeleted = 0;
+        if (oldRoomIds.length > 0) {
+            const msgResult = await this.pool.query(`DELETE FROM chat_messages WHERE room_id = ANY($1)`, [oldRoomIds]);
+            messagesDeleted = msgResult.rowCount || 0;
+        }
+        // Delete old agent streams
+        const agentStreamResult = await this.pool.query(`DELETE FROM agent_streams WHERE ended_at IS NOT NULL AND ended_at < $1`, [cutoffTime]);
+        const agentStreamsDeleted = agentStreamResult.rowCount || 0;
+        // Delete old regular streams
+        const streamResult = await this.pool.query(`DELETE FROM streams WHERE ended_at IS NOT NULL AND ended_at < $1`, [cutoffTime]);
+        const streamsDeleted = streamResult.rowCount || 0;
+        if (streamsDeleted > 0 || agentStreamsDeleted > 0 || messagesDeleted > 0) {
+            console.log(`[DB Cleanup] Deleted ${streamsDeleted} streams, ${agentStreamsDeleted} agent streams, ${messagesDeleted} messages (older than ${maxAgeDays} days)`);
+        }
+        return { streams: streamsDeleted, agentStreams: agentStreamsDeleted, messages: messagesDeleted };
+    }
+    /**
+     * Delete orphaned chat messages (messages with no associated stream).
+     */
+    async cleanupOrphanedMessages() {
+        const result = await this.pool.query(`DELETE FROM chat_messages
+       WHERE room_id NOT IN (SELECT room_id FROM agent_streams)
+       AND room_id NOT IN (SELECT id FROM streams)`);
+        const count = result.rowCount || 0;
+        if (count > 0) {
+            console.log(`[DB Cleanup] Deleted ${count} orphaned chat messages`);
+        }
+        return count;
+    }
+    /**
+     * Run all cleanup jobs. Call this periodically (e.g., once per hour or daily).
+     */
+    async runCleanupJobs(maxAgeDays = 30) {
+        console.log('[DB Cleanup] Starting cleanup jobs...');
+        // Clean expired bans
+        const bansDeleted = await this.cleanExpiredBans();
+        if (bansDeleted > 0) {
+            console.log(`[DB Cleanup] Deleted ${bansDeleted} expired bans`);
+        }
+        // Clean old streams and messages
+        await this.cleanupOldStreams(maxAgeDays);
+        // Clean orphaned messages
+        await this.cleanupOrphanedMessages();
+        console.log('[DB Cleanup] Cleanup jobs completed');
+    }
     // Cleanup
     async close() {
         await this.pool.end();

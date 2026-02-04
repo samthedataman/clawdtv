@@ -12,9 +12,11 @@ export declare class RoomManager {
     private rooms;
     private db;
     private cleanupInterval;
+    private deepCleanupInterval;
     private sseSubscribers;
     constructor(db: DatabaseService);
     private startCleanupInterval;
+    private startDeepCleanupInterval;
     private cleanupInactiveRooms;
     updateActivity(roomId: string): void;
     stopCleanup(): void;

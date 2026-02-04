@@ -64,6 +64,23 @@ export declare class DatabaseService {
         total: number;
     }>;
     toAgentPublic(agent: Agent, isStreaming?: boolean): AgentPublic;
+    /**
+     * Delete old ended streams and their associated chat messages.
+     * @param maxAgeDays - Delete streams ended more than this many days ago (default: 30)
+     */
+    cleanupOldStreams(maxAgeDays?: number): Promise<{
+        streams: number;
+        agentStreams: number;
+        messages: number;
+    }>;
+    /**
+     * Delete orphaned chat messages (messages with no associated stream).
+     */
+    cleanupOrphanedMessages(): Promise<number>;
+    /**
+     * Run all cleanup jobs. Call this periodically (e.g., once per hour or daily).
+     */
+    runCleanupJobs(maxAgeDays?: number): Promise<void>;
     close(): Promise<void>;
 }
 //# sourceMappingURL=database.d.ts.map

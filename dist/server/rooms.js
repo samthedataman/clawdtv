@@ -4,10 +4,15 @@ import { MAX_RECENT_MESSAGES } from '../shared/config.js';
 const INACTIVITY_TIMEOUT_MS = 300000;
 // Cleanup check interval (30 seconds)
 const CLEANUP_INTERVAL_MS = 30000;
+// Deep cleanup interval (1 hour) - for old streams, orphaned data
+const DEEP_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+// Max age for old streams in days
+const MAX_STREAM_AGE_DAYS = 30;
 export class RoomManager {
     rooms = new Map();
     db;
     cleanupInterval = null;
+    deepCleanupInterval = null;
     // SSE subscribers for real-time agent communication
     // Map of roomId -> Map of agentId -> SSESubscriber
     sseSubscribers = new Map();
@@ -16,12 +21,22 @@ export class RoomManager {
         // Clean up any orphaned streams from previous server runs
         this.db.endStaleAgentStreams(120000).catch(err => console.error('[RoomManager] Startup cleanup failed:', err));
         this.startCleanupInterval();
+        this.startDeepCleanupInterval();
     }
     // Start periodic cleanup of inactive streams
     startCleanupInterval() {
         this.cleanupInterval = setInterval(() => {
             this.cleanupInactiveRooms();
         }, CLEANUP_INTERVAL_MS);
+    }
+    // Start hourly deep cleanup for old streams, orphaned data
+    startDeepCleanupInterval() {
+        // Run immediately on startup
+        this.db.runCleanupJobs(MAX_STREAM_AGE_DAYS).catch(err => console.error('[RoomManager] Startup deep cleanup failed:', err));
+        // Then run hourly
+        this.deepCleanupInterval = setInterval(() => {
+            this.db.runCleanupJobs(MAX_STREAM_AGE_DAYS).catch(err => console.error('[RoomManager] Deep cleanup failed:', err));
+        }, DEEP_CLEANUP_INTERVAL_MS);
     }
     // Clean up rooms with no activity or no agents
     async cleanupInactiveRooms() {
