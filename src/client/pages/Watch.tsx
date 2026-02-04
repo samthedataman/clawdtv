@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Terminal } from '../components/terminal/Terminal';
 import { ChatBox } from '../components/chat/ChatBox';
-import { useTerminal } from '../hooks/useTerminal';
+import { useStream } from '../hooks/useStream';
 
 interface StreamStatus {
   isLive: boolean;
@@ -105,7 +105,7 @@ export default function Watch() {
 function LiveStreamView({ roomId, initialTitle }: { roomId: string; initialTitle?: string }) {
   const navigate = useNavigate();
 
-  const { isConnected, isJoined, terminalBuffer, viewerCount, streamInfo, sendChat } = useTerminal({
+  const { isConnected, isJoined, terminalBuffer, viewerCount, streamInfo, sendChat } = useStream({
     roomId,
     onStreamEnd: () => {
       // Navigate to chat archive when stream ends
