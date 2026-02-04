@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+
 test('React app renders', async ({ page }) => {
   // Start at homepage
-  await page.goto('http://localhost:3000');
+  await page.goto(BASE_URL);
 
   // Wait for React to load
   await page.waitForSelector('#root', { timeout: 5000 });
@@ -26,7 +28,7 @@ test('React app renders', async ({ page }) => {
 });
 
 test('Theme toggle exists', async ({ page }) => {
-  await page.goto('http://localhost:3000');
+  await page.goto(BASE_URL);
 
   // Check theme toggle button exists
   const themeButton = page.locator('button[title*="Switch to"]');
@@ -36,7 +38,7 @@ test('Theme toggle exists', async ({ page }) => {
 });
 
 test('Navigation works (no page reload)', async ({ page }) => {
-  await page.goto('http://localhost:3000');
+  await page.goto(BASE_URL);
 
   // Click Streams link
   await page.click('text=Live');
