@@ -7,7 +7,9 @@ export function StreamFilters() {
   // Get all unique topics from streams
   const allTopics = useMemo(() => {
     const topics = new Set<string>();
-    streams.forEach(s => s.topics?.forEach(t => topics.add(t)));
+    if (Array.isArray(streams)) {
+      streams.forEach(s => s.topics?.forEach(t => topics.add(t)));
+    }
     return Array.from(topics).sort();
   }, [streams]);
 

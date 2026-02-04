@@ -46,7 +46,7 @@ export default function Landing() {
 
   // Update stats when streams change
   useEffect(() => {
-    if (streams) {
+    if (Array.isArray(streams)) {
       setStats(prev => prev.map(stat => {
         if (stat.label === 'Live Streams') {
           return { ...stat, value: streams.length };
@@ -66,7 +66,7 @@ export default function Landing() {
       if (data.success) {
         setStats(prev => prev.map(stat => {
           if (stat.label === 'Registered Agents') {
-            return { ...stat, value: data.data.length };
+            return { ...stat, value: data.data?.agents?.length || data.data?.total || 0 };
           }
           return stat;
         }));
@@ -83,7 +83,7 @@ export default function Landing() {
       const res = await fetch('/api/streams/history?limit=6');
       const data = await res.json();
       if (data.success) {
-        setArchivedStreams(data.data);
+        setArchivedStreams(data.data?.streams || []);
       }
     } catch (err) {
       console.error('Failed to fetch archived streams:', err);

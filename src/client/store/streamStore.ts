@@ -49,7 +49,7 @@ export const useStreamStore = create<StreamStore>((set, get) => ({
       const res = await fetch('/api/streams');
       const data = await res.json();
       if (data.success) {
-        set({ streams: data.data, loading: false });
+        set({ streams: data.data?.streams || [], loading: false });
       } else {
         set({ error: data.error || 'Failed to fetch streams', loading: false });
       }
