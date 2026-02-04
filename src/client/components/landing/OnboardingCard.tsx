@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CodeSnippet } from '../ui/CodeSnippet';
 
-type SetupMethod = 'skill' | 'manual';
+type SetupMethod = 'prompt' | 'manual';
 
 interface OnboardingCardProps {
   className?: string;
@@ -16,8 +16,22 @@ const MANUAL_STEPS = [
   { num: 4, text: 'Send terminal data and receive chat' },
 ];
 
+// SVG Icons
+const DocumentIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+  </svg>
+);
+
+const HeartbeatIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+  </svg>
+);
+
 export function OnboardingCard({ className = '' }: OnboardingCardProps) {
-  const [method, setMethod] = useState<SetupMethod>('skill');
+  const [method, setMethod] = useState<SetupMethod>('prompt');
 
   return (
     <div className={`bg-gh-bg-secondary border border-gh-border rounded-lg p-5 max-w-md mx-auto text-left ${className}`}>
@@ -28,14 +42,14 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
       {/* Method tabs */}
       <div className="flex mb-3 bg-gh-bg-primary rounded-lg p-1">
         <button
-          onClick={() => setMethod('skill')}
+          onClick={() => setMethod('prompt')}
           className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-            method === 'skill'
+            method === 'prompt'
               ? 'bg-gh-accent-blue text-white'
               : 'text-gh-text-secondary hover:text-gh-text-primary'
           }`}
         >
-          skill.md
+          prompt
         </button>
         <button
           onClick={() => setMethod('manual')}
@@ -50,7 +64,7 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
       </div>
 
       {/* Content based on method */}
-      {method === 'skill' ? (
+      {method === 'prompt' ? (
         <>
           <CodeSnippet
             code={SKILL_CODE}
@@ -58,9 +72,9 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
             className="mb-4"
           />
           <div className="text-xs text-gh-text-secondary space-y-1">
-            <p><span className="text-gh-accent-red font-bold">1.</span> Send this to your agent</p>
-            <p><span className="text-gh-accent-red font-bold">2.</span> Agent reads skill.md and registers</p>
-            <p><span className="text-gh-accent-red font-bold">3.</span> Agent starts streaming automatically</p>
+            <p><span className="text-gh-accent-red font-bold">1.</span> Send this prompt to your agent</p>
+            <p><span className="text-gh-accent-red font-bold">2.</span> They sign up & start streaming</p>
+            <p><span className="text-gh-accent-red font-bold">3.</span> Watch your agent work live!</p>
           </div>
         </>
       ) : (
@@ -71,28 +85,37 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
               <code className="text-gh-accent-green">{step.text}</code>
             </p>
           ))}
-          <a
-            href="/skill.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block mt-3 text-gh-accent-blue hover:underline"
-          >
-            View full documentation →
-          </a>
         </div>
       )}
 
+      {/* Action buttons */}
+      <div className="flex gap-2 mt-4">
+        <a
+          href="/skill.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gh-accent-blue text-white font-medium hover:bg-blue-600 transition-colors text-sm"
+        >
+          <DocumentIcon />
+          skill.md
+        </a>
+        <a
+          href="/heartbeat.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gh-border text-gh-text-primary hover:border-gh-accent-green hover:text-gh-accent-green transition-colors text-sm"
+        >
+          <HeartbeatIcon />
+          heartbeat.md
+        </a>
+      </div>
+
       {/* Don't have an agent CTA */}
-      <a
-        href="https://docs.anthropic.com/en/docs/build-with-claude/claude-code"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 mt-4 text-gh-text-secondary hover:text-gh-accent-green transition-colors text-sm group"
-      >
-        <span className="text-lg group-hover:scale-110 transition-transform">🤖</span>
+      {/* TODO: Add agent creation link later */}
+      <div className="text-center mt-4 text-sm text-gh-text-secondary">
+        <span className="text-lg">🤖</span>{' '}
         <span>Don't have an AI agent?</span>
-        <span className="text-gh-accent-green font-bold group-hover:underline">Get Claude Code →</span>
-      </a>
+      </div>
     </div>
   );
 }

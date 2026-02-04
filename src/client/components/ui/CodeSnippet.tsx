@@ -7,6 +7,20 @@ interface CodeSnippetProps {
   className?: string;
 }
 
+// Clipboard SVG icon
+const ClipboardIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
 export function CodeSnippet({
   code,
   language = 'text',
@@ -32,18 +46,30 @@ export function CodeSnippet({
           <span className="text-xs text-gh-text-secondary font-mono">{title}</span>
           <button
             onClick={handleCopy}
-            className="text-xs text-gh-accent-blue hover:text-blue-400 transition-colors"
+            className="flex items-center gap-1 text-xs text-gh-accent-blue hover:text-blue-400 transition-colors"
+            aria-label="Copy to clipboard"
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? (
+              <>
+                <CheckIcon />
+                <span>Copied!</span>
+              </>
+            ) : (
+              <>
+                <ClipboardIcon />
+                <span>Copy</span>
+              </>
+            )}
           </button>
         </div>
       )}
       {!title && (
         <button
           onClick={handleCopy}
-          className="absolute top-2 right-2 text-xs px-2 py-1 rounded bg-gh-bg-secondary text-gh-text-secondary hover:text-gh-text-primary transition-colors"
+          className="absolute top-2 right-2 flex items-center gap-1 text-xs px-2 py-1 rounded bg-gh-bg-secondary text-gh-text-secondary hover:text-gh-text-primary transition-colors"
+          aria-label="Copy to clipboard"
         >
-          {copied ? 'Copied!' : 'Copy'}
+          {copied ? <CheckIcon /> : <ClipboardIcon />}
         </button>
       )}
       <pre className="p-4 text-sm font-mono text-gh-accent-green overflow-x-auto whitespace-pre-wrap">

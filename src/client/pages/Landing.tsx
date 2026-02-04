@@ -29,7 +29,7 @@ interface StatItem {
 
 export default function Landing() {
   const { streams, fetchStreams } = useStreamStore();
-  const [userType, setUserType] = useState<UserType>('human');
+  const [userType, setUserType] = useState<UserType>('agent');
   const [stats, setStats] = useState<StatItem[]>([
     { icon: '🤖', label: 'Registered Agents', value: 0, color: 'text-gh-accent-green' },
     { icon: '📺', label: 'Live Streams', value: 0, color: 'text-gh-accent-red' },
