@@ -2,15 +2,12 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { Terminal } from '../components/terminal/Terminal';
-import { ChatBox } from '../components/chat/ChatBox';
-import { useChatStore } from '../store/chatStore';
 
 export default function Watch() {
   const { roomId } = useParams<{ roomId: string }>();
   const [terminalBuffer, setTerminalBuffer] = useState('');
+  const [messages, setMessages] = useState<any[]>([]);
   const [isJoined, setIsJoined] = useState(false);
-  const addMessage = useChatStore(state => state.addMessage);
-  const setMessages = useChatStore(state => state.setMessages);
 
   const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = typeof window !== 'undefined' ? `${protocol}://${window.location.host}/ws` : null;
@@ -18,7 +15,7 @@ export default function Watch() {
   const { sendJsonMessage, readyState } = useWebSocket(wsUrl, {
     onOpen: () => {
       console.log('✅ Connected');
-      const username = localStorage.getItem('username') || `Anon${Math.floor(Math.random() * 10000)}`;
+      const username = `Anon${Math.floor(Math.random() * 10000)}`;
       sendJsonMessage({ type: 'auth', username, role: 'viewer' });
       sendJsonMessage({ type: 'join_stream', roomId });
     },
@@ -27,9 +24,10 @@ export default function Watch() {
       console.log('📨', data.type);
 
       if (data.type === 'join_stream_response' && data.success) {
+        console.log('✅ Joined stream');
         setIsJoined(true);
         if (data.terminalBuffer) setTerminalBuffer(data.terminalBuffer);
-        if (data.recentMessages) setMessages(roomId!, data.recentMessages);
+        if (data.recentMessages) setMessages(data.recentMessages);
       }
 
       if (data.type === 'terminal') {
@@ -37,43 +35,43 @@ export default function Watch() {
       }
 
       if (data.type === 'chat') {
-        addMessage(roomId!, {
-          id: data.id,
-          userId: data.userId || data.username,
-          username: data.username,
-          content: data.content,
-          role: data.role || 'viewer',
-          timestamp: data.timestamp,
-          gifUrl: data.gifUrl,
-        });
+        setMessages(prev => [...prev, data]);
       }
     },
     shouldReconnect: () => true,
-    reconnectAttempts: 10,
-    reconnectInterval: (attempt) => Math.min(Math.pow(2, attempt) * 1000, 30000),
   });
 
   const isConnected = readyState === ReadyState.OPEN;
 
   return (
-    <div className="watch-page">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-gh-text-primary">
-          {isConnected ? '🔴 LIVE' : '⏸️ Connecting...'}
-        </h1>
-      </div>
+    <div style={{ padding: '20px' }}>
+      <h1 style={{ color: 'white', marginBottom: '20px' }}>
+        {isConnected ? '🔴 LIVE' : '⏸️ Connecting...'}
+      </h1>
 
-      <div className="flex gap-4 h-[600px]">
-        <div className="flex-1 bg-black rounded-lg border border-gh-border overflow-hidden">
+      <div style={{ display: 'flex', gap: '20px' }}>
+        <div style={{ flex: 1, background: 'black', border: '1px solid #333', borderRadius: '8px', overflow: 'hidden', height: '600px' }}>
           <Terminal data={terminalBuffer} />
         </div>
 
-        <div className="w-96">
-          <ChatBox
-            roomId={roomId!}
-            onSendMessage={(content, gif) => {
-              if (isJoined) sendJsonMessage({ type: 'send_chat', content, gifUrl: gif });
-              return isJoined;
+        <div style={{ width: '400px', background: '#1a1a2e', border: '1px solid #333', borderRadius: '8px', padding: '10px' }}>
+          <h3 style={{ color: 'white' }}>Chat</h3>
+          <div style={{ maxHeight: '500px', overflow: 'auto' }}>
+            {messages.map((msg, i) => (
+              <div key={i} style={{ color: 'white', marginBottom: '10px' }}>
+                <strong>{msg.username}:</strong> {msg.content}
+              </div>
+            ))}
+          </div>
+          <input
+            type="text"
+            placeholder="Type message..."
+            style={{ width: '100%', padding: '8px', marginTop: '10px' }}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && isJoined) {
+                sendJsonMessage({ type: 'send_chat', content: e.currentTarget.value });
+                e.currentTarget.value = '';
+              }
             }}
             disabled={!isJoined}
           />
