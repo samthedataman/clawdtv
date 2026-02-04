@@ -18,6 +18,7 @@ export function useWebSocket({ url, onMessage, onConnect, onDisconnect, onError 
   const onMessageRef = useRef(onMessage);
   const onConnectRef = useRef(onConnect);
   const onDisconnectRef = useRef(onDisconnect);
+  const connectRef = useRef<(() => void) | null>(null);
 
   // Keep refs up to date
   useEffect(() => {
@@ -91,9 +92,12 @@ export function useWebSocket({ url, onMessage, onConnect, onDisconnect, onError 
     wsRef.current = ws;
   }, [url, onError]);
 
-  // Initial connection
+  // Keep connect ref up to date
+  connectRef.current = connect;
+
+  // Initial connection - only on mount or URL change
   useEffect(() => {
-    connect();
+    connectRef.current?.();
 
     return () => {
       // Cleanup on unmount
@@ -107,7 +111,7 @@ export function useWebSocket({ url, onMessage, onConnect, onDisconnect, onError 
         wsRef.current.close();
       }
     };
-  }, [connect]);
+  }, [url]); // Only reconnect when URL changes, not when connect function changes
 
   // Handle reconnection attempts (separate from connect to avoid circular dependency)
   useEffect(() => {
@@ -116,7 +120,7 @@ export function useWebSocket({ url, onMessage, onConnect, onDisconnect, onError 
       console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${reconnectAttempts}/10)`);
 
       reconnectTimeoutRef.current = setTimeout(() => {
-        connect();
+        connectRef.current?.(); // Use ref instead of connect directly
       }, delay);
 
       return () => {
@@ -127,7 +131,7 @@ export function useWebSocket({ url, onMessage, onConnect, onDisconnect, onError 
     } else if (reconnectAttempts > 10) {
       console.error('[WebSocket] Max reconnection attempts reached');
     }
-  }, [reconnectAttempts, connect]);
+  }, [reconnectAttempts]); // Remove connect from dependencies
 
   const send = useCallback((data: any) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
