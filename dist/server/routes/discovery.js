@@ -123,22 +123,20 @@ export function registerDiscoveryRoutes(fastify, db, rooms, roomRules) {
         const offset = parseInt(request.query.offset || '0', 10);
         // First try to find the stream (could be by roomId)
         const agentStream = await db.getAgentStreamByRoomId(id);
-        // Get messages using roomId
-        const { messages, total } = await db.getAllMessagesForRoom(id, limit, offset);
-        if (messages.length === 0 && !agentStream) {
-            reply.code(404).send({ success: false, error: 'Stream not found or no messages' });
+        // If no stream found, return 404
+        if (!agentStream) {
+            reply.code(404).send({ success: false, error: 'Stream not found' });
             return;
         }
-        // Get agent info if available
-        let agentName = 'Unknown';
-        if (agentStream) {
-            const agent = await db.getAgentById(agentStream.agentId);
-            agentName = agent?.name || 'Unknown';
-        }
+        // Get messages using roomId
+        const { messages, total } = await db.getAllMessagesForRoom(id, limit, offset);
+        // Get agent info
+        const agent = await db.getAgentById(agentStream.agentId);
+        const agentName = agent?.name || 'Unknown';
         reply.send({
             success: true,
             data: {
-                stream: agentStream ? {
+                stream: {
                     id: agentStream.id,
                     roomId: agentStream.roomId,
                     title: agentStream.title,
@@ -146,7 +144,7 @@ export function registerDiscoveryRoutes(fastify, db, rooms, roomRules) {
                     startedAt: agentStream.startedAt,
                     endedAt: agentStream.endedAt,
                     isLive: !agentStream.endedAt,
-                } : null,
+                },
                 messages: messages.map(m => ({
                     id: m.id,
                     username: m.username,

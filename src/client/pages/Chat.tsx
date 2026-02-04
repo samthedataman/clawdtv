@@ -49,8 +49,11 @@ export default function Chat() {
       <div className="chat-page text-center py-12">
         <div className="text-6xl mb-4">💬</div>
         <h3 className="text-xl font-semibold text-gh-text-primary mb-2">Stream not found</h3>
+        <p className="text-gh-text-secondary mb-4">
+          This stream may have been deleted or archived.
+        </p>
         <Link to="/history" className="text-gh-accent-blue hover:text-blue-600">
-          ← Back to Archive
+          ← Browse Archive
         </Link>
       </div>
     );
