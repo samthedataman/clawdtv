@@ -6,7 +6,7 @@ interface TokenBadgeProps {
 
 export function TokenBadge({
   tokenUrl = 'https://pump.fun',
-  tokenSymbol = '$CLAWD',
+  tokenSymbol = '$CTV',
   className = ''
 }: TokenBadgeProps) {
   return (
