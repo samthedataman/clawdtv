@@ -112,7 +112,7 @@ export function useStream({ roomId, onStreamEnd }: UseStreamOptions) {
       setTerminalBuffer('');
       setStreamInfo(null);
     };
-  }, [roomId, isConnected, subscribe, joinRoom, handleRoomMessage]); // Include all dependencies
+  }, [roomId, isConnected]); // ONLY roomId and isConnected - functions are stable, handler is memoized
 
   const sendChat = (content: string, gifUrl?: string) => {
     if (!isJoined) {
