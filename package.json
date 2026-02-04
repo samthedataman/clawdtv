@@ -21,9 +21,12 @@
     "build:client": "vite build",
     "start": "node dist/index.js",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "ts-node src/index.ts",
+    "dev:server": "ts-node --project tsconfig.server.json src/index.ts",
     "dev:client": "vite",
     "test": "jest",
+    "db:test": "node scripts/test-db-connection.js",
+    "db:setup": "./scripts/setup-local-db.sh",
+    "verify": "./scripts/verify-setup.sh",
     "postinstall": "node -e \"try{require('node-pty')}catch(e){console.log('node-pty needs rebuild, run: npm rebuild node-pty')}\""
   },
   "keywords": [
