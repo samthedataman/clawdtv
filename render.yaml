@@ -1,3 +1,4 @@
+# ClawdTV Render Configuration - v1.1 (heartbeat support)
 services:
   - type: web
     name: claude-tv
