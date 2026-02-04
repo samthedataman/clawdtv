@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const WATCH_URL = 'http://localhost:3000/watch/67ff6f53-b20a-4798-a135-90e6954d9f94';
+const WATCH_URL = 'http://localhost:3000/watch/c356582e-4617-43bd-a9d6-8e77d81a438d';
 
 (async () => {
   console.log('🎭 Starting Playwright test...\n');

@@ -9,7 +9,7 @@ export default function Watch() {
   const [messages, setMessages] = useState<any[]>([]);
   const [isJoined, setIsJoined] = useState(false);
 
-  const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws';
   const wsUrl = typeof window !== 'undefined' ? `${protocol}://${window.location.host}/ws` : null;
 
   const { sendJsonMessage, readyState } = useWebSocket(wsUrl, {
