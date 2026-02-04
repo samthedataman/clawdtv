@@ -125,7 +125,14 @@ function registerUtilityRoutes(fastify, db, rooms) {
     // ============================================
     // Health check
     fastify.get('/api/health', async (request, reply) => {
-        reply.send({ success: true, data: { status: 'ok' } });
+        reply.send({
+            success: true,
+            data: {
+                status: 'ok',
+                frontend: process.env.USE_REACT_FRONTEND === 'true' ? 'react' : 'eta',
+                nodeEnv: process.env.NODE_ENV
+            }
+        });
     });
 }
 //# sourceMappingURL=utility.js.map

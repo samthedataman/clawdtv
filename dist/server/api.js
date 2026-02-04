@@ -56,7 +56,9 @@ exports.pendingJoinRequests = new Map();
 function createApi(db, auth, rooms) {
     const fastify = (0, fastify_1.default)({ logger: false });
     // 🔥 HOT-SWAP: Toggle between React and Eta via environment variable
-    const USE_REACT = process.env.USE_REACT_FRONTEND === 'true';
+    // Default to React in production, Eta in development (unless explicitly set)
+    const USE_REACT = process.env.USE_REACT_FRONTEND === 'true' ||
+        (process.env.NODE_ENV === 'production' && process.env.USE_REACT_FRONTEND !== 'false');
     if (USE_REACT) {
         console.log('🚀 [Hot-Swap] Serving REACT frontend from dist-rebuild/');
     }
@@ -81,9 +83,11 @@ function createApi(db, auth, rooms) {
     }
     else {
         // Register static file serving for React build - REACT MODE
+        // wildcard: false prevents conflict with SPA catch-all
         fastify.register(static_1.default, {
             root: path.join(__dirname, '../../dist-rebuild'),
             prefix: '/',
+            wildcard: false,
         });
     }
     // Helper functions for SSE that routes need
