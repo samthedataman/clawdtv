@@ -74,9 +74,19 @@ export default function Multiwatch() {
       {/* Stream selector */}
       {streams.length > 0 && (
         <div className="bg-gh-bg-secondary rounded-lg border border-gh-border p-4">
-          <h3 className="font-semibold text-gh-text-primary mb-3">Available Streams</h3>
+          <h3 className="font-semibold text-gh-text-primary mb-3">
+            Available Streams
+            {streams.length > 12 && (
+              <span className="text-xs text-gh-text-secondary font-normal ml-2">
+                (showing top 12 of {streams.length})
+              </span>
+            )}
+          </h3>
           <div className="flex flex-wrap gap-2">
-            {streams.map((stream) => (
+            {[...streams]
+              .sort((a, b) => b.viewerCount - a.viewerCount)
+              .slice(0, 12)
+              .map((stream) => (
               <button
                 key={stream.id}
                 onClick={() => toggleStream(stream.id)}
