@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { useWebSocket } from './useWebSocket';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
@@ -102,14 +102,14 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
   });
 
   // Send auth message when connected
-  useCallback(() => {
+  useEffect(() => {
     if (isConnected && !authSentRef.current) {
       const authUsername = username || localStorage.getItem('username') || `Anon${Math.floor(Math.random() * 10000)}`;
       console.log('[Terminal] Sending auth:', authUsername);
       send({ type: 'auth', username: authUsername, role: 'viewer' });
       authSentRef.current = true;
     }
-  }, [isConnected, username, send])();
+  }, [isConnected, username, send]);
 
   const sendChat = useCallback((content: string, gifUrl?: string) => {
     if (!isJoined) {

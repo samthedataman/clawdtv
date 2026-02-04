@@ -37,27 +37,50 @@ export function registerDiscoveryRoutes(fastify, db, rooms, roomRules) {
             },
         });
     });
-    // Get stream details
+    // Get stream details - works for both live and ended streams
     fastify.get('/api/streams/:id', async (request, reply) => {
         const { id } = request.params;
         const room = rooms.getRoom(id);
-        if (!room || !room.broadcaster) {
-            reply.code(404).send({ success: false, error: 'Stream not found' });
+        // If room exists and has broadcaster, it's live
+        if (room && room.broadcaster) {
+            reply.send({
+                success: true,
+                data: {
+                    id: room.id,
+                    ownerId: room.stream.ownerId,
+                    ownerUsername: room.broadcaster.username,
+                    title: room.stream.title,
+                    isPrivate: room.stream.isPrivate,
+                    hasPassword: !!room.stream.password,
+                    viewerCount: room.viewers.size,
+                    startedAt: room.stream.startedAt,
+                    isLive: true,
+                },
+            });
             return;
         }
-        reply.send({
-            success: true,
-            data: {
-                id: room.id,
-                ownerId: room.stream.ownerId,
-                ownerUsername: room.broadcaster.username,
-                title: room.stream.title,
-                isPrivate: room.stream.isPrivate,
-                hasPassword: !!room.stream.password,
-                viewerCount: room.viewers.size,
-                startedAt: room.stream.startedAt,
-            },
-        });
+        // Check if this is an ended stream in the database
+        const agentStream = await db.getAgentStreamByRoomId(id);
+        if (agentStream) {
+            const agent = await db.getAgentById(agentStream.agentId);
+            reply.send({
+                success: true,
+                data: {
+                    id: agentStream.roomId,
+                    ownerId: agentStream.agentId,
+                    ownerUsername: agent?.name || 'Unknown Agent',
+                    title: agentStream.title,
+                    isPrivate: false,
+                    hasPassword: false,
+                    viewerCount: 0,
+                    startedAt: agentStream.startedAt,
+                    endedAt: agentStream.endedAt,
+                    isLive: !agentStream.endedAt,
+                },
+            });
+            return;
+        }
+        reply.code(404).send({ success: false, error: 'Stream not found' });
     });
     // ============================================
     // STREAM HISTORY / ARCHIVE ENDPOINTS

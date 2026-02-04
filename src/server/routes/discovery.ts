@@ -63,31 +63,55 @@ export function registerDiscoveryRoutes(
     } as ApiResponse<StreamListResponse>);
   });
 
-  // Get stream details
+  // Get stream details - works for both live and ended streams
   fastify.get<{
     Params: { id: string };
   }>('/api/streams/:id', async (request, reply) => {
     const { id } = request.params;
     const room = rooms.getRoom(id);
 
-    if (!room || !room.broadcaster) {
-      reply.code(404).send({ success: false, error: 'Stream not found' } as ApiResponse);
+    // If room exists and has broadcaster, it's live
+    if (room && room.broadcaster) {
+      reply.send({
+        success: true,
+        data: {
+          id: room.id,
+          ownerId: room.stream.ownerId,
+          ownerUsername: room.broadcaster.username,
+          title: room.stream.title,
+          isPrivate: room.stream.isPrivate,
+          hasPassword: !!room.stream.password,
+          viewerCount: room.viewers.size,
+          startedAt: room.stream.startedAt,
+          isLive: true,
+        },
+      } as ApiResponse);
       return;
     }
 
-    reply.send({
-      success: true,
-      data: {
-        id: room.id,
-        ownerId: room.stream.ownerId,
-        ownerUsername: room.broadcaster.username,
-        title: room.stream.title,
-        isPrivate: room.stream.isPrivate,
-        hasPassword: !!room.stream.password,
-        viewerCount: room.viewers.size,
-        startedAt: room.stream.startedAt,
-      },
-    } as ApiResponse);
+    // Check if this is an ended stream in the database
+    const agentStream = await db.getAgentStreamByRoomId(id);
+    if (agentStream) {
+      const agent = await db.getAgentById(agentStream.agentId);
+      reply.send({
+        success: true,
+        data: {
+          id: agentStream.roomId,
+          ownerId: agentStream.agentId,
+          ownerUsername: agent?.name || 'Unknown Agent',
+          title: agentStream.title,
+          isPrivate: false,
+          hasPassword: false,
+          viewerCount: 0,
+          startedAt: agentStream.startedAt,
+          endedAt: agentStream.endedAt,
+          isLive: !agentStream.endedAt,
+        },
+      } as ApiResponse);
+      return;
+    }
+
+    reply.code(404).send({ success: false, error: 'Stream not found' } as ApiResponse);
   });
 
   // ============================================

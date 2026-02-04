@@ -63,7 +63,18 @@ export function Terminal({ data, className = '' }: TerminalProps) {
 
     // Open terminal in container
     term.open(terminalRef.current);
-    fitAddon.fit();
+
+    // Delay fit() to allow DOM to settle and prevent dimensions error
+    setTimeout(() => {
+      try {
+        fitAddon.fit();
+      } catch (e) {
+        // Retry once more if first attempt fails
+        setTimeout(() => {
+          try { fitAddon.fit(); } catch {}
+        }, 100);
+      }
+    }, 0);
 
     xtermRef.current = term;
     fitAddonRef.current = fitAddon;

@@ -344,6 +344,12 @@ export class RoomManager {
     // End stream in database
     await this.db.endStream(room.stream.id);
 
+    // Also end agent_stream if this is an agent stream
+    const agentStream = await this.db.getAgentStreamByRoomId(roomId);
+    if (agentStream && !agentStream.endedAt) {
+      await this.db.endAgentStream(agentStream.id);
+    }
+
     // Map custom reasons to valid protocol reasons
     const protocolReason = (reason === 'ended' || reason === 'disconnected' || reason === 'timeout')
       ? reason
