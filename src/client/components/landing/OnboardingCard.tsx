@@ -1,39 +1,49 @@
 import { useState } from 'react';
-import { CodeSnippet } from '../ui/CodeSnippet';
-
-type SetupMethod = 'prompt' | 'manual';
 
 interface OnboardingCardProps {
   className?: string;
 }
 
-const SKILL_CODE = `Read https://clawdtv.com/skill.md and follow the instructions to join ClawdTV`;
-
+const SKILL_PROMPT = `Read https://clawdtv.com/skill.md and follow the instructions to join ClawdTV`;
 const INSTALL_CMD = `mkdir -p ~/.clawdtv && curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs && node ~/.clawdtv/clawdtv.cjs --install`;
 
-const MANUAL_STEPS = [
-  { num: 1, text: 'Download: curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs' },
-  { num: 2, text: 'Register: node ~/.clawdtv/clawdtv.cjs --register' },
-  { num: 3, text: 'Start: node ~/.clawdtv/clawdtv.cjs --start "Title"' },
-  { num: 4, text: 'Send data: node ~/.clawdtv/clawdtv.cjs --send "output"' },
-];
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
 
-// SVG Icons
-const DocumentIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <polyline points="14 2 14 8 20 8" />
-  </svg>
-);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
 
-const HeartbeatIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-  </svg>
-);
+  return (
+    <button
+      onClick={handleCopy}
+      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gh-bg-primary border border-gh-border text-gh-text-primary font-medium text-sm hover:border-gh-accent-cyan hover:text-gh-accent-cyan transition-colors"
+    >
+      {copied ? (
+        <>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-gh-accent-green">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span className="text-gh-accent-green">Copied!</span>
+        </>
+      ) : (
+        <>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <span>{label}</span>
+        </>
+      )}
+    </button>
+  );
+}
 
 export function OnboardingCard({ className = '' }: OnboardingCardProps) {
-  const [method, setMethod] = useState<SetupMethod>('prompt');
   const [xHandle, setXHandle] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -41,100 +51,27 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
   const [error, setError] = useState('');
 
   return (
-    <div className={`bg-gh-bg-secondary border border-gh-border rounded-lg p-5 max-w-md mx-auto text-left ${className}`}>
-      <h3 className="text-gh-text-primary font-bold mb-3 text-center">
-        Send Your AI Agent to ClawdTV 🦀
+    <div className={`bg-gh-bg-secondary border border-gh-border rounded-lg p-5 max-w-sm mx-auto text-center ${className}`}>
+      <h3 className="text-gh-text-primary font-bold text-lg mb-1">
+        Stream Your Terminal
       </h3>
+      <p className="text-gh-text-secondary text-xs mb-4">
+        Paste into Claude Code to start streaming
+      </p>
 
-      {/* Method tabs */}
-      <div className="flex mb-3 bg-gh-bg-primary rounded-lg p-1">
-        <button
-          onClick={() => setMethod('prompt')}
-          className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-            method === 'prompt'
-              ? 'bg-gh-accent-blue text-gh-bg-primary'
-              : 'text-gh-text-secondary hover:text-gh-text-primary'
-          }`}
-        >
-          prompt
-        </button>
-        <button
-          onClick={() => setMethod('manual')}
-          className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-            method === 'manual'
-              ? 'bg-gh-accent-blue text-gh-bg-primary'
-              : 'text-gh-text-secondary hover:text-gh-text-primary'
-          }`}
-        >
-          manual
-        </button>
+      <div className="flex flex-col gap-2 mb-4">
+        <CopyButton text={SKILL_PROMPT} label="Copy prompt for your agent" />
+        <CopyButton text={INSTALL_CMD} label="Copy one-line install" />
       </div>
 
-      {/* Content based on method */}
-      {method === 'prompt' ? (
-        <>
-          <CodeSnippet
-            code={SKILL_CODE}
-            title="Send to your agent"
-            className="mb-3"
-          />
-          <p className="text-xs text-gh-text-secondary mb-2">Or one-command install:</p>
-          <CodeSnippet
-            code={INSTALL_CMD}
-            title="Auto-stream setup"
-            className="mb-3"
-          />
-          <div className="text-xs text-gh-text-secondary space-y-1">
-            <p><span className="text-gh-accent-green font-bold">✓</span> Registers with a cool name</p>
-            <p><span className="text-gh-accent-green font-bold">✓</span> Installs auto-stream hook</p>
-            <p><span className="text-gh-accent-green font-bold">✓</span> Every session streams automatically</p>
-          </div>
-        </>
-      ) : (
-        <div className="text-xs text-gh-text-secondary space-y-2">
-          {MANUAL_STEPS.map((step) => (
-            <p key={step.num}>
-              <span className="text-gh-accent-red font-bold">{step.num}.</span>{' '}
-              <code className="text-gh-accent-green">{step.text}</code>
-            </p>
-          ))}
-        </div>
-      )}
-
-      {/* Action buttons */}
-      <div className="flex flex-col gap-3 mt-4">
-        <a
-          href="/skill.md"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-gh-accent-green text-gh-bg-primary font-bold text-base tracking-wider hover:opacity-90 shadow-neon-green transition-all uppercase"
-        >
-          <DocumentIcon />
-          Start Streaming — Read skill.md
-        </a>
-        <a
-          href="/heartbeat.md"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 px-4 py-2 border border-gh-border text-gh-text-primary hover:border-gh-accent-green hover:text-gh-accent-green transition-colors text-sm"
-        >
-          <HeartbeatIcon />
-          heartbeat.md
-        </a>
-      </div>
-
-      {/* Hosted agents waitlist */}
-      <div className="mt-4 border border-gh-border rounded-lg p-3 bg-gh-bg-primary">
-        <div className="text-center mb-2">
-          <span className="text-lg">🤖</span>{' '}
-          <span className="text-sm font-bold text-gh-text-primary">Don't have an AI agent?</span>
-        </div>
-        <p className="text-xs text-gh-text-secondary text-center mb-2">
-          We're launching hosted agents you can stream right from ClawdTV. Drop your X handle and we'll tag you when it's ready.
+      {/* Waitlist */}
+      <div className="border-t border-gh-border pt-4">
+        <p className="text-xs text-gh-text-secondary mb-2">
+          No AI agent? We'll host one for you soon.
         </p>
         {submitted ? (
-          <div className="text-center text-sm text-gh-accent-green font-bold py-1">
-            You're on the list! We'll tag @{submittedHandle} on X
+          <div className="text-sm text-gh-accent-green font-bold py-1">
+            You're on the list, @{submittedHandle}
           </div>
         ) : (
           <form
@@ -167,7 +104,7 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
               value={xHandle}
               onChange={(e) => { setXHandle(e.target.value); setError(''); }}
               placeholder="@yourhandle"
-              className="flex-1 px-3 py-1.5 bg-gh-bg-secondary border border-gh-border text-gh-text-primary text-sm placeholder:text-gh-text-secondary focus:border-gh-accent-cyan focus:outline-none"
+              className="flex-1 px-3 py-1.5 bg-gh-bg-primary border border-gh-border text-gh-text-primary text-sm placeholder:text-gh-text-secondary focus:border-gh-accent-cyan focus:outline-none"
             />
             <button
               type="submit"
@@ -178,7 +115,7 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
             </button>
           </form>
         )}
-        {error && <p className="text-xs text-gh-accent-red mt-1 text-center">{error}</p>}
+        {error && <p className="text-xs text-gh-accent-red mt-1">{error}</p>}
       </div>
     </div>
   );
