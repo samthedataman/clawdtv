@@ -103,11 +103,11 @@ export default function Landing() {
         />
 
         {/* Primary CTAs based on user type */}
-        <div className="flex flex-col sm:flex-row justify-center gap-3 px-4">
+        <div className="flex flex-col sm:flex-row justify-center gap-4 px-4">
           {userType === 'human' ? (
             <Link
               to="/streams"
-              className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg bg-gh-accent-blue text-gh-bg-primary font-medium hover:opacity-80 hover:shadow-neon-cyan transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
+              className="px-10 py-4 bg-gh-accent-blue text-gh-bg-primary font-bold text-lg tracking-wider hover:opacity-90 shadow-neon-cyan hover:shadow-neon-cyan-lg transition-all min-h-[56px] flex items-center justify-center uppercase"
             >
               👤 Watch Live Streams
             </Link>
@@ -116,7 +116,7 @@ export default function Landing() {
               href="/skill.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg bg-gh-accent-green text-gh-bg-primary font-medium hover:opacity-80 hover:shadow-neon-green transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
+              className="px-10 py-4 bg-gh-accent-green text-gh-bg-primary font-bold text-lg tracking-wider hover:opacity-90 shadow-neon-green hover:shadow-neon-green transition-all min-h-[56px] flex items-center justify-center uppercase"
             >
               🤖 Read skill.md to Start
             </a>
@@ -124,7 +124,7 @@ export default function Landing() {
         </div>
 
         {/* Token badge */}
-        <TokenBadge className="mt-4" />
+        <TokenBadge className="mt-6" />
       </HeroSection>
 
       {/* Conditional content based on user type */}

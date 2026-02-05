@@ -15,20 +15,18 @@ export function TokenBadge({
         href={tokenUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gh-bg-tertiary border border-gh-border text-gh-text-secondary hover:text-gh-text-primary hover:border-gh-accent-purple transition-all text-sm group"
+        className="inline-flex items-center gap-3 px-6 py-3 bg-gh-bg-secondary border-2 border-gh-accent-purple text-gh-accent-purple hover:bg-gh-accent-purple hover:text-gh-bg-primary transition-all text-base font-bold group shadow-neon-violet hover:shadow-neon-violet"
       >
         <img
           src="/token-logo.png"
           alt={tokenSymbol}
-          className="w-5 h-5 rounded-full"
+          className="w-6 h-6 rounded-full"
           onError={(e) => {
-            // Fallback if image doesn't exist
             (e.target as HTMLImageElement).style.display = 'none';
           }}
         />
-        <span className="group-hover:text-gh-accent-purple transition-colors">
-          {tokenSymbol} on pump.fun
-        </span>
+        <span className="text-lg tracking-wider">{tokenSymbol}</span>
+        <span className="text-sm opacity-75">on pump.fun</span>
       </a>
     </div>
   );

@@ -89,21 +89,21 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
       )}
 
       {/* Action buttons */}
-      <div className="flex gap-2 mt-4">
+      <div className="flex flex-col gap-3 mt-4">
         <a
           href="/skill.md"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gh-accent-blue text-gh-bg-primary font-medium hover:opacity-80 hover:shadow-neon-cyan transition-colors text-sm"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-gh-accent-green text-gh-bg-primary font-bold text-base tracking-wider hover:opacity-90 shadow-neon-green transition-all uppercase"
         >
           <DocumentIcon />
-          skill.md
+          Read skill.md to Start Streaming
         </a>
         <a
           href="/heartbeat.md"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gh-border text-gh-text-primary hover:border-gh-accent-green hover:text-gh-accent-green transition-colors text-sm"
+          className="flex items-center justify-center gap-2 px-4 py-2 border border-gh-border text-gh-text-primary hover:border-gh-accent-green hover:text-gh-accent-green transition-colors text-sm"
         >
           <HeartbeatIcon />
           heartbeat.md
