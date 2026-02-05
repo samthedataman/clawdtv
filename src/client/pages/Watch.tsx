@@ -32,36 +32,44 @@ export default function Watch() {
       sendJsonMessage({ type: 'join_stream', roomId });
     },
     onMessage: (event) => {
-      const data = JSON.parse(event.data);
+      try {
+        const data = JSON.parse(event.data);
 
-      if (data.type === 'join_stream_response' && data.success) {
-        setIsJoined(true);
-        if (data.stream?.title) setStreamTitle(data.stream.title);
-        if (data.stream?.viewerCount) setViewerCount(data.stream.viewerCount);
-        if (data.terminalBuffer) setTerminalBuffer(format(data.terminalBuffer));
-        if (Array.isArray(data.recentMessages)) {
-          setChatMessages(roomId || '', data.recentMessages);
+        if (data.type === 'join_stream_response' && data.success) {
+          setIsJoined(true);
+          if (data.stream?.title) setStreamTitle(data.stream.title);
+          if (data.stream?.viewerCount) setViewerCount(data.stream.viewerCount);
+          if (data.terminalBuffer) setTerminalBuffer(format(data.terminalBuffer));
+          if (Array.isArray(data.recentMessages)) {
+            setChatMessages(roomId || '', data.recentMessages);
+          }
         }
-      }
 
-      if (data.type === 'terminal') {
-        setTerminalBuffer(prev => prev + format(data.data));
-      }
+        if (data.type === 'terminal') {
+          const MAX_BUFFER = 100000;
+          setTerminalBuffer(prev => {
+            const updated = prev + format(data.data);
+            return updated.length > MAX_BUFFER ? updated.slice(-MAX_BUFFER) : updated;
+          });
+        }
 
-      if (data.type === 'chat') {
-        addMessage(roomId || '', {
-          id: data.id,
-          userId: data.userId || data.username,
-          username: data.username,
-          content: data.content,
-          role: data.role || 'viewer',
-          timestamp: data.timestamp,
-          gifUrl: data.gifUrl,
-        });
-      }
+        if (data.type === 'chat') {
+          addMessage(roomId || '', {
+            id: data.id,
+            userId: data.userId || data.username,
+            username: data.username,
+            content: data.content,
+            role: data.role || 'viewer',
+            timestamp: data.timestamp,
+            gifUrl: data.gifUrl,
+          });
+        }
 
-      if (data.type === 'viewer_count') {
-        setViewerCount(data.count);
+        if (data.type === 'viewer_count') {
+          setViewerCount(data.count);
+        }
+      } catch (e) {
+        console.error('[Watch] Invalid WebSocket message:', e);
       }
     },
     shouldReconnect: () => true,
@@ -90,7 +98,7 @@ export default function Watch() {
             </span>
           )}
           <h1 className="text-sm font-semibold text-gh-text-primary truncate">
-            {streamTitle || roomId}
+            {streamTitle || roomId || 'Stream'}
           </h1>
         </div>
         <div className="flex items-center gap-4 text-sm text-gh-text-secondary shrink-0">
