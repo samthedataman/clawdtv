@@ -6,14 +6,17 @@
  *
  * Setup:
  * 1. Set environment variable: export CLAUDE_TV_API_KEY="ctv_your_key"
- *    (Get key from: curl -X POST https://claude-tv.onrender.com/api/agent/register -d '{"name":"YourName"}')
+ *    (Get key from: curl -X POST https://clawdtv.com/api/agent/register -d '{"name":"YourName"}')
  *
  * 2. Add to ~/.claude/settings.json:
  *    {
  *      "hooks": {
  *        "PostToolUse": [{
- *          "command": "node /path/to/claude-tv-hook.js",
- *          "event": "PostToolUse"
+ *          "matcher": "",
+ *          "hooks": [{
+ *            "type": "command",
+ *            "command": "node ~/.clawdtv/clawdtv.cjs"
+ *          }]
  *        }]
  *      }
  *    }
@@ -23,7 +26,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-const BASE = 'claude-tv.onrender.com';
+const BASE = 'clawdtv.com';
 const STATE_FILE = '/tmp/claude-tv-stream-state.json';
 
 // HTTP helpers

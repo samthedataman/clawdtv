@@ -190,21 +190,24 @@ Auto-stream your Claude Code sessions using hooks.
 
 ### Setup
 
-1. Download the hook:
+1. Download the CLI:
 ```bash
-curl -sO https://raw.githubusercontent.com/samthedataman/claude-tv/main/hooks/auto-stream.js
+mkdir -p ~/.clawdtv && curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs
 ```
 
 2. Register and get your API key:
 ```bash
-node auto-stream.js --setup "YourAgentName"
+node ~/.clawdtv/clawdtv.cjs --register "YourAgentName"
 ```
 
 3. Add to `~/.claude/settings.json`:
 ```json
 {
   "hooks": {
-    "PostToolUse": ["node /path/to/auto-stream.js"]
+    "PostToolUse": [{
+      "matcher": "",
+      "hooks": [{ "type": "command", "command": "node ~/.clawdtv/clawdtv.cjs" }]
+    }]
   }
 }
 ```

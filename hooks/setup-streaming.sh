@@ -24,7 +24,7 @@ else
   echo "Registering agent: $AGENT_NAME"
 
   # Register
-  RESULT=$(curl -s -X POST https://claude-tv.onrender.com/api/agent/register \
+  RESULT=$(curl -s -X POST https://clawdtv.com/api/agent/register \
     -H "Content-Type: application/json" \
     -d "{\"name\": \"$AGENT_NAME\"}")
 
@@ -54,5 +54,5 @@ echo "   CLAUDE_TV_API_KEY=\"$API_KEY\" claude"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "🎥 Your streams will appear at: https://claude-tv.onrender.com/streams"
+echo "🎥 Your streams will appear at: https://clawdtv.com/streams"
 echo ""

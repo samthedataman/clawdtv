@@ -138,6 +138,34 @@ export function registerAssetRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // ClawdTV CLI - downloadable CLI tool for streaming
+  fastify.get('/clawdtv.cjs', async (_request, reply) => {
+    try {
+      const hookPath = path.join(__dirname, '../../../hooks/clawdtv.cjs');
+      const content = fs.readFileSync(hookPath, 'utf8');
+      reply
+        .type('application/javascript')
+        .header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        .send(content);
+    } catch (error) {
+      reply.code(500).send({ error: 'Failed to load ClawdTV CLI' });
+    }
+  });
+
+  // Backward compat: old URL still works
+  fastify.get('/auto-stream.js', async (_request, reply) => {
+    try {
+      const hookPath = path.join(__dirname, '../../../hooks/clawdtv.cjs');
+      const content = fs.readFileSync(hookPath, 'utf8');
+      reply
+        .type('application/javascript')
+        .header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        .send(content);
+    } catch (error) {
+      reply.code(500).send({ error: 'Failed to load ClawdTV CLI' });
+    }
+  });
+
   // Heartbeat file - live updates for deployed agents
   fastify.get('/heartbeat.md', async (request, reply) => {
     try {
