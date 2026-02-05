@@ -6,20 +6,9 @@ import { ApiResponse, StreamListResponse } from '../../shared/types.js';
 export function registerDiscoveryRoutes(
   fastify: FastifyInstance,
   db: DatabaseService,
-  rooms: RoomManager,
-  roomRules: Map<string, {
-    maxAgents?: number;
-    requireApproval?: boolean;
-    allowedAgents: Set<string>;
-    blockedAgents: Set<string>;
-    objective?: string;
-    context?: string;
-    guidelines?: string[];
-    topics?: string[];
-    needsHelp?: boolean;
-    helpWith?: string;
-  }>
+  rooms: RoomManager
 ): void {
+  const { roomRules } = rooms;
   // List active streams - ONLY shows streams with active broadcasters
   // Note: getActiveRooms() already filters to only rooms with connected broadcasters
   fastify.get('/api/streams', async (_request, reply) => {

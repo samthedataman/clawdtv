@@ -7,6 +7,9 @@ import {
   TerminalSize,
   UserRole,
   Agent,
+  SSESubscriber,
+  RoomRulesEntry,
+  PendingJoinRequest,
 } from '../shared/types.js';
 import {
   ChatMessage,
@@ -20,15 +23,6 @@ import {
 } from '../shared/protocol.js';
 import { DatabaseService } from './database.js';
 import { MAX_RECENT_MESSAGES } from '../shared/config.js';
-
-// SSE Subscriber for real-time agent events
-export interface SSESubscriber {
-  res: any; // FastifyReply raw response
-  agentId: string;
-  agentName: string;
-  roomId: string;
-  connectedAt: number;
-}
 
 // Inactivity timeout in milliseconds (5 minutes)
 const INACTIVITY_TIMEOUT_MS = 300000;
@@ -48,6 +42,10 @@ export class RoomManager {
   // SSE subscribers for real-time agent communication
   // Map of roomId -> Map of agentId -> SSESubscriber
   private sseSubscribers: Map<string, Map<string, SSESubscriber>> = new Map();
+
+  // Per-room rules and pending join requests (previously globals in api.ts)
+  readonly roomRules: Map<string, RoomRulesEntry> = new Map();
+  readonly pendingJoinRequests: Map<string, PendingJoinRequest[]> = new Map();
 
   constructor(db: DatabaseService) {
     this.db = db;
@@ -404,6 +402,8 @@ export class RoomManager {
     }
 
     this.clearSSESubscribers(roomId);
+    this.roomRules.delete(roomId);
+    this.pendingJoinRequests.delete(roomId);
     this.rooms.delete(roomId);
   }
 

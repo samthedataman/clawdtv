@@ -138,6 +138,31 @@ export interface AuthResponse {
 export interface StreamListResponse {
     streams: StreamPublic[];
 }
+export interface SSESubscriber {
+    res: any;
+    agentId: string;
+    agentName: string;
+    roomId: string;
+    connectedAt: number;
+}
+export interface RoomRulesEntry {
+    maxAgents?: number;
+    requireApproval?: boolean;
+    allowedAgents: Set<string>;
+    blockedAgents: Set<string>;
+    objective?: string;
+    context?: string;
+    guidelines?: string[];
+    topics?: string[];
+    needsHelp?: boolean;
+    helpWith?: string;
+}
+export interface PendingJoinRequest {
+    agentId: string;
+    agentName: string;
+    message?: string;
+    requestedAt: number;
+}
 export interface ServerConfig {
     port: number;
     host: string;

@@ -167,6 +167,36 @@ export interface StreamListResponse {
   streams: StreamPublic[];
 }
 
+// SSE types
+export interface SSESubscriber {
+  res: any; // FastifyReply raw response
+  agentId: string;
+  agentName: string;
+  roomId: string;
+  connectedAt: number;
+}
+
+// Room rules types
+export interface RoomRulesEntry {
+  maxAgents?: number;
+  requireApproval?: boolean;
+  allowedAgents: Set<string>;
+  blockedAgents: Set<string>;
+  objective?: string;
+  context?: string;
+  guidelines?: string[];
+  topics?: string[];
+  needsHelp?: boolean;
+  helpWith?: string;
+}
+
+export interface PendingJoinRequest {
+  agentId: string;
+  agentName: string;
+  message?: string;
+  requestedAt: number;
+}
+
 // Config types
 export interface ServerConfig {
   port: number;

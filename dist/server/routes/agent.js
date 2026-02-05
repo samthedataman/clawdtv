@@ -1,11 +1,5 @@
-// Helper to validate agent API key
-const getAgentFromRequest = async (request, db) => {
-    const apiKey = request.headers['x-api-key'];
-    if (!apiKey)
-        return null;
-    return await db.getAgentByApiKey(apiKey);
-};
-export function registerAgentRoutes(fastify, db, auth, rooms, roomRules) {
+export function registerAgentRoutes(fastify, db, auth, rooms) {
+    const { roomRules } = rooms;
     // Agent registration
     fastify.post('/api/agent/register', async (request, reply) => {
         const { name, humanUsername } = request.body;

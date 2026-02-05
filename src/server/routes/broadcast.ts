@@ -3,74 +3,19 @@ import { v4 as uuidv4 } from 'uuid';
 import { DatabaseService } from '../database.js';
 import { AuthService } from '../auth.js';
 import { RoomManager } from '../rooms.js';
+import { SSESubscriber, RoomRulesEntry, PendingJoinRequest } from '../../shared/types.js';
+import { getAgentFromRequest } from '../helpers/agentAuth.js';
 
-interface AuthenticatedRequest extends FastifyRequest {
-  userId?: string;
-  username?: string;
-}
-
-// Room rules type
-export type RoomRules = Map<string, {
-  maxAgents?: number;
-  requireApproval?: boolean;
-  allowedAgents: Set<string>;
-  blockedAgents: Set<string>;
-  objective?: string;
-  context?: string;
-  guidelines?: string[];
-  topics?: string[];
-  needsHelp?: boolean;
-  helpWith?: string;
-}>;
-
-// Pending join requests type
-export type PendingJoinRequests = Map<string, Array<{
-  agentId: string;
-  agentName: string;
-  message?: string;
-  requestedAt: number;
-}>>;
-
-// SSE subscriber type
-export interface SSESubscriber {
-  res: FastifyReply;
-  agentId: string;
-  agentName: string;
-  roomId: string;
-  connectedAt: number;
-}
-
-// Helper to validate agent API key
-async function getAgentFromRequest(request: any, db: DatabaseService) {
-  const apiKey = request.headers['x-api-key'] as string;
-  if (!apiKey) return null;
-  return await db.getAgentByApiKey(apiKey);
-}
-
-// Helper to broadcast SSE events
-function broadcastSSE(
-  rooms: RoomManager,
-  roomId: string,
-  eventType: string,
-  data: any,
-  excludeAgentId?: string
-) {
-  rooms.broadcastSSE(roomId, eventType, data, excludeAgentId);
-}
-
-// Helper to remove SSE subscriber
-function removeSSESubscriber(rooms: RoomManager, roomId: string, agentId: string) {
-  rooms.removeSSESubscriber(roomId, agentId);
-}
+export type RoomRules = Map<string, RoomRulesEntry>;
+export type PendingJoinRequests = Map<string, PendingJoinRequest[]>;
 
 export function registerBroadcastRoutes(
   fastify: FastifyInstance,
   db: DatabaseService,
   auth: AuthService,
-  rooms: RoomManager,
-  roomRules: RoomRules,
-  pendingJoinRequests: PendingJoinRequests
+  rooms: RoomManager
 ) {
+  const { roomRules, pendingJoinRequests } = rooms;
   // ============================================
   // SSE ENDPOINT - Real-time events for agents
   // ============================================
@@ -130,7 +75,7 @@ export function registerBroadcastRoutes(
 
     // Only broadcast join event if this is a fresh connection, not a reconnect
     if (!isReconnect) {
-      broadcastSSE(rooms, roomId, 'agent_connected', {
+      rooms.broadcastSSE(roomId, 'agent_connected', {
         agentId: agent.id,
         agentName: agent.name,
         viewerCount: room.viewers.size + 1,
@@ -143,17 +88,17 @@ export function registerBroadcastRoutes(
         reply.raw.write(`event: heartbeat\ndata: {"timestamp":${Date.now()}}\n\n`);
       } catch {
         clearInterval(heartbeatInterval);
-        removeSSESubscriber(rooms, roomId, agent.id);
+        rooms.removeSSESubscriber(roomId, agent.id);
       }
     }, 15000);
 
     // Handle client disconnect
     request.raw.on('close', () => {
       clearInterval(heartbeatInterval);
-      removeSSESubscriber(rooms, roomId, agent.id);
+      rooms.removeSSESubscriber(roomId, agent.id);
 
       // Broadcast disconnect event
-      broadcastSSE(rooms, roomId, 'agent_disconnected', {
+      rooms.broadcastSSE(roomId, 'agent_disconnected', {
         agentId: agent.id,
         agentName: agent.name,
       });
@@ -340,7 +285,7 @@ export function registerBroadcastRoutes(
     rooms.broadcastTerminalData(agentStream.roomId, data);
 
     // Broadcast to SSE subscribers
-    broadcastSSE(rooms, agentStream.roomId, 'terminal', {
+    rooms.broadcastSSE(agentStream.roomId, 'terminal', {
       data: data.length > 1000 ? data.slice(-1000) : data,
       truncated: data.length > 1000,
     });
@@ -391,7 +336,7 @@ export function registerBroadcastRoutes(
     }
 
     // Broadcast stream end to SSE subscribers before cleanup
-    broadcastSSE(rooms, agentStream.roomId, 'stream_end', {
+    rooms.broadcastSSE(agentStream.roomId, 'stream_end', {
       roomId: agentStream.roomId,
       reason: 'ended',
       broadcasterName: agent.name,
@@ -759,7 +704,7 @@ export function registerBroadcastRoutes(
     rooms.updateActivity(agentStream.roomId);
 
     // Broadcast to SSE subscribers
-    broadcastSSE(rooms, agentStream.roomId, 'chat', {
+    rooms.broadcastSSE(agentStream.roomId, 'chat', {
       messageId: chatMsg.id,
       userId: agent.id,
       username: agent.name,

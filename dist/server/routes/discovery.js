@@ -1,4 +1,5 @@
-export function registerDiscoveryRoutes(fastify, db, rooms, roomRules) {
+export function registerDiscoveryRoutes(fastify, db, rooms) {
+    const { roomRules } = rooms;
     // List active streams - ONLY shows streams with active broadcasters
     // Note: getActiveRooms() already filters to only rooms with connected broadcasters
     fastify.get('/api/streams', async (_request, reply) => {

@@ -2,29 +2,15 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { DatabaseService } from '../database.js';
 import { AuthService } from '../auth.js';
 import { RoomManager } from '../rooms.js';
-
-interface AuthenticatedRequest extends FastifyRequest {
-  userId?: string;
-  username?: string;
-}
-
-// Helper to validate agent API key
-const getAgentFromRequest = async (request: any, db: DatabaseService) => {
-  const apiKey = request.headers['x-api-key'] as string;
-  if (!apiKey) return null;
-  return await db.getAgentByApiKey(apiKey);
-};
+import { getAgentFromRequest } from '../helpers/agentAuth.js';
 
 export function registerWatchingRoutes(
   fastify: FastifyInstance,
   db: DatabaseService,
   auth: AuthService,
-  rooms: RoomManager,
-  roomRules: Map<string, any>,
-  pendingJoinRequests: Map<string, any[]>,
-  broadcastSSE: (roomId: string, eventType: string, data: any, excludeAgentId?: string) => void,
-  removeSSESubscriber: (roomId: string, agentId: string) => void
+  rooms: RoomManager
 ) {
+  const { roomRules, pendingJoinRequests } = rooms;
   // Agent joins another stream as a viewer
   fastify.post<{
     Body: { roomId: string; message?: string };
@@ -111,7 +97,7 @@ export function registerWatchingRoutes(
     rooms.addAgentViewer(roomId, agent.id, agent.name);
 
     // Broadcast join to SSE subscribers (real-time notification)
-    broadcastSSE(roomId, 'agent_join', {
+    rooms.broadcastSSE(roomId,'agent_join', {
       agentId: agent.id,
       agentName: agent.name,
       viewerCount: room.viewers.size,
@@ -171,10 +157,10 @@ export function registerWatchingRoutes(
     rooms.removeAgentViewer(roomId, agent.id);
 
     // Also remove from SSE subscribers
-    removeSSESubscriber(roomId, agent.id);
+    rooms.removeSSESubscriber(roomId, agent.id);
 
     // Broadcast leave to SSE subscribers
-    broadcastSSE(roomId, 'agent_leave', {
+    rooms.broadcastSSE(roomId,'agent_leave', {
       agentId: agent.id,
       agentName: agent.name,
       viewerCount: Math.max(0, viewerCount),
@@ -294,7 +280,7 @@ export function registerWatchingRoutes(
     rooms.broadcastToRoom(roomId, chatMsg);
 
     // Broadcast to SSE subscribers (real-time for agents)
-    broadcastSSE(roomId, 'chat', {
+    rooms.broadcastSSE(roomId,'chat', {
       messageId: chatMsg.id,
       userId: agent.id,
       username: agent.name,

@@ -16,6 +16,9 @@ export class RoomManager {
     // SSE subscribers for real-time agent communication
     // Map of roomId -> Map of agentId -> SSESubscriber
     sseSubscribers = new Map();
+    // Per-room rules and pending join requests (previously globals in api.ts)
+    roomRules = new Map();
+    pendingJoinRequests = new Map();
     constructor(db) {
         this.db = db;
         // Clean up any orphaned streams from previous server runs
@@ -303,6 +306,8 @@ export class RoomManager {
             catch { }
         }
         this.clearSSESubscribers(roomId);
+        this.roomRules.delete(roomId);
+        this.pendingJoinRequests.delete(roomId);
         this.rooms.delete(roomId);
     }
     // Create a room for an agent stream (no WebSocket broadcaster required)

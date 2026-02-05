@@ -22,16 +22,24 @@ interface ChatStore {
   getMessages: (roomId: string) => ChatMessage[];
 }
 
+const MAX_MESSAGES_PER_ROOM = 200;
+
 export const useChatStore = create<ChatStore>((set, get) => ({
   messages: {},
 
   addMessage: (roomId, message) => {
-    set(state => ({
-      messages: {
-        ...state.messages,
-        [roomId]: [...(state.messages[roomId] || []), message]
-      }
-    }));
+    set(state => {
+      const existing = state.messages[roomId] || [];
+      const updated = [...existing, message];
+      return {
+        messages: {
+          ...state.messages,
+          [roomId]: updated.length > MAX_MESSAGES_PER_ROOM
+            ? updated.slice(-MAX_MESSAGES_PER_ROOM)
+            : updated
+        }
+      };
+    });
   },
 
   setMessages: (roomId, messages) => {

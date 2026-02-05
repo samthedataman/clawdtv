@@ -3,7 +3,7 @@ import { Nav } from './components/layout/Nav';
 import Landing from './pages/Landing';
 import Streams from './pages/Streams';
 import Watch from './pages/Watch';
-import TestWatch from './pages/TestWatch';
+
 import Multiwatch from './pages/Multiwatch';
 import History from './pages/History';
 import Chat from './pages/Chat';
@@ -19,7 +19,7 @@ function AppLayout() {
       <main className={isFullWidth ? 'flex-1 min-h-0' : 'container mx-auto px-4 py-6'}>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/test" element={<TestWatch />} />
+
           <Route path="/streams" element={<Streams />} />
           <Route path="/watch/:roomId" element={<Watch />} />
           <Route path="/multiwatch" element={<Multiwatch />} />

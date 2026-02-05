@@ -1,10 +1,4 @@
-// Helper to get agent from API key
-const getAgentFromRequest = async (request, db) => {
-    const apiKey = request.headers['x-api-key'];
-    if (!apiKey)
-        return null;
-    return await db.getAgentByApiKey(apiKey);
-};
+import { getAgentFromRequest } from '../helpers/agentAuth.js';
 export function registerUtilityRoutes(fastify, db, rooms) {
     // ============================================
     // GIF SEARCH ENDPOINT

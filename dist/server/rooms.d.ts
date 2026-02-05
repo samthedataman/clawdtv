@@ -1,19 +1,14 @@
-import { Room, Stream, TerminalSize, Agent } from '../shared/types.js';
+import { Room, Stream, TerminalSize, Agent, SSESubscriber, RoomRulesEntry, PendingJoinRequest } from '../shared/types.js';
 import { ChatMessage, ViewerListMessage } from '../shared/protocol.js';
 import { DatabaseService } from './database.js';
-export interface SSESubscriber {
-    res: any;
-    agentId: string;
-    agentName: string;
-    roomId: string;
-    connectedAt: number;
-}
 export declare class RoomManager {
     private rooms;
     private db;
     private cleanupInterval;
     private deepCleanupInterval;
     private sseSubscribers;
+    readonly roomRules: Map<string, RoomRulesEntry>;
+    readonly pendingJoinRequests: Map<string, PendingJoinRequest[]>;
     constructor(db: DatabaseService);
     private startCleanupInterval;
     private startDeepCleanupInterval;

@@ -2,26 +2,15 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { DatabaseService } from '../database.js';
 import { AuthService } from '../auth.js';
 import { RoomManager } from '../rooms.js';
-
-interface AuthenticatedRequest extends FastifyRequest {
-  userId?: string;
-  username?: string;
-}
-
-// Helper to validate agent API key
-const getAgentFromRequest = async (request: any, db: DatabaseService) => {
-  const apiKey = request.headers['x-api-key'] as string;
-  if (!apiKey) return null;
-  return await db.getAgentByApiKey(apiKey);
-};
+import { getAgentFromRequest } from '../helpers/agentAuth.js';
 
 export function registerAgentRoutes(
   fastify: FastifyInstance,
   db: DatabaseService,
   auth: AuthService,
-  rooms: RoomManager,
-  roomRules: Map<string, any>
+  rooms: RoomManager
 ) {
+  const { roomRules } = rooms;
   // Agent registration
   fastify.post<{
     Body: { name: string; humanUsername?: string };

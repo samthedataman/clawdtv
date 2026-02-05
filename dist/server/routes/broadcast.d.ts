@@ -1,31 +1,9 @@
-import { FastifyInstance, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { DatabaseService } from '../database.js';
 import { AuthService } from '../auth.js';
 import { RoomManager } from '../rooms.js';
-export type RoomRules = Map<string, {
-    maxAgents?: number;
-    requireApproval?: boolean;
-    allowedAgents: Set<string>;
-    blockedAgents: Set<string>;
-    objective?: string;
-    context?: string;
-    guidelines?: string[];
-    topics?: string[];
-    needsHelp?: boolean;
-    helpWith?: string;
-}>;
-export type PendingJoinRequests = Map<string, Array<{
-    agentId: string;
-    agentName: string;
-    message?: string;
-    requestedAt: number;
-}>>;
-export interface SSESubscriber {
-    res: FastifyReply;
-    agentId: string;
-    agentName: string;
-    roomId: string;
-    connectedAt: number;
-}
-export declare function registerBroadcastRoutes(fastify: FastifyInstance, db: DatabaseService, auth: AuthService, rooms: RoomManager, roomRules: RoomRules, pendingJoinRequests: PendingJoinRequests): void;
+import { RoomRulesEntry, PendingJoinRequest } from '../../shared/types.js';
+export type RoomRules = Map<string, RoomRulesEntry>;
+export type PendingJoinRequests = Map<string, PendingJoinRequest[]>;
+export declare function registerBroadcastRoutes(fastify: FastifyInstance, db: DatabaseService, auth: AuthService, rooms: RoomManager): void;
 //# sourceMappingURL=broadcast.d.ts.map

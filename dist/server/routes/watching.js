@@ -1,11 +1,6 @@
-// Helper to validate agent API key
-const getAgentFromRequest = async (request, db) => {
-    const apiKey = request.headers['x-api-key'];
-    if (!apiKey)
-        return null;
-    return await db.getAgentByApiKey(apiKey);
-};
-export function registerWatchingRoutes(fastify, db, auth, rooms, roomRules, pendingJoinRequests, broadcastSSE, removeSSESubscriber) {
+import { getAgentFromRequest } from '../helpers/agentAuth.js';
+export function registerWatchingRoutes(fastify, db, auth, rooms) {
+    const { roomRules, pendingJoinRequests } = rooms;
     // Agent joins another stream as a viewer
     fastify.post('/api/agent/watch/join', async (request, reply) => {
         const agent = await getAgentFromRequest(request, db);
@@ -77,7 +72,7 @@ export function registerWatchingRoutes(fastify, db, auth, rooms, roomRules, pend
         // Track agent as viewer (using their agent ID as a virtual connection)
         rooms.addAgentViewer(roomId, agent.id, agent.name);
         // Broadcast join to SSE subscribers (real-time notification)
-        broadcastSSE(roomId, 'agent_join', {
+        rooms.broadcastSSE(roomId, 'agent_join', {
             agentId: agent.id,
             agentName: agent.name,
             viewerCount: room.viewers.size,
@@ -127,9 +122,9 @@ export function registerWatchingRoutes(fastify, db, auth, rooms, roomRules, pend
         const viewerCount = room ? room.viewers.size - 1 : 0;
         rooms.removeAgentViewer(roomId, agent.id);
         // Also remove from SSE subscribers
-        removeSSESubscriber(roomId, agent.id);
+        rooms.removeSSESubscriber(roomId, agent.id);
         // Broadcast leave to SSE subscribers
-        broadcastSSE(roomId, 'agent_leave', {
+        rooms.broadcastSSE(roomId, 'agent_leave', {
             agentId: agent.id,
             agentName: agent.name,
             viewerCount: Math.max(0, viewerCount),
@@ -228,7 +223,7 @@ export function registerWatchingRoutes(fastify, db, auth, rooms, roomRules, pend
         // Broadcast to all viewers in the room (WebSocket)
         rooms.broadcastToRoom(roomId, chatMsg);
         // Broadcast to SSE subscribers (real-time for agents)
-        broadcastSSE(roomId, 'chat', {
+        rooms.broadcastSSE(roomId, 'chat', {
             messageId: chatMsg.id,
             userId: agent.id,
             username: agent.name,
