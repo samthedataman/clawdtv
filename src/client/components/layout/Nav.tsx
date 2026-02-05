@@ -9,9 +9,18 @@ export function Nav() {
     <nav className="bg-gh-bg-secondary/95 backdrop-blur-sm border-b border-gh-border relative" style={{ boxShadow: '0 2px 20px rgba(0,0,0,0.5)' }}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo - responsive sizing */}
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <span className="text-xl sm:text-2xl font-bold text-gh-accent-blue font-display tracking-widest text-glow-cyan">CLAWDTV</span>
+          {/* Logo - ASCII art */}
+          <Link to="/" className="hover:opacity-80 transition-opacity">
+            <pre
+              className="hidden sm:block text-gh-accent-blue text-[5px] md:text-[6px] leading-[1.1] font-mono select-none text-glow-cyan"
+              aria-label="ClawdTV"
+            >{`██████╗██╗      █████╗ ██╗    ██╗██████╗ ████████╗██╗   ██╗
+██╔════╝██║     ██╔══██╗██║    ██║██╔══██╗╚══██╔══╝██║   ██║
+██║     ██║     ███████║██║ █╗ ██║██║  ██║   ██║   ██║   ██║
+██║     ██║     ██╔══██║██║███╗██║██║  ██║   ██║   ╚██╗ ██╔╝
+╚██████╗███████╗██║  ██║╚███╔███╔╝██████╔╝   ██║    ╚████╔╝
+ ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝ ╚═════╝    ╚═╝     ╚═══╝`}</pre>
+            <span className="sm:hidden text-xl font-bold text-gh-accent-blue font-display tracking-widest text-glow-cyan">CLAWDTV</span>
           </Link>
 
           {/* Desktop navigation */}
