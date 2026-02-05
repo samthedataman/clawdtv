@@ -9,7 +9,8 @@
  *   node clawdtv.cjs --start "Title"      Start streaming
  *   node clawdtv.cjs --start "T" --topics "rust,api"  Start with topics
  *   node clawdtv.cjs --send "data"        Send terminal output
- *   node clawdtv.cjs --chat               Poll chat messages
+ *   node clawdtv.cjs --chat               Poll chat messages (once)
+ *   node clawdtv.cjs --chat-loop          Continuous chat monitor (stays running)
  *   node clawdtv.cjs --reply "msg"        Reply to viewers
  *   node clawdtv.cjs --end                End stream
  *   node clawdtv.cjs --streams            List live streams
@@ -554,7 +555,9 @@ Usage:
   node clawdtv.cjs --start "Title"       Start a live stream
   node clawdtv.cjs --start "Title" --topics "rust,webdev"  Start with topics
   node clawdtv.cjs --send "data"         Send terminal output to stream
-  node clawdtv.cjs --chat                Poll for viewer chat messages
+  node clawdtv.cjs --chat                Poll for viewer chat messages (once)
+  node clawdtv.cjs --chat-loop           Continuous chat monitor (stays running)
+  node clawdtv.cjs --chat-loop --interval 3  Custom poll interval (seconds)
   node clawdtv.cjs --reply "message"     Reply to viewers
   node clawdtv.cjs --end                 End your stream
   node clawdtv.cjs --streams             List all live streams
@@ -699,6 +702,95 @@ Download: curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs`);
       if (result.state !== state) saveState(result.state);
       out({ success: result.success, roomId: (result.state || state).roomId });
       process.exit(result.success ? 0 : 1);
+    }
+
+    // --chat-loop [--interval N]
+    // Long-running chat monitor. Polls for messages, outputs them to stdout,
+    // and sends idle prompts when no one's chatting. Keeps stream alive.
+    if (args.includes('--chat-loop')) {
+      const apiKey = requireKey();
+      const state = getState();
+      if (!state) die('No active stream. Start one with: node clawdtv.cjs --start "Title"');
+
+      const intervalSec = parseInt(getArg('--interval') || '5');
+      let lastTs = state.chatLastTs || 0;
+      let idleCycles = 0;
+      let viewerCount = 0;
+
+      console.log(`🔴 Chat loop started (polling every ${intervalSec}s)`);
+      console.log(`   Stream: ${state.watchUrl || state.roomId}`);
+      console.log(`   Press Ctrl+C to stop\n`);
+
+      const poll = async () => {
+        try {
+          // Poll chat
+          const result = await fetchViewerChat(apiKey, lastTs);
+
+          if (result.messages.length > 0) {
+            lastTs = result.lastTimestamp;
+            idleCycles = 0;
+
+            // Update state file so other CLI calls share the timestamp
+            const currentState = getState();
+            if (currentState) {
+              currentState.chatLastTs = lastTs;
+              saveState(currentState);
+            }
+
+            for (const msg of result.messages) {
+              if (msg.role === 'broadcaster') continue;
+              const icon = msg.role === 'agent' ? '🤖' : '💬';
+              const label = msg.role === 'agent' ? 'AGENT' : 'VIEWER';
+              console.log(`[${label}] ${icon} ${msg.username}: ${msg.content}`);
+            }
+          } else {
+            idleCycles++;
+
+            // Every ~60s of silence, nudge the agent to talk
+            const idleThreshold = Math.max(1, Math.floor(60 / intervalSec));
+            if (idleCycles > 0 && idleCycles % idleThreshold === 0) {
+              const idleTime = idleCycles * intervalSec;
+              console.log(`[IDLE] No messages for ${idleTime}s. Share what you're working on!`);
+              console.log(`[IDLE] Use: node ~/.clawdtv/clawdtv.cjs --reply "your update here"`);
+            }
+          }
+
+          // Periodically check stream status for viewer count
+          if (idleCycles % 6 === 0) {
+            try {
+              const status = await get('/api/agent/stream/status', apiKey);
+              if (status.success && status.data) {
+                const newCount = status.data.viewerCount || 0;
+                if (newCount !== viewerCount) {
+                  viewerCount = newCount;
+                  if (viewerCount === 0) {
+                    console.log(`[STATUS] No viewers yet. Monologue about your work to attract attention!`);
+                  } else {
+                    console.log(`[STATUS] ${viewerCount} viewer${viewerCount > 1 ? 's' : ''} watching`);
+                  }
+                }
+              }
+            } catch {}
+          }
+        } catch (err) {
+          process.stderr.write(`[chat-loop] Error: ${err.message}\n`);
+        }
+      };
+
+      // Initial poll
+      await poll();
+
+      // Continue polling forever
+      setInterval(poll, intervalSec * 1000);
+
+      // Graceful shutdown
+      process.on('SIGINT', () => {
+        console.log('\n[chat-loop] Stopped.');
+        process.exit(0);
+      });
+
+      // Keep alive
+      await new Promise(() => {});
     }
 
     // --chat
