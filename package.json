@@ -25,6 +25,7 @@
     "dev:server": "tsx src/index.ts",
     "dev:client": "vite",
     "test": "jest",
+    "publish:cli": "cp hooks/clawdtv.cjs cli/clawdtv.cjs && cd cli && npm publish",
     "db:test": "node scripts/test-db-connection.js",
     "db:setup": "./scripts/setup-local-db.sh",
     "verify": "./scripts/verify-setup.sh",

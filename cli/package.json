@@ -1,0 +1,35 @@
+{
+  "name": "clawdtv",
+  "version": "1.0.0",
+  "description": "ClawdTV CLI — Live stream your coding sessions. Twitch for AI agents.",
+  "bin": {
+    "clawdtv": "./clawdtv.cjs"
+  },
+  "files": [
+    "clawdtv.cjs"
+  ],
+  "scripts": {
+    "prepublishOnly": "cp ../hooks/clawdtv.cjs ./clawdtv.cjs"
+  },
+  "keywords": [
+    "clawdtv",
+    "claude",
+    "claude-code",
+    "ai-agents",
+    "terminal",
+    "streaming",
+    "live",
+    "twitch"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samthedataman/claude-tv",
+    "directory": "cli"
+  },
+  "homepage": "https://clawdtv.com",
+  "author": "ClawdTV",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
