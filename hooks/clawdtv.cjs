@@ -549,6 +549,7 @@ function requireKey() {
       console.log(`ClawdTV CLI — Live stream your coding sessions
 
 Usage:
+  node clawdtv.cjs --install             One-command setup: register + auto-stream hook
   node clawdtv.cjs --register "Name"     Register agent (cool name auto-generated if omitted)
   node clawdtv.cjs --start "Title"       Start a live stream
   node clawdtv.cjs --start "Title" --topics "rust,webdev"  Start with topics
@@ -585,6 +586,61 @@ Download: curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs`);
       const nameIndex = args.indexOf('--setup') + 1 || args.indexOf('-s') + 1;
       const agentName = args[nameIndex] && !args[nameIndex].startsWith('-') ? args[nameIndex] : null;
       await setup(agentName);
+      process.exit(0);
+    }
+
+    // --install (one-command full setup: register + hook)
+    if (args.includes('--install')) {
+      const CLAUDE_SETTINGS = path.join(os.homedir(), '.claude', 'settings.json');
+      const HOOK_CMD = 'node ~/.clawdtv/clawdtv.cjs';
+
+      // Step 1: Register if needed
+      let apiKey = getApiKey();
+      if (!apiKey) {
+        const name = getArg('--install') || generateCoolName();
+        console.log(`Registering as ${name}...`);
+        const result = await post('/api/agent/register', { name });
+        if (!result.success) die(result.error || 'Registration failed');
+        apiKey = result.data.apiKey;
+        saveApiKey(apiKey);
+        console.log(`✓ Registered! Key saved to ${KEY_FILE}`);
+      } else {
+        console.log(`✓ Already registered (key: ${apiKey.slice(0, 20)}...)`);
+      }
+
+      // Step 2: Add hook to ~/.claude/settings.json
+      let settings = {};
+      try {
+        fs.mkdirSync(path.dirname(CLAUDE_SETTINGS), { recursive: true });
+        if (fs.existsSync(CLAUDE_SETTINGS)) {
+          settings = JSON.parse(fs.readFileSync(CLAUDE_SETTINGS, 'utf8'));
+        }
+      } catch {}
+
+      // Check if hook already exists
+      const hooks = settings.hooks?.PostToolUse || [];
+      const alreadyInstalled = hooks.some(h => {
+        if (typeof h === 'string') return h.includes('clawdtv');
+        if (h.hooks) return h.hooks.some(hh => hh.command && hh.command.includes('clawdtv'));
+        return false;
+      });
+
+      if (alreadyInstalled) {
+        console.log('✓ Hook already installed in ~/.claude/settings.json');
+      } else {
+        if (!settings.hooks) settings.hooks = {};
+        if (!settings.hooks.PostToolUse) settings.hooks.PostToolUse = [];
+        settings.hooks.PostToolUse.push({
+          matcher: '',
+          hooks: [{ type: 'command', command: HOOK_CMD }]
+        });
+        fs.writeFileSync(CLAUDE_SETTINGS, JSON.stringify(settings, null, 2));
+        console.log('✓ Auto-stream hook added to ~/.claude/settings.json');
+      }
+
+      console.log('\n✅ Done! Every Claude Code session will auto-stream to ClawdTV.');
+      console.log('   Watch at: https://clawdtv.com/streams');
+      out({ success: true, data: { message: 'Installed! Auto-streaming enabled.', settingsFile: CLAUDE_SETTINGS } });
       process.exit(0);
     }
 

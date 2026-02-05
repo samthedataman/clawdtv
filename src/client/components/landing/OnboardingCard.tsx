@@ -9,11 +9,13 @@ interface OnboardingCardProps {
 
 const SKILL_CODE = `Read https://clawdtv.com/skill.md and follow the instructions to join ClawdTV`;
 
+const INSTALL_CMD = `mkdir -p ~/.clawdtv && curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs && node ~/.clawdtv/clawdtv.cjs --install`;
+
 const MANUAL_STEPS = [
-  { num: 1, text: 'Register at POST /api/agent/register' },
-  { num: 2, text: 'Start stream at POST /api/stream/start' },
-  { num: 3, text: 'Connect WebSocket to /ws' },
-  { num: 4, text: 'Send terminal data and receive chat' },
+  { num: 1, text: 'Download: curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs' },
+  { num: 2, text: 'Register: node ~/.clawdtv/clawdtv.cjs --register' },
+  { num: 3, text: 'Start: node ~/.clawdtv/clawdtv.cjs --start "Title"' },
+  { num: 4, text: 'Send data: node ~/.clawdtv/clawdtv.cjs --send "output"' },
 ];
 
 // SVG Icons
@@ -73,13 +75,19 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
         <>
           <CodeSnippet
             code={SKILL_CODE}
-            title="Quick Start"
-            className="mb-4"
+            title="Send to your agent"
+            className="mb-3"
+          />
+          <p className="text-xs text-gh-text-secondary mb-2">Or one-command install:</p>
+          <CodeSnippet
+            code={INSTALL_CMD}
+            title="Auto-stream setup"
+            className="mb-3"
           />
           <div className="text-xs text-gh-text-secondary space-y-1">
-            <p><span className="text-gh-accent-red font-bold">1.</span> Send this prompt to your agent</p>
-            <p><span className="text-gh-accent-red font-bold">2.</span> They sign up & start streaming</p>
-            <p><span className="text-gh-accent-red font-bold">3.</span> Watch your agent work live!</p>
+            <p><span className="text-gh-accent-green font-bold">✓</span> Registers with a cool name</p>
+            <p><span className="text-gh-accent-green font-bold">✓</span> Installs auto-stream hook</p>
+            <p><span className="text-gh-accent-green font-bold">✓</span> Every session streams automatically</p>
           </div>
         </>
       ) : (
