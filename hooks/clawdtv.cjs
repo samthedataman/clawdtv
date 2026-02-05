@@ -99,15 +99,37 @@ const post = (path, data, key) => request('POST', path, data, key);
 const get = (path, key) => request('GET', path, null, key);
 
 // ============ State Management ============
+function parseKeyFromContent(content) {
+  const trimmed = content.trim();
+  // If it starts with ctv_, it's a raw API key
+  if (trimmed.startsWith('ctv_')) return trimmed.split('\n')[0].trim();
+  // Multi-line KEY=VALUE format (from setup scripts)
+  for (const line of trimmed.split('\n')) {
+    const match = line.match(/^API_KEY=(.+)$/);
+    if (match) return match[1].trim();
+  }
+  // Fallback: if single line, use as-is
+  if (!trimmed.includes('\n')) return trimmed;
+  return null;
+}
+
 function getApiKey() {
   // Check env first
   if (process.env.CLAUDE_TV_API_KEY) {
-    return process.env.CLAUDE_TV_API_KEY;
+    return process.env.CLAUDE_TV_API_KEY.trim();
   }
   // Check file
   try {
     if (fs.existsSync(KEY_FILE)) {
-      return fs.readFileSync(KEY_FILE, 'utf8').trim();
+      const content = fs.readFileSync(KEY_FILE, 'utf8');
+      const key = parseKeyFromContent(content);
+      if (key) {
+        // Fix the file to clean format for next time
+        if (content.trim() !== key) {
+          try { fs.writeFileSync(KEY_FILE, key, { mode: 0o600 }); } catch {}
+        }
+        return key;
+      }
     }
   } catch {}
   return null;
@@ -570,8 +592,14 @@ Download: curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs`);
     if (args.includes('--register')) {
       const existing = getApiKey();
       if (existing) {
-        out({ success: true, data: { message: 'Already registered', apiKey: existing.slice(0, 25) + '...' } });
-        process.exit(0);
+        // Verify the key actually works
+        const check = await get('/api/agent/stream/status', existing);
+        if (check.success || (check.error && !check.error.includes('Invalid'))) {
+          out({ success: true, data: { message: 'Already registered', apiKey: existing.slice(0, 25) + '...' } });
+          process.exit(0);
+        }
+        // Key is invalid, re-register
+        process.stderr.write('Existing key is invalid, re-registering...\n');
       }
       const name = getArg('--register') || generateCoolName();
       const result = await post('/api/agent/register', { name });
@@ -588,8 +616,19 @@ Download: curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs`);
       const topicsRaw = getArg('--topics');
       const topics = topicsRaw ? topicsRaw.split(',').map(t => t.trim()).filter(Boolean) : null;
       const result = await startNewStream(apiKey, title, topics);
+      if (!result.data || !result.data.roomId) {
+        die('Stream started but got unexpected response: ' + JSON.stringify(result));
+      }
       saveState({ roomId: result.data.roomId, watchUrl: result.data.watchUrl, startedAt: Date.now() });
-      out(result);
+      out({
+        success: true,
+        data: {
+          roomId: result.data.roomId,
+          watchUrl: result.data.watchUrl,
+          title,
+          message: `You're LIVE! Watch at: ${result.data.watchUrl}`
+        }
+      });
       process.exit(0);
     }
 
@@ -686,6 +725,11 @@ Download: curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs`);
     // Default: Hook mode (no args, reads stdin from Claude Code PostToolUse)
     await handleHook();
   } catch (err) {
-    process.exit(0);
+    // In hook mode (no args), fail silently so we don't break Claude Code
+    if (args.length === 0) {
+      process.exit(0);
+    }
+    // In CLI mode, show the error
+    die(err.message || String(err));
   }
 })();
