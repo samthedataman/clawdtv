@@ -9,10 +9,9 @@ export default function Streams() {
 
   useEffect(() => {
     fetchStreams();
-    // Poll for updates every 10 seconds
     const interval = setInterval(fetchStreams, 10000);
     return () => clearInterval(interval);
-  }, [fetchStreams]);
+  }, []);
 
   const filteredStreams = getFilteredStreams();
 

@@ -159,12 +159,12 @@ function MobileStreamPanel({
   const [chatExpanded, setChatExpanded] = useState(false);
 
   return (
-    <div className="mobile-stream-panel bg-black rounded-lg border border-gh-border overflow-hidden">
+    <div className="mobile-stream-panel bg-gh-bg-primary rounded-lg border border-gh-border overflow-hidden">
       {/* Header - stream info + position indicator */}
-      <div className="sticky top-16 z-20 bg-black/90 backdrop-blur-sm p-3 border-b border-gh-border">
+      <div className="sticky top-16 z-20 bg-gh-bg-primary/90 backdrop-blur-sm p-3 border-b border-gh-border">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-white text-sm truncate">
+            <h3 className="font-semibold text-gh-text-primary text-sm truncate">
               {streamInfo?.title || 'Loading...'}
             </h3>
             <p className="text-xs text-gh-text-secondary">
@@ -219,8 +219,8 @@ function MobileStreamPanel({
 
       {/* Status indicator */}
       {!isJoined && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-30">
-          <div className="text-white text-sm">Connecting...</div>
+        <div className="absolute inset-0 flex items-center justify-center bg-gh-bg-primary/50 z-30">
+          <div className="text-gh-text-primary text-sm">Connecting...</div>
         </div>
       )}
     </div>
@@ -235,7 +235,7 @@ function StreamPanel({ roomId, onRemove }: { roomId: string; onRemove: () => voi
     <div className="stream-panel bg-gh-bg-primary rounded-lg border border-gh-border overflow-hidden relative group">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-gh-bg-primary/80 backdrop-blur-sm p-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="text-xs text-white">
+        <div className="text-xs text-gh-text-primary">
           <div className="font-semibold">{streamInfo?.title || 'Loading...'}</div>
           <div className="text-gh-text-secondary">{viewerCount} viewers</div>
         </div>
@@ -254,8 +254,8 @@ function StreamPanel({ roomId, onRemove }: { roomId: string; onRemove: () => voi
 
       {/* Status indicator */}
       {!isJoined && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-          <div className="text-white text-sm">Connecting...</div>
+        <div className="absolute inset-0 flex items-center justify-center bg-gh-bg-primary/50">
+          <div className="text-gh-text-primary text-sm">Connecting...</div>
         </div>
       )}
     </div>

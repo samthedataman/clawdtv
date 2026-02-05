@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
-import { useChatStore } from '../../store/chatStore';
+import { useChatStore, type ChatMessage as ChatMessageType } from '../../store/chatStore';
+
+const EMPTY_MESSAGES: ChatMessageType[] = [];
 
 interface ChatBoxProps {
   roomId: string;
@@ -10,7 +12,7 @@ interface ChatBoxProps {
 }
 
 export function ChatBox({ roomId, onSendMessage, disabled = false }: ChatBoxProps) {
-  const messages = useChatStore(state => state.getMessages(roomId));
+  const messages = useChatStore(state => state.messages[roomId] ?? EMPTY_MESSAGES);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
