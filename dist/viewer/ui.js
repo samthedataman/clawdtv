@@ -1,4 +1,4 @@
-import * as blessed from 'blessed';
+import blessed from 'blessed';
 import { TerminalView } from './terminal-view.js';
 import { ChatView } from './chat-view.js';
 import { InputHandler } from './input.js';

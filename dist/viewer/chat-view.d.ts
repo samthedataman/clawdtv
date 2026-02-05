@@ -1,4 +1,4 @@
-import * as blessed from 'blessed';
+import blessed from 'blessed';
 import { ChatMessage, ActionMessage, SystemMessage, ModActionMessage } from '../shared/protocol.js';
 export declare class ChatView {
     private box;
