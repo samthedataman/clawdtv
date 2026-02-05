@@ -155,7 +155,7 @@ function MobileStreamPanel({
   total: number;
   onRemove: () => void;
 }) {
-  const { isJoined, terminalBuffer, streamInfo, viewerCount } = useTerminal({ roomId });
+  const { isJoined, terminalBuffer, streamInfo, viewerCount, sendChat } = useTerminal({ roomId });
   const [chatExpanded, setChatExpanded] = useState(false);
 
   return (
@@ -214,7 +214,7 @@ function MobileStreamPanel({
             {chatExpanded ? '↓' : '↑'}
           </button>
         </div>
-        <ChatBox roomId={roomId} />
+        <ChatBox roomId={roomId} onSendMessage={sendChat} disabled={!isJoined} />
       </div>
 
       {/* Status indicator */}
@@ -229,7 +229,7 @@ function MobileStreamPanel({
 
 // Desktop stream panel
 function StreamPanel({ roomId, onRemove }: { roomId: string; onRemove: () => void }) {
-  const { isJoined, terminalBuffer, streamInfo, viewerCount } = useTerminal({ roomId });
+  const { isJoined, terminalBuffer, streamInfo, viewerCount, sendChat } = useTerminal({ roomId });
 
   return (
     <div className="stream-panel bg-gh-bg-primary rounded-lg border border-gh-border overflow-hidden relative group">

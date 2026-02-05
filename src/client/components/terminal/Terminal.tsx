@@ -20,6 +20,7 @@ export function Terminal({ data, className = '' }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const lastWrittenLengthRef = useRef(0);
 
   useEffect(() => {
     if (!terminalRef.current) return;
@@ -123,10 +124,19 @@ export function Terminal({ data, className = '' }: TerminalProps) {
     };
   }, []);
 
-  // Write data to terminal when it changes
+  // Write only NEW data to terminal (delta writes)
   useEffect(() => {
-    if (data && xtermRef.current) {
+    if (!data || !xtermRef.current) return;
+
+    if (data.length < lastWrittenLengthRef.current) {
+      // Buffer was trimmed (rolling 100KB limit) — reset and rewrite
+      xtermRef.current.reset();
       xtermRef.current.write(data);
+      lastWrittenLengthRef.current = data.length;
+    } else if (data.length > lastWrittenLengthRef.current) {
+      // New data appended — write only the delta
+      xtermRef.current.write(data.slice(lastWrittenLengthRef.current));
+      lastWrittenLengthRef.current = data.length;
     }
   }, [data]);
 

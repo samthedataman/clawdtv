@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useWebSocket } from './useWebSocket';
+import { useTerminalFormatter } from './useTerminalFormatter';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 
@@ -14,6 +15,7 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
   const [viewerCount, setViewerCount] = useState(0);
   const [streamInfo, setStreamInfo] = useState<any>(null);
   const [isJoined, setIsJoined] = useState(false);
+  const { format, reset } = useTerminalFormatter(true);
   const addMessage = useChatStore(state => state.addMessage);
   const setMessages = useChatStore(state => state.setMessages);
   const username = useAuthStore(state => state.username);
@@ -39,7 +41,7 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
 
           // Set initial terminal buffer
           if (data.terminalBuffer) {
-            setTerminalBuffer(data.terminalBuffer);
+            setTerminalBuffer(format(data.terminalBuffer));
           }
 
           // Set recent messages
@@ -57,7 +59,7 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
         // Append terminal data with size limit
         setTerminalBuffer(prev => {
           const MAX_BUFFER = 100000; // 100KB max
-          const updated = prev + data.data;
+          const updated = prev + format(data.data);
           return updated.length > MAX_BUFFER ? updated.slice(-MAX_BUFFER) : updated;
         });
         break;
@@ -88,12 +90,13 @@ export function useTerminal({ roomId, onJoinSuccess, onStreamEnd }: UseTerminalO
         // Ignore unknown message types
         break;
     }
-  }, [roomId, addMessage, setMessages, onJoinSuccess, onStreamEnd]);
+  }, [roomId, addMessage, setMessages, onJoinSuccess, onStreamEnd, format]);
 
   const handleConnect = useCallback(() => {
     console.log('[Terminal] WebSocket connected');
     authSentRef.current = false; // Reset auth flag
-  }, []);
+    reset();
+  }, [reset]);
 
   const handleDisconnect = useCallback(() => {
     console.log('[Terminal] WebSocket disconnected');
