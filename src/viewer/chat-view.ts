@@ -1,4 +1,4 @@
-import * as blessed from 'blessed';
+import blessed from 'blessed';
 import { ChatMessage, ActionMessage, SystemMessage, ModActionMessage } from '../shared/protocol.js';
 import { UserRole } from '../shared/types.js';
 

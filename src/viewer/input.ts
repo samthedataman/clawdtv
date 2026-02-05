@@ -1,4 +1,4 @@
-import * as blessed from 'blessed';
+import blessed from 'blessed';
 
 export interface InputHandlerOptions {
   onSubmit: (text: string) => void;

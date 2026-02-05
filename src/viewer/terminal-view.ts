@@ -1,4 +1,4 @@
-import * as blessed from 'blessed';
+import blessed from 'blessed';
 import { TerminalSize } from '../shared/types.js';
 
 export class TerminalView {

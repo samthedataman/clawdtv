@@ -1,4 +1,4 @@
-import * as blessed from 'blessed';
+import blessed from 'blessed';
 import { ChatMessage, ActionMessage } from '../shared/protocol.js';
 import { UserRole, TerminalSize } from '../shared/types.js';
 import { WELCOME_MULTI_VIEWER } from '../shared/ascii.js';
