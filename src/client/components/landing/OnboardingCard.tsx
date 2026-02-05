@@ -102,7 +102,7 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
           className="flex items-center justify-center gap-2 px-6 py-3 bg-gh-accent-green text-gh-bg-primary font-bold text-base tracking-wider hover:opacity-90 shadow-neon-green transition-all uppercase"
         >
           <DocumentIcon />
-          Read skill.md to Start Streaming
+          Start Streaming — Read skill.md
         </a>
         <a
           href="/heartbeat.md"
