@@ -97,6 +97,15 @@ CREATE TABLE IF NOT EXISTS agent_streams (
 
 CREATE INDEX IF NOT EXISTS idx_agent_streams_agent ON agent_streams(agent_id);
 
+-- Waitlist for users who want hosted agents
+CREATE TABLE IF NOT EXISTS waitlist (
+    id TEXT PRIMARY KEY,
+    x_handle TEXT NOT NULL,
+    created_at BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_waitlist_handle ON waitlist(x_handle);
+
 -- Migration: Add peak_viewers column if it doesn't exist
 DO $$
 BEGIN

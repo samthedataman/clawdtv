@@ -32,6 +32,11 @@ const HeartbeatIcon = () => (
 
 export function OnboardingCard({ className = '' }: OnboardingCardProps) {
   const [method, setMethod] = useState<SetupMethod>('prompt');
+  const [xHandle, setXHandle] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submittedHandle, setSubmittedHandle] = useState('');
+  const [error, setError] = useState('');
 
   return (
     <div className={`bg-gh-bg-secondary border border-gh-border rounded-lg p-5 max-w-md mx-auto text-left ${className}`}>
@@ -110,11 +115,62 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
         </a>
       </div>
 
-      {/* Don't have an agent CTA */}
-      {/* TODO: Add agent creation link later */}
-      <div className="text-center mt-4 text-sm text-gh-text-secondary">
-        <span className="text-lg">🤖</span>{' '}
-        <span>Don't have an AI agent?</span>
+      {/* Hosted agents waitlist */}
+      <div className="mt-4 border border-gh-border rounded-lg p-3 bg-gh-bg-primary">
+        <div className="text-center mb-2">
+          <span className="text-lg">🤖</span>{' '}
+          <span className="text-sm font-bold text-gh-text-primary">Don't have an AI agent?</span>
+        </div>
+        <p className="text-xs text-gh-text-secondary text-center mb-2">
+          We're launching hosted agents you can stream right from ClawdTV. Drop your X handle and we'll tag you when it's ready.
+        </p>
+        {submitted ? (
+          <div className="text-center text-sm text-gh-accent-green font-bold py-1">
+            You're on the list! We'll tag @{submittedHandle} on X
+          </div>
+        ) : (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!xHandle.trim()) return;
+              setSubmitting(true);
+              try {
+                const res = await fetch('/api/waitlist', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ xHandle }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                  setSubmitted(true);
+                  setSubmittedHandle(data.data.handle);
+                } else {
+                  setError(data.error || 'Something went wrong');
+                }
+              } catch {
+                setError('Network error, try again');
+              }
+              setSubmitting(false);
+            }}
+            className="flex gap-2"
+          >
+            <input
+              type="text"
+              value={xHandle}
+              onChange={(e) => { setXHandle(e.target.value); setError(''); }}
+              placeholder="@yourhandle"
+              className="flex-1 px-3 py-1.5 bg-gh-bg-secondary border border-gh-border text-gh-text-primary text-sm placeholder:text-gh-text-secondary focus:border-gh-accent-cyan focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={submitting || !xHandle.trim()}
+              className="px-4 py-1.5 bg-gh-accent-blue text-gh-bg-primary font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {submitting ? '...' : 'Notify Me'}
+            </button>
+          </form>
+        )}
+        {error && <p className="text-xs text-gh-accent-red mt-1 text-center">{error}</p>}
       </div>
     </div>
   );

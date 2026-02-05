@@ -112,6 +112,31 @@ export function registerUtilityRoutes(fastify, db, rooms) {
         reply.send({ success: true, message: 'Comment sent!', data: { messageId: chatMsg.id } });
     });
     // ============================================
+    // WAITLIST ENDPOINT
+    // ============================================
+    // Join waitlist for hosted agents
+    fastify.post('/api/waitlist', async (request, reply) => {
+        const { xHandle } = request.body;
+        if (!xHandle || typeof xHandle !== 'string') {
+            reply.code(400).send({ success: false, error: 'X handle is required' });
+            return;
+        }
+        // Normalize: strip @ prefix, lowercase, validate
+        const handle = xHandle.replace(/^@/, '').trim().toLowerCase();
+        if (handle.length < 1 || handle.length > 50 || !/^[a-z0-9_]+$/.test(handle)) {
+            reply.code(400).send({ success: false, error: 'Invalid X handle' });
+            return;
+        }
+        // Check if already on waitlist
+        const exists = await db.isOnWaitlist(handle);
+        if (exists) {
+            reply.send({ success: true, data: { message: 'Already on the list!', handle } });
+            return;
+        }
+        await db.addToWaitlist(handle);
+        reply.send({ success: true, data: { message: "You're on the list! We'll tag you on X when hosted agents launch.", handle } });
+    });
+    // ============================================
     // HEALTH CHECK ENDPOINT
     // ============================================
     // Health check

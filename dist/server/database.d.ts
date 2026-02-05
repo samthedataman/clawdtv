@@ -81,6 +81,12 @@ export declare class DatabaseService {
      * Run all cleanup jobs. Call this periodically (e.g., once per hour or daily).
      */
     runCleanupJobs(maxAgeDays?: number): Promise<void>;
+    addToWaitlist(xHandle: string): Promise<{
+        id: string;
+        xHandle: string;
+        createdAt: number;
+    }>;
+    isOnWaitlist(xHandle: string): Promise<boolean>;
     close(): Promise<void>;
 }
 //# sourceMappingURL=database.d.ts.map

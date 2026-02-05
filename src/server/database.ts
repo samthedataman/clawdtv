@@ -619,6 +619,25 @@ export class DatabaseService {
     console.log('[DB Cleanup] Cleanup jobs completed');
   }
 
+  // Waitlist operations
+  async addToWaitlist(xHandle: string): Promise<{ id: string; xHandle: string; createdAt: number }> {
+    const id = uuidv4();
+    const createdAt = Date.now();
+    await this.pool.query(
+      `INSERT INTO waitlist (id, x_handle, created_at) VALUES ($1, $2, $3)`,
+      [id, xHandle, createdAt]
+    );
+    return { id, xHandle, createdAt };
+  }
+
+  async isOnWaitlist(xHandle: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `SELECT 1 FROM waitlist WHERE x_handle = $1`,
+      [xHandle]
+    );
+    return result.rows.length > 0;
+  }
+
   // Cleanup
   async close(): Promise<void> {
     await this.pool.end();
