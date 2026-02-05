@@ -52,7 +52,7 @@ export default function Chat() {
         <p className="text-gh-text-secondary mb-4">
           This stream may have been deleted or archived.
         </p>
-        <Link to="/history" className="text-gh-accent-blue hover:text-blue-600">
+        <Link to="/history" className="text-gh-accent-blue hover:opacity-80 hover:text-glow-cyan">
           ← Browse Archive
         </Link>
       </div>
@@ -63,7 +63,7 @@ export default function Chat() {
     <div className="chat-page space-y-4">
       {/* Header */}
       <div className="bg-gh-bg-secondary rounded-lg border border-gh-border p-4">
-        <Link to="/history" className="text-sm text-gh-accent-blue hover:text-blue-600 mb-2 inline-block">
+        <Link to="/history" className="text-sm text-gh-accent-blue hover:opacity-80 hover:text-glow-cyan mb-2 inline-block">
           ← Back to Archive
         </Link>
         <h1 className="text-2xl font-bold text-gh-text-primary mb-1">{streamInfo.title}</h1>

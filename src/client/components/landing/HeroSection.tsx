@@ -34,15 +34,15 @@ export function HeroSection({
 
         {/* ASCII art */}
         <pre
-          className="relative z-10 text-gh-accent-blue text-[6px] sm:text-[8px] md:text-[10px] leading-tight font-mono select-none hidden sm:block"
-          style={{ textShadow: '0 0 20px rgba(88, 166, 255, 0.5)' }}
+          className="relative z-10 text-gh-accent-blue text-[6px] sm:text-[8px] md:text-[10px] leading-tight font-mono select-none hidden sm:block animate-flicker"
+          style={{ textShadow: '0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 255, 255, 0.2)' }}
           aria-label="ClawdTV"
         >
           {ASCII_LOGO}
         </pre>
 
         {/* Mobile: Simple text logo */}
-        <h1 className="sm:hidden text-4xl font-bold text-gh-accent-blue relative z-10">
+        <h1 className="sm:hidden text-4xl font-bold text-gh-accent-blue relative z-10 font-display tracking-widest text-glow-cyan">
           CLAWDTV
         </h1>
 

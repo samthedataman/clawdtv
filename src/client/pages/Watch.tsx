@@ -2,40 +2,66 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { Terminal } from '../components/terminal/Terminal';
+import { ChatBox } from '../components/chat/ChatBox';
+import { useTerminalFormatter } from '../hooks/useTerminalFormatter';
+import { useChatStore } from '../store/chatStore';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 export default function Watch() {
   const { roomId } = useParams<{ roomId: string }>();
+  const isMobile = useIsMobile();
   const [terminalBuffer, setTerminalBuffer] = useState('');
-  const [messages, setMessages] = useState<any[]>([]);
   const [isJoined, setIsJoined] = useState(false);
+  const [viewerCount, setViewerCount] = useState(0);
+  const [streamTitle, setStreamTitle] = useState('');
+
+  const addMessage = useChatStore(state => state.addMessage);
+  const setChatMessages = useChatStore(state => state.setMessages);
+
+  const { format, reset } = useTerminalFormatter(true);
 
   const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws';
   const wsUrl = typeof window !== 'undefined' ? `${protocol}://${window.location.host}/ws` : null;
 
   const { sendJsonMessage, readyState } = useWebSocket(wsUrl, {
     onOpen: () => {
-      console.log('✅ Connected');
+      console.log('[Watch] Connected');
+      reset();
       const username = `Anon${Math.floor(Math.random() * 10000)}`;
       sendJsonMessage({ type: 'auth', username, role: 'viewer' });
       sendJsonMessage({ type: 'join_stream', roomId });
     },
     onMessage: (event) => {
       const data = JSON.parse(event.data);
-      console.log('📨', data.type);
 
       if (data.type === 'join_stream_response' && data.success) {
-        console.log('✅ Joined stream');
         setIsJoined(true);
-        if (data.terminalBuffer) setTerminalBuffer(data.terminalBuffer);
-        if (data.recentMessages) setMessages(data.recentMessages);
+        if (data.stream?.title) setStreamTitle(data.stream.title);
+        if (data.stream?.viewerCount) setViewerCount(data.stream.viewerCount);
+        if (data.terminalBuffer) setTerminalBuffer(format(data.terminalBuffer));
+        if (Array.isArray(data.recentMessages)) {
+          setChatMessages(roomId || '', data.recentMessages);
+        }
       }
 
       if (data.type === 'terminal') {
-        setTerminalBuffer(prev => prev + data.data);
+        setTerminalBuffer(prev => prev + format(data.data));
       }
 
       if (data.type === 'chat') {
-        setMessages(prev => [...prev, data]);
+        addMessage(roomId || '', {
+          id: data.id,
+          userId: data.userId || data.username,
+          username: data.username,
+          content: data.content,
+          role: data.role || 'viewer',
+          timestamp: data.timestamp,
+          gifUrl: data.gifUrl,
+        });
+      }
+
+      if (data.type === 'viewer_count') {
+        setViewerCount(data.count);
       }
     },
     shouldReconnect: () => true,
@@ -43,36 +69,54 @@ export default function Watch() {
 
   const isConnected = readyState === ReadyState.OPEN;
 
-  return (
-    <div style={{ padding: '20px' }}>
-      <h1 style={{ color: 'white', marginBottom: '20px' }}>
-        {isConnected ? '🔴 LIVE' : '⏸️ Connecting...'}
-      </h1>
+  const handleSendChat = (content: string, gifUrl?: string) => {
+    if (!isJoined) return;
+    sendJsonMessage({ type: 'send_chat', content, gifUrl });
+  };
 
-      <div style={{ display: 'flex', gap: '20px' }}>
-        <div style={{ flex: 1, background: 'black', border: '1px solid #333', borderRadius: '8px', overflow: 'hidden', height: '600px' }}>
+  return (
+    <div className="h-full flex flex-col">
+      {/* Stream info header */}
+      <div className="flex items-center justify-between px-4 py-2 bg-gh-bg-secondary border-b border-gh-border shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          {isConnected ? (
+            <span className="flex items-center gap-1.5 shrink-0">
+              <span className="w-2 h-2 rounded-full bg-gh-accent-red animate-pulse" />
+              <span className="text-sm font-semibold text-gh-accent-red">LIVE</span>
+            </span>
+          ) : (
+            <span className="text-sm font-semibold text-gh-text-secondary shrink-0">
+              Connecting...
+            </span>
+          )}
+          <h1 className="text-sm font-semibold text-gh-text-primary truncate">
+            {streamTitle || roomId}
+          </h1>
+        </div>
+        <div className="flex items-center gap-4 text-sm text-gh-text-secondary shrink-0">
+          <span>{viewerCount} viewer{viewerCount !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+
+      {/* Main content: Terminal (2/3) + Chat (1/3) */}
+      <div
+        className="flex-1 min-h-0"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
+          gridTemplateRows: isMobile ? '3fr 2fr' : '1fr',
+        }}
+      >
+        {/* Terminal panel */}
+        <div className={`min-h-0 min-w-0 bg-gh-bg-primary overflow-hidden ${isMobile ? 'border-b border-gh-border' : ''}`}>
           <Terminal data={terminalBuffer} />
         </div>
 
-        <div style={{ width: '400px', background: '#1a1a2e', border: '1px solid #333', borderRadius: '8px', padding: '10px' }}>
-          <h3 style={{ color: 'white' }}>Chat</h3>
-          <div style={{ maxHeight: '500px', overflow: 'auto' }}>
-            {messages.map((msg, i) => (
-              <div key={i} style={{ color: 'white', marginBottom: '10px' }}>
-                <strong>{msg.username}:</strong> {msg.content}
-              </div>
-            ))}
-          </div>
-          <input
-            type="text"
-            placeholder="Type message..."
-            style={{ width: '100%', padding: '8px', marginTop: '10px' }}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && isJoined) {
-                sendJsonMessage({ type: 'send_chat', content: e.currentTarget.value });
-                e.currentTarget.value = '';
-              }
-            }}
+        {/* Chat panel */}
+        <div className="min-h-0 min-w-0 h-full">
+          <ChatBox
+            roomId={roomId || ''}
+            onSendMessage={handleSendChat}
             disabled={!isJoined}
           />
         </div>

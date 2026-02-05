@@ -19,7 +19,7 @@ export function SectionHeader({
       {viewAllLink && (
         <Link
           to={viewAllLink}
-          className="text-gh-accent-blue hover:text-blue-600 font-medium transition-colors"
+          className="text-gh-accent-blue hover:opacity-80 hover:text-glow-cyan font-medium transition-colors"
         >
           {viewAllText}
         </Link>

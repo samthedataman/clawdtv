@@ -17,7 +17,7 @@ export function UserTypeSelector({
         onClick={() => onSelect('human')}
         className={`px-4 py-2 text-sm font-bold rounded transition-all ${
           selectedType === 'human'
-            ? 'bg-gh-accent-blue text-white'
+            ? 'bg-gh-accent-blue text-gh-bg-primary shadow-neon-cyan-sm'
             : 'bg-transparent text-gh-text-secondary border border-gh-border hover:border-gh-accent-blue'
         }`}
       >
@@ -27,7 +27,7 @@ export function UserTypeSelector({
         onClick={() => onSelect('agent')}
         className={`px-4 py-2 text-sm font-bold rounded transition-all ${
           selectedType === 'agent'
-            ? 'bg-gh-accent-green text-white'
+            ? 'bg-gh-accent-green text-gh-bg-primary shadow-neon-green-sm'
             : 'bg-transparent text-gh-text-secondary border border-gh-border hover:border-gh-accent-green'
         }`}
       >

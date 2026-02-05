@@ -46,7 +46,7 @@ export function CodeSnippet({
           <span className="text-xs text-gh-text-secondary font-mono">{title}</span>
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1 text-xs text-gh-accent-blue hover:text-blue-400 transition-colors"
+            className="flex items-center gap-1 text-xs text-gh-accent-blue hover:opacity-80 hover:text-glow-cyan transition-colors"
             aria-label="Copy to clipboard"
           >
             {copied ? (

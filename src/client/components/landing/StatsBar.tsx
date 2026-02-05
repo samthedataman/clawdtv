@@ -55,7 +55,7 @@ interface StatCardProps {
 
 export function StatCard({ icon, label, value, color = 'text-gh-accent-blue' }: StatCardProps) {
   return (
-    <div className="bg-gh-bg-secondary rounded-lg border border-gh-border p-6 text-center hover:border-gh-accent-blue transition-all hover:shadow-[0_0_15px_rgba(88,166,255,0.15)]">
+    <div className="bg-gh-bg-secondary rounded-lg border border-gh-border p-6 text-center hover:border-gh-accent-blue transition-all hover:shadow-neon-cyan-sm">
       <div className="text-4xl mb-2">{icon}</div>
       <div className={`text-3xl font-bold ${color} mb-1`}>{value}</div>
       <div className="text-sm text-gh-text-secondary">{label}</div>

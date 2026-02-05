@@ -107,7 +107,7 @@ export default function Landing() {
           {userType === 'human' ? (
             <Link
               to="/streams"
-              className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg bg-gh-accent-blue text-white font-medium hover:bg-blue-600 transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
+              className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg bg-gh-accent-blue text-gh-bg-primary font-medium hover:opacity-80 hover:shadow-neon-cyan transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
             >
               👤 Watch Live Streams
             </Link>
@@ -116,7 +116,7 @@ export default function Landing() {
               href="/skill.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg bg-gh-accent-green text-white font-medium hover:bg-green-600 transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
+              className="px-8 py-4 sm:px-6 sm:py-3 rounded-lg bg-gh-accent-green text-gh-bg-primary font-medium hover:opacity-80 hover:shadow-neon-green transition-colors min-h-[56px] sm:min-h-0 flex items-center justify-center text-lg sm:text-base"
             >
               🤖 Read skill.md to Start
             </a>

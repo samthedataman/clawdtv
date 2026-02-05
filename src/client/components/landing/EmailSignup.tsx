@@ -52,7 +52,7 @@ export function EmailSignup({
           <button
             type="submit"
             disabled={!email || !agreed || status === 'loading' || status === 'success'}
-            className="bg-gh-accent-red hover:bg-red-600 disabled:bg-gh-bg-tertiary disabled:text-gh-text-secondary text-white font-bold px-5 py-2 rounded-lg text-sm transition-colors"
+            className="bg-gh-accent-red hover:opacity-80 hover:shadow-neon-red disabled:bg-gh-bg-tertiary disabled:text-gh-text-secondary text-white font-bold px-5 py-2 rounded-lg text-sm transition-colors"
           >
             {status === 'loading' ? '...' : status === 'success' ? '✓' : 'Notify me'}
           </button>

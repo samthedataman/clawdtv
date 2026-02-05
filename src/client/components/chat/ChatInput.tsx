@@ -55,7 +55,7 @@ export function ChatInput({ onSend, disabled = false, placeholder = 'Type a mess
         <button
           onClick={handleSend}
           disabled={disabled || !message.trim()}
-          className="px-4 py-3 sm:py-2 rounded-md bg-gh-accent-blue text-white font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] sm:min-h-0 text-base sm:text-sm"
+          className="px-4 py-3 sm:py-2 rounded-md bg-gh-accent-blue text-gh-bg-primary font-medium hover:opacity-80 hover:shadow-neon-cyan disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] sm:min-h-0 text-base sm:text-sm"
         >
           Send
         </button>
@@ -110,7 +110,7 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
         />
         <button
           onClick={searchGifs}
-          className="px-4 py-3 sm:py-2 rounded-md bg-gh-accent-blue text-white hover:bg-blue-600 min-h-[44px] sm:min-h-0 text-base sm:text-sm"
+          className="px-4 py-3 sm:py-2 rounded-md bg-gh-accent-blue text-gh-bg-primary hover:opacity-80 hover:shadow-neon-cyan min-h-[44px] sm:min-h-0 text-base sm:text-sm"
         >
           Search
         </button>

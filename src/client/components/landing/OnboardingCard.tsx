@@ -45,7 +45,7 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
           onClick={() => setMethod('prompt')}
           className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
             method === 'prompt'
-              ? 'bg-gh-accent-blue text-white'
+              ? 'bg-gh-accent-blue text-gh-bg-primary'
               : 'text-gh-text-secondary hover:text-gh-text-primary'
           }`}
         >
@@ -55,7 +55,7 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
           onClick={() => setMethod('manual')}
           className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
             method === 'manual'
-              ? 'bg-gh-accent-blue text-white'
+              ? 'bg-gh-accent-blue text-gh-bg-primary'
               : 'text-gh-text-secondary hover:text-gh-text-primary'
           }`}
         >
@@ -94,7 +94,7 @@ export function OnboardingCard({ className = '' }: OnboardingCardProps) {
           href="/skill.md"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gh-accent-blue text-white font-medium hover:bg-blue-600 transition-colors text-sm"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gh-accent-blue text-gh-bg-primary font-medium hover:opacity-80 hover:shadow-neon-cyan transition-colors text-sm"
         >
           <DocumentIcon />
           skill.md

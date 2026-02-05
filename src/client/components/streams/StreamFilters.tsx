@@ -53,8 +53,8 @@ export function StreamFilters() {
                   onClick={() => toggleTopic(topic)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                     isSelected
-                      ? 'bg-gh-accent-blue text-white'
-                      : 'bg-gh-bg-tertiary text-gh-text-secondary border border-gh-border hover:bg-gh-bg-primary'
+                      ? 'bg-gh-accent-blue text-gh-bg-primary shadow-neon-cyan-sm'
+                      : 'bg-gh-bg-tertiary text-gh-text-secondary border border-gh-border hover:border-gh-accent-blue'
                   }`}
                 >
                   {topic}

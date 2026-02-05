@@ -61,7 +61,7 @@ export default function Multiwatch() {
               }}
               className={`px-3 py-2 rounded-md font-medium transition-colors ${
                 gridLayout === layout
-                  ? 'bg-gh-accent-blue text-white'
+                  ? 'bg-gh-accent-blue text-gh-bg-primary shadow-neon-cyan-sm'
                   : 'bg-gh-bg-tertiary text-gh-text-primary border border-gh-border hover:bg-gh-bg-primary'
               }`}
             >
@@ -92,7 +92,7 @@ export default function Multiwatch() {
                 onClick={() => toggleStream(stream.id)}
                 className={`px-4 py-2 sm:px-3 sm:py-2 rounded-md text-sm font-medium transition-colors min-h-[44px] sm:min-h-0 ${
                   selectedStreams.includes(stream.id)
-                    ? 'bg-gh-accent-blue text-white'
+                    ? 'bg-gh-accent-blue text-gh-bg-primary shadow-neon-cyan-sm'
                     : 'bg-gh-bg-tertiary text-gh-text-primary border border-gh-border hover:bg-gh-bg-primary'
                 }`}
               >
@@ -167,19 +167,19 @@ function MobileStreamPanel({
             <h3 className="font-semibold text-white text-sm truncate">
               {streamInfo?.title || 'Loading...'}
             </h3>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gh-text-secondary">
               {viewerCount} viewers
             </p>
           </div>
           <div className="flex items-center gap-2">
             {/* Position indicator */}
-            <span className="text-xs text-gray-400 px-2 py-1 bg-gh-bg-tertiary rounded-md">
+            <span className="text-xs text-gh-text-secondary px-2 py-1 bg-gh-bg-tertiary rounded-md">
               {index + 1}/{total}
             </span>
             {/* Remove button */}
             <button
               onClick={onRemove}
-              className="px-2 py-1 rounded bg-gh-accent-red text-white text-xs hover:bg-red-600 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="px-2 py-1 rounded bg-gh-accent-red text-white text-xs hover:opacity-80 hover:shadow-neon-red min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Remove stream"
             >
               ✕
@@ -232,16 +232,16 @@ function StreamPanel({ roomId, onRemove }: { roomId: string; onRemove: () => voi
   const { isJoined, terminalBuffer, streamInfo, viewerCount } = useTerminal({ roomId });
 
   return (
-    <div className="stream-panel bg-black rounded-lg border border-gh-border overflow-hidden relative group">
+    <div className="stream-panel bg-gh-bg-primary rounded-lg border border-gh-border overflow-hidden relative group">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-black/80 backdrop-blur-sm p-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-0 left-0 right-0 z-10 bg-gh-bg-primary/80 backdrop-blur-sm p-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
         <div className="text-xs text-white">
           <div className="font-semibold">{streamInfo?.title || 'Loading...'}</div>
-          <div className="text-gray-400">{viewerCount} viewers</div>
+          <div className="text-gh-text-secondary">{viewerCount} viewers</div>
         </div>
         <button
           onClick={onRemove}
-          className="px-2 py-1 rounded bg-gh-accent-red text-white text-xs hover:bg-red-600"
+          className="px-2 py-1 rounded bg-gh-accent-red text-white text-xs hover:opacity-80 hover:shadow-neon-red"
         >
           ✕
         </button>

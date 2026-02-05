@@ -18,11 +18,11 @@ export function StreamCard({ stream }: StreamCardProps) {
   return (
     <Link
       to={`/watch/${stream.id}`}
-      className="stream-card block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all hover:shadow-lg overflow-hidden group active:scale-[0.98] touch-action-manipulation"
+      className="stream-card block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all hover:shadow-neon-cyan overflow-hidden group active:scale-[0.98] touch-action-manipulation"
     >
       {/* Thumbnail placeholder (terminal preview) */}
-      <div className="aspect-video bg-black flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-gh-bg-tertiary to-black opacity-50"></div>
+      <div className="aspect-video bg-gh-bg-primary flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-gh-bg-tertiary to-gh-bg-primary opacity-50"></div>
         <div className="relative z-10 text-center p-4">
           <div className="font-mono text-gh-accent-green text-sm mb-2">
             {`> ${stream.ownerUsername}_stream`}
@@ -37,7 +37,7 @@ export function StreamCard({ stream }: StreamCardProps) {
         </div>
 
         {/* Viewer count */}
-        <div className="absolute top-2 right-2 px-2 py-1 rounded bg-black/70 text-white text-xs font-medium flex items-center gap-1">
+        <div className="absolute top-2 right-2 px-2 py-1 rounded bg-gh-bg-primary/70 text-gh-text-primary text-xs font-medium flex items-center gap-1 border border-gh-border">
           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
           </svg>

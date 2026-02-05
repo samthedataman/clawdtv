@@ -247,7 +247,7 @@ export default function Why() {
               href="https://pump.fun/coin/G8vGeqzGC3WLxqRnDT7bW15JdSNYPBnLcqmtqyBSpump"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gh-accent-purple text-white font-semibold hover:bg-purple-600 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gh-accent-purple text-white font-semibold hover:opacity-80 hover:shadow-neon-violet transition-colors"
             >
               View $CTV Token
             </a>
@@ -266,7 +266,7 @@ export default function Why() {
         <div className="flex flex-wrap justify-center gap-4">
           <Link
             to="/streams"
-            className="px-6 py-3 rounded-lg bg-gh-accent-blue text-white font-semibold hover:bg-blue-600 transition-colors"
+            className="px-6 py-3 rounded-lg bg-gh-accent-blue text-gh-bg-primary font-semibold hover:opacity-80 hover:shadow-neon-cyan transition-colors"
           >
             Watch Live Streams
           </Link>

@@ -24,37 +24,44 @@ export function Terminal({ data, className = '' }: TerminalProps) {
   useEffect(() => {
     if (!terminalRef.current) return;
 
-    // Create terminal instance with GitHub dark theme
+    // Create terminal instance with cyberpunk neon theme
     const term = new XTerm({
       theme: {
-        background: '#000000',
-        foreground: '#c9d1d9',
-        cursor: '#58a6ff',
-        cursorAccent: '#0d1117',
-        selectionBackground: 'rgba(88, 166, 255, 0.3)',
-        black: '#484f58',
-        red: '#ff7b72',
-        green: '#3fb950',
-        yellow: '#d29922',
-        blue: '#58a6ff',
-        magenta: '#bc8cff',
-        cyan: '#39c5cf',
-        white: '#b1bac4',
-        brightBlack: '#6e7681',
-        brightRed: '#ffa198',
-        brightGreen: '#56d364',
-        brightYellow: '#e3b341',
-        brightBlue: '#79c0ff',
-        brightMagenta: '#d2a8ff',
-        brightCyan: '#56d4dd',
-        brightWhite: '#f0f6fc',
+        background: '#0a0a0f',
+        foreground: '#e0e0ff',
+        cursor: '#00ffff',
+        cursorAccent: '#0a0a0f',
+        selectionBackground: 'rgba(0, 255, 255, 0.2)',
+        black: '#1a1a2e',
+        red: '#ff0040',
+        green: '#00ff41',
+        yellow: '#ffff00',
+        blue: '#00ffff',
+        magenta: '#ff00ff',
+        cyan: '#00b8b8',
+        white: '#e0e0ff',
+        brightBlack: '#3a3a5c',
+        brightRed: '#ff1493',
+        brightGreen: '#39ff14',
+        brightYellow: '#ffff66',
+        brightBlue: '#66ffff',
+        brightMagenta: '#ff66ff',
+        brightCyan: '#33ffcc',
+        brightWhite: '#f0f0ff',
       },
       fontSize: getFontSize(),
-      fontFamily: 'SF Mono, Fira Code, Consolas, Monaco, Courier New, monospace',
+      fontFamily: '"Share Tech Mono", SF Mono, Fira Code, Consolas, Monaco, "Courier New", monospace',
+      fontWeight: '400',           // Regular weight for body text
+      fontWeightBold: '700',       // Stronger bold emphasis
+      lineHeight: 1.4,             // Better readability (up from default 1.0)
+      letterSpacing: 0,            // Keep monospace alignment
       cursorBlink: true,
       scrollback: 5000,
       convertEol: true,
-      disableStdin: true, // Read-only terminal
+      disableStdin: true,          // Read-only terminal
+      allowProposedApi: true,      // Enable experimental features
+      smoothScrollDuration: 100,   // Smooth scrolling animation
+      fastScrollSensitivity: 5,    // Fast scroll sensitivity
     });
 
     // Add fit addon for responsive sizing
@@ -93,8 +100,24 @@ export function Terminal({ data, className = '' }: TerminalProps) {
 
     window.addEventListener('resize', handleResize);
 
+    // Watch for container resize (CSS grid layout changes, etc.)
+    const resizeObserver = new ResizeObserver(() => {
+      if (fitAddonRef.current && xtermRef.current) {
+        try {
+          fitAddonRef.current.fit();
+        } catch (e) {
+          // Ignore resize errors during transitions
+        }
+      }
+    });
+
+    if (terminalRef.current) {
+      resizeObserver.observe(terminalRef.current);
+    }
+
     // Cleanup
     return () => {
+      resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);
       term.dispose();
     };
