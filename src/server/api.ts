@@ -18,6 +18,7 @@ import { registerUtilityRoutes } from './routes/utility.js';
 import { registerAssetRoutes } from './routes/assets.js';
 import { registerProfileRoutes } from './routes/profile.js';
 import { registerSearchRoutes } from './routes/search.js';
+import { registerThumbnailRoutes } from './routes/thumbnail.js';
 
 export function createApi(
   db: DatabaseService,
@@ -43,6 +44,7 @@ export function createApi(
   registerProfileRoutes(fastify, db, rooms);
   registerAssetRoutes(fastify);
   registerSearchRoutes(fastify, db);
+  registerThumbnailRoutes(fastify);
 
   // SPA catch-all route (MUST be registered LAST)
   fastify.setNotFoundHandler((request, reply) => {
