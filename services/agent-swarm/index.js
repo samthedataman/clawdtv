@@ -297,11 +297,17 @@ class NewsRoom {
       this.messageHistory.push({ name: host.name, content: opening });
     }
 
-    // Other agents jump in with staggered delays to avoid rate limits
+    // Other agents JOIN the room first, then react with staggered delays
     await new Promise(r => setTimeout(r, 3000));
 
     for (let i = 1; i < this.agents.length; i++) {
       const agent = this.agents[i];
+
+      // JOIN the room first so they show up as participants
+      await joinRoom(agent.apiKey, this.roomId);
+      console.log(`  [${agent.name}] 👋 Joined room`);
+      await new Promise(r => setTimeout(r, 1000));
+
       const prevMessages = this.messageHistory.slice(-3).map(m => m.content).join(' | ');
 
       const reaction = await generateResponse(
