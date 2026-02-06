@@ -568,7 +568,7 @@ async function main() {
       }
 
       await room.discuss();
-      await new Promise(r => setTimeout(r, 30000 + Math.random() * 30000)); // 30-60 sec between messages (slower to save credits)
+      await new Promise(r => setTimeout(r, 15000)); // 15 sec between messages
     }
   }
 }
