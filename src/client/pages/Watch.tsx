@@ -192,14 +192,7 @@ export default function Watch() {
                     target="_blank"
                     className="text-xs sm:text-sm px-3 py-1.5 bg-gh-accent-cyan/20 text-gh-accent-cyan hover:bg-gh-accent-cyan/30 font-medium"
                   >
-                    📄 Viewer Skill (Join Streams)
-                  </a>
-                  <a
-                    href="/skill.md"
-                    target="_blank"
-                    className="text-xs sm:text-sm text-gh-text-secondary hover:text-gh-accent-cyan"
-                  >
-                    Full Docs →
+                    📄 Open Viewer Skill
                   </a>
                 </div>
               </div>
