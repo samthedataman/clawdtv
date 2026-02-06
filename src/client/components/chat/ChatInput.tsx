@@ -40,24 +40,24 @@ export function ChatInput({ onSend, disabled = false, placeholder = 'Type a mess
   };
 
   return (
-    <div className="chat-input px-4 pb-6 pt-2 bg-[#0d0d14]">
+    <div className="chat-input px-4 pb-6 pt-0 bg-[#313338]">
       {/* GIF Picker */}
       {showGifPicker && (
-        <div className="mb-3 p-3 rounded-lg bg-[#0a0a0f] border border-gh-border/50">
+        <div className="mb-3 p-3 rounded-lg bg-[#2b2d31] border border-[#1e1f22]">
           <GifPicker onSelect={handleGifSelect} onClose={() => setShowGifPicker(false)} />
         </div>
       )}
 
       {/* Discord-style input bar */}
-      <div className="flex items-center gap-0 bg-[#1a1a2e] rounded-lg overflow-hidden border border-gh-border/30 focus-within:border-gh-accent-blue/50 transition-colors">
+      <div className="flex items-center gap-0 bg-[#383a40] rounded-lg overflow-hidden">
         {/* Plus button for attachments */}
         <button
           onClick={() => setShowGifPicker(!showGifPicker)}
-          className={`px-4 py-3 text-gh-text-secondary hover:text-gh-text-primary transition-colors ${showGifPicker ? 'text-gh-accent-blue' : ''}`}
+          className={`px-4 py-2.5 text-[#b5bac1] hover:text-[#dbdee1] transition-colors ${showGifPicker ? 'text-[#5865f2]' : ''}`}
           title="Add GIF"
           disabled={disabled}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" strokeWidth="2" />
             <path strokeWidth="2" strokeLinecap="round" d="M12 8v8M8 12h8" />
           </svg>
@@ -72,29 +72,37 @@ export function ChatInput({ onSend, disabled = false, placeholder = 'Type a mess
           onKeyPress={handleKeyPress}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 py-3 pr-4 bg-transparent text-gh-text-primary placeholder-gh-text-secondary/50 focus:outline-none disabled:opacity-50 text-sm"
+          className="flex-1 py-2.5 pr-4 bg-transparent text-[#dbdee1] placeholder-[#6d6f78] focus:outline-none disabled:opacity-50 text-base"
           maxLength={500}
         />
+
+        {/* Emoji button (decorative) */}
+        <button
+          className="px-2 py-2.5 text-[#b5bac1] hover:text-[#dbdee1] transition-colors"
+          title="Add emoji"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
+            <circle cx="8" cy="10" r="1" fill="currentColor" />
+            <circle cx="16" cy="10" r="1" fill="currentColor" />
+            <path strokeWidth="1.5" strokeLinecap="round" d="M8 14s1.5 2 4 2 4-2 4-2" />
+          </svg>
+        </button>
 
         {/* Send button (only shows when there's text) */}
         {message.trim() && (
           <button
             onClick={handleSend}
             disabled={disabled}
-            className="px-4 py-3 text-gh-accent-blue hover:text-gh-accent-cyan disabled:opacity-50 transition-colors"
+            className="px-3 py-2.5 text-[#5865f2] hover:text-[#7289da] disabled:opacity-50 transition-colors"
             title="Send message"
           >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
               <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
             </svg>
           </button>
         )}
       </div>
-
-      {/* Hint text */}
-      <p className="text-[10px] text-gh-text-secondary/40 mt-2 text-center">
-        Press Enter to send
-      </p>
     </div>
   );
 }
@@ -157,10 +165,10 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
     <div className="gif-picker">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-gh-text-primary">GIFs</h4>
+        <h4 className="text-sm font-semibold text-[#f2f3f5]">GIFs</h4>
         <button
           onClick={onClose}
-          className="text-gh-text-secondary hover:text-gh-text-primary transition-colors"
+          className="text-[#b5bac1] hover:text-[#dbdee1] transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeWidth="2" strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
@@ -178,11 +186,11 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && searchGifs()}
             placeholder="Search Tenor"
-            className="w-full px-3 py-2 rounded bg-[#1a1a2e] border border-gh-border/30 text-gh-text-primary placeholder-gh-text-secondary/50 focus:outline-none focus:border-gh-accent-blue/50 text-sm"
+            className="w-full px-3 py-2 rounded bg-[#1e1f22] text-[#dbdee1] placeholder-[#6d6f78] focus:outline-none text-sm"
           />
           <button
             onClick={searchGifs}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gh-text-secondary hover:text-gh-accent-blue"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-[#b5bac1] hover:text-[#5865f2]"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="8" strokeWidth="2" />
@@ -195,7 +203,7 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
       {/* Results */}
       {loading ? (
         <div className="flex items-center justify-center py-8">
-          <div className="w-6 h-6 border-2 border-gh-accent-blue border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-[#5865f2] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : gifs.length > 0 ? (
         <div className="grid grid-cols-3 gap-1 max-h-48 overflow-y-auto">
@@ -203,7 +211,7 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
             <button
               key={i}
               onClick={() => onSelect(gif.media_formats?.gif?.url || gif.url)}
-              className="relative aspect-video overflow-hidden rounded hover:ring-2 hover:ring-gh-accent-blue transition-all"
+              className="relative aspect-video overflow-hidden rounded hover:ring-2 hover:ring-[#5865f2] transition-all"
             >
               <img
                 src={gif.media_formats?.tinygif?.url || gif.url}
@@ -215,7 +223,7 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
           ))}
         </div>
       ) : (
-        <div className="text-center py-8 text-gh-text-secondary text-sm">
+        <div className="text-center py-8 text-[#949ba4] text-sm">
           No GIFs found. Try a different search!
         </div>
       )}

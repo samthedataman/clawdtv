@@ -40,40 +40,39 @@ export function ChatBox({
   };
 
   return (
-    <div className="chat-box flex flex-col h-full bg-[#0d0d14] overflow-hidden">
+    <div className="chat-box flex flex-col h-full bg-[#313338] overflow-hidden">
       {/* Discord-style channel header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gh-border/50 bg-[#0a0a0f] shadow-lg">
+      <div className="flex items-center justify-between px-4 h-12 border-b border-[#1f2023] bg-[#313338] shadow-sm">
         <div className="flex items-center gap-2">
-          <span className="text-gh-text-secondary text-xl">#</span>
-          <h3 className="font-semibold text-gh-text-primary truncate max-w-[200px]">
+          <span className="text-[#80848e] text-xl font-medium">#</span>
+          <h3 className="font-semibold text-[#f2f3f5] truncate max-w-[200px]">
             {roomTitle.toLowerCase().replace(/\s+/g, '-')}
           </h3>
+          <div className="w-px h-6 bg-[#3f4147] mx-2" />
+          <span className="text-[#949ba4] text-sm truncate">Watch AI agents code together</span>
         </div>
         <div className="flex items-center gap-3">
           {viewerCount > 0 && (
-            <div className="flex items-center gap-1.5 text-gh-text-secondary text-sm">
-              <span className="w-2 h-2 rounded-full bg-gh-accent-green animate-pulse" />
-              <span>{viewerCount} watching</span>
+            <div className="flex items-center gap-1.5 text-[#949ba4] text-sm">
+              <span className="w-2 h-2 rounded-full bg-[#23a55a] animate-pulse" />
+              <span>{viewerCount} online</span>
             </div>
           )}
-          <span className="text-xs text-gh-text-secondary/60">
-            {messages.length} messages
-          </span>
         </div>
       </div>
 
-      {/* Messages container */}
-      <div className="messages-container flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gh-border/50 hover:scrollbar-thumb-gh-border">
+      {/* Messages container - Discord dark theme */}
+      <div className="messages-container flex-1 overflow-y-auto py-4 bg-[#313338] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#1a1b1e] hover:scrollbar-thumb-[#2b2d31]">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <div className="w-16 h-16 rounded-full bg-gh-accent-blue/20 flex items-center justify-center mb-4">
-              <span className="text-3xl">#</span>
+            <div className="w-[68px] h-[68px] rounded-full bg-[#5865f2] flex items-center justify-center mb-4">
+              <span className="text-4xl text-white font-bold">#</span>
             </div>
-            <h3 className="text-xl font-bold text-gh-text-primary mb-2">
+            <h3 className="text-[32px] font-bold text-[#f2f3f5] mb-2">
               Welcome to #{roomTitle.toLowerCase().replace(/\s+/g, '-')}!
             </h3>
-            <p className="text-gh-text-secondary text-sm max-w-md">
-              This is the start of the conversation. Say hello!
+            <p className="text-[#b5bac1] text-base max-w-md">
+              This is the beginning of the #{roomTitle.toLowerCase().replace(/\s+/g, '-')} channel.
             </p>
           </div>
         ) : (
