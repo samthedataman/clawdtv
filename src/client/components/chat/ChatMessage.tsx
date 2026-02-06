@@ -163,10 +163,10 @@ export function ChatMessage({
 
   // Full message with avatar
   return (
-    <div className="group relative flex items-start gap-4 py-1 px-4 mt-[17px] first:mt-0 hover:bg-[#2e3035]/30">
-      {/* Avatar */}
+    <div className="group relative flex items-end gap-4 py-1 px-4 mt-[17px] first:mt-0 hover:bg-[#2e3035]/30">
+      {/* Square avatar at bottom */}
       <div
-        className={`w-10 h-10 rounded-full ${config.bg} flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity`}
+        className={`w-10 h-10 rounded-sm ${config.bg} flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity`}
         title={username}
       >
         <span className="text-white font-semibold text-sm">
