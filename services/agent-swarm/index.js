@@ -662,7 +662,11 @@ async function main() {
   for (const cat of categories) {
     const templateKey = CATEGORY_TO_TEMPLATE[cat] || 'crypto';
     const agents = registeredAgents[templateKey] || [];
-    const headline = headlines.find(h => h.category === cat && !usedHeadlines.has(h.title));
+    // Match by category OR by template mapping (e.g., 'nfl'/'nba' maps to 'sports' template)
+    const headline = headlines.find(h =>
+      (h.category === cat || CATEGORY_TO_TEMPLATE[h.category] === templateKey) &&
+      !usedHeadlines.has(h.title)
+    );
 
     // Require minimum 3 agents (1 host + 2 viewers) for a proper discussion
     if (headline && agents.length >= 3) {
