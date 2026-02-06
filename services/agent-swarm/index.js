@@ -21,7 +21,7 @@ if (!OPENROUTER_KEY) {
 // NEWS CATEGORIES to scan for shocking stories
 const NEWS_CATEGORIES = ['crypto', 'bitcoin', 'ai', 'nfl', 'nba', 'celebrities', 'entertainment'];
 
-// DYNAMIC AGENT TEMPLATES - spawn based on news topic
+// DYNAMIC AGENT TEMPLATES - 4 agents per category for lively debates
 const AGENT_TEMPLATES = {
   crypto: [
     { name: 'CryptoBull', model: 'anthropic/claude-3-haiku', stance: 'bullish',
@@ -30,6 +30,8 @@ const AGENT_TEMPLATES = {
       systemPrompt: `You're CryptoBear, reacting to BREAKING crypto news. You're skeptical - you've seen crashes before. Point out red flags, regulatory risks, and "I told you so" moments. Be the voice of doom. REACT TO THE HEADLINE. Under 200 chars.` },
     { name: 'CryptoAnon', model: 'anthropic/claude-3-haiku', stance: 'conspiracy',
       systemPrompt: `You're CryptoAnon, a conspiracy theorist reacting to crypto news. You see manipulation everywhere - whales, governments, Illuminati. Connect dots that may not exist. Be paranoid but entertaining. REACT TO THE HEADLINE. Under 200 chars.` },
+    { name: 'DeFiDegen', model: 'anthropic/claude-3-haiku', stance: 'degen',
+      systemPrompt: `You're DeFiDegen, a reckless yield farmer reacting to crypto news. You ape into everything. "Ser this is bullish for my bags." You've been rugged 5 times but keep going. Use degen slang. REACT TO THE HEADLINE. Under 200 chars.` },
   ],
   ai: [
     { name: 'AIDoomer', model: 'anthropic/claude-3.5-sonnet', stance: 'doomer',
@@ -38,6 +40,8 @@ const AGENT_TEMPLATES = {
       systemPrompt: `You're Accelerando, an e/acc reacting to AI news. You want AI progress FASTER. Regulations are cope. Open source everything. Every AI news is exciting and humans should embrace the singularity. REACT TO THE HEADLINE with enthusiasm. Under 200 chars.` },
     { name: 'AIRealist', model: 'anthropic/claude-3.5-sonnet', stance: 'moderate',
       systemPrompt: `You're AIRealist, a pragmatic AI researcher reacting to news. You see both risks and benefits. You call out hype AND doomerism. You ask "what does this actually mean?" REACT TO THE HEADLINE with nuance. Under 200 chars.` },
+    { name: 'LabRatLarry', model: 'anthropic/claude-3-haiku', stance: 'insider',
+      systemPrompt: `You're LabRatLarry, claiming to be an AI researcher with "inside knowledge". You drop hints about what labs are REALLY working on. "My sources at [lab] say..." Be mysterious and dramatic. REACT TO THE HEADLINE. Under 200 chars.` },
   ],
   sports: [
     { name: 'HotTakeTony', model: 'anthropic/claude-3-haiku', stance: 'hot-takes',
@@ -46,6 +50,8 @@ const AGENT_TEMPLATES = {
       systemPrompt: `You're StatsNerd reacting to sports news. You counter hot takes with STATS. Cite win probability, advanced metrics, historical comparisons. Be the voice of reason. REACT TO THE HEADLINE with data. Under 200 chars.` },
     { name: 'OldSchoolFan', model: 'anthropic/claude-3-haiku', stance: 'nostalgic',
       systemPrompt: `You're OldSchoolFan reacting to sports news. Everything was better in the old days. Modern athletes are soft. You miss "real" sports. Be grumpy but lovable. REACT TO THE HEADLINE. Under 200 chars.` },
+    { name: 'BetBroMike', model: 'anthropic/claude-3-haiku', stance: 'gambler',
+      systemPrompt: `You're BetBroMike, a sports bettor reacting to news. Everything is about the spread, the odds, the value. "This is a LOCK." You've won big and lost big. Share betting angles. REACT TO THE HEADLINE. Under 200 chars.` },
   ],
   celebrities: [
     { name: 'TeaSpiller', model: 'anthropic/claude-3-haiku', stance: 'gossip',
@@ -54,6 +60,8 @@ const AGENT_TEMPLATES = {
       systemPrompt: `You're CelebDefender reacting to celebrity news. You defend stars - they're human too! Find the sympathetic angle. Push back on hate. "Leave them alone!" REACT TO THE HEADLINE with compassion. Under 200 chars.` },
     { name: 'ShadeQueen', model: 'anthropic/claude-3-haiku', stance: 'shade',
       systemPrompt: `You're ShadeQueen reacting to celebrity news. You throw subtle shade - never cruel, but clever. You see through PR spin. Your reads are iconic. REACT TO THE HEADLINE with wit. Under 200 chars.` },
+    { name: 'PRPaula', model: 'anthropic/claude-3-haiku', stance: 'pr-spin',
+      systemPrompt: `You're PRPaula, a celebrity publicist reacting to news. You spin EVERYTHING positively. "Actually this is great for their brand." You see the PR angle in every story. REACT TO THE HEADLINE. Under 200 chars.` },
   ],
 };
 
@@ -266,36 +274,60 @@ class NewsRoom {
 
     const host = this.agents[0];
 
-    // Poll for external messages
+    // Poll for ALL messages including from humans
     const chatResult = await pollChat(host.apiKey, this.lastChatTimestamp);
-    let externalMsg = null;
+    const externalMessages = [];
 
     if (chatResult.success && chatResult.data?.messages?.length > 0) {
       this.lastChatTimestamp = chatResult.data.lastTimestamp;
       const agentNames = this.agents.map(a => a.name);
+
       for (const msg of chatResult.data.messages) {
+        // Add ALL messages to history for context
+        this.messageHistory.push({ name: msg.username, content: msg.content, isHuman: !agentNames.includes(msg.username) });
+        if (this.messageHistory.length > 30) this.messageHistory.shift();
+
+        // Track external (human) messages separately
         if (!agentNames.includes(msg.username)) {
-          externalMsg = msg;
-          break;
+          externalMessages.push(msg);
         }
       }
     }
 
     // Pick random agent to speak
     const speaker = this.agents[Math.floor(Math.random() * this.agents.length)];
-    const lastMsgs = this.messageHistory.slice(-5);
+    const recentChat = this.messageHistory.slice(-8);
+
+    // Build chat context string for the AI
+    const chatContext = recentChat.length > 0
+      ? `Recent chat:\n${recentChat.map(m => `${m.isHuman ? '👤' : '🤖'} ${m.name}: ${m.content}`).join('\n')}`
+      : '';
 
     let prompt;
-    if (externalMsg) {
-      prompt = `A viewer "${externalMsg.username}" said: "${externalMsg.content}" about the story "${this.headline.title}". React to them! Under 200 chars.`;
-    } else if (lastMsgs.length > 0) {
-      const lastMsg = lastMsgs[lastMsgs.length - 1];
-      prompt = `The story is: "${this.headline.title}". ${lastMsg.name} just said: "${lastMsg.content}". React - agree, disagree, escalate, or add a new angle. Be dramatic! Under 200 chars.`;
+    if (externalMessages.length > 0) {
+      // PRIORITIZE responding to humans!
+      const humanMsg = externalMessages[externalMessages.length - 1];
+      prompt = `BREAKING NEWS: "${this.headline.title}"
+
+${chatContext}
+
+A HUMAN VIEWER "${humanMsg.username}" just asked/said: "${humanMsg.content}"
+
+RESPOND DIRECTLY TO THEM! Address them by name. Answer their question or react to their comment. Be engaging and invite more discussion. Stay in character. Under 200 chars.`;
+    } else if (recentChat.length > 0) {
+      const lastMsg = recentChat[recentChat.length - 1];
+      prompt = `BREAKING NEWS: "${this.headline.title}"
+
+${chatContext}
+
+${lastMsg.name} just said: "${lastMsg.content}".
+
+React - agree, disagree, escalate, ask a follow-up question, or add a new angle. Be dramatic! Under 200 chars.`;
     } else {
       prompt = `Keep discussing: "${this.headline.title}". Share another shocking angle, conspiracy theory, or hot take. Under 200 chars.`;
     }
 
-    const response = await generateResponse(speaker.persona, prompt, lastMsgs.map(m => ({ username: m.name, content: m.content })));
+    const response = await generateResponse(speaker.persona, prompt, recentChat.map(m => ({ username: m.name, content: m.content })));
 
     if (response) {
       if (speaker === this.agents[0]) {
@@ -303,9 +335,12 @@ class NewsRoom {
       } else {
         await sendRoomChat(speaker.apiKey, this.roomId, response);
       }
-      console.log(`  [${speaker.name}] 💬 ${response}`);
-      this.messageHistory.push({ name: speaker.name, content: response });
-      if (this.messageHistory.length > 20) this.messageHistory.shift();
+
+      const emoji = externalMessages.length > 0 ? '👋' : '💬';
+      console.log(`  [${speaker.name}] ${emoji} ${response}`);
+
+      this.messageHistory.push({ name: speaker.name, content: response, isHuman: false });
+      if (this.messageHistory.length > 30) this.messageHistory.shift();
     }
   }
 
