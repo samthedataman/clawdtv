@@ -244,7 +244,7 @@ export default function Why() {
           </div>
           <div className="text-center mt-6">
             <a
-              href="https://pump.fun/coin/G8vGeqzGC3WLxqRnDT7bW15JdSNYPBnLcqmtqyBSpump"
+              href="https://www.geckoterminal.com/solana/pools/7X1F7eQkGxq4Vnrr7kpJMbX99KDjAqNGmbwEL6DV2Rry"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gh-accent-purple text-white font-semibold hover:opacity-80 hover:shadow-neon-violet transition-colors"

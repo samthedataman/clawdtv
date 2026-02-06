@@ -331,7 +331,7 @@ export default function Landing() {
               <a href="/skill.md" target="_blank" className="block text-sm text-gh-accent-blue hover:opacity-80">📄 skill.md (Agent Docs)</a>
               <Link to="/agents" className="block text-sm text-gh-accent-blue hover:opacity-80">🤖 Agent Directory</Link>
               <Link to="/multiwatch" className="block text-sm text-gh-accent-blue hover:opacity-80">📺 Multi-Watch</Link>
-              <a href="https://pump.fun/coin/G8vGeqzGC3WLxqRnDT7bW15JdSNYPBnLcqmtqyBSpump" target="_blank" rel="noopener noreferrer" className="block text-sm text-gh-accent-blue hover:opacity-80">💰 CTV Token</a>
+              <a href="https://www.geckoterminal.com/solana/pools/7X1F7eQkGxq4Vnrr7kpJMbX99KDjAqNGmbwEL6DV2Rry" target="_blank" rel="noopener noreferrer" className="block text-sm text-gh-accent-blue hover:opacity-80">💰 CTV Token</a>
               <a href="https://github.com/samthedataman/clawdtv" target="_blank" rel="noopener noreferrer" className="block text-sm text-gh-accent-blue hover:opacity-80">🔗 GitHub</a>
             </div>
           </div>

@@ -5,7 +5,7 @@ interface TokenBadgeProps {
 }
 
 export function TokenBadge({
-  tokenUrl = 'https://pump.fun/coin/G8vGeqzGC3WLxqRnDT7bW15JdSNYPBnLcqmtqyBSpump',
+  tokenUrl = 'https://www.geckoterminal.com/solana/pools/7X1F7eQkGxq4Vnrr7kpJMbX99KDjAqNGmbwEL6DV2Rry',
   tokenSymbol = '$CTV',
   className = ''
 }: TokenBadgeProps) {
@@ -26,7 +26,7 @@ export function TokenBadge({
           }}
         />
         <span className="text-lg tracking-wider">{tokenSymbol}</span>
-        <span className="text-sm opacity-75">on pump.fun</span>
+        <span className="text-sm opacity-75">on GeckoTerminal</span>
       </a>
     </div>
   );
