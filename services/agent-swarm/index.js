@@ -60,6 +60,9 @@ const AGENT_TEMPLATES = {
     { name: 'DeFiDegen', model: 'anthropic/claude-3-haiku', stance: 'degen',
       gifKeywords: ['ape', 'moon', 'wagmi', 'diamond hands', 'bullish'],
       systemPrompt: `Reckless yield farmer. Apes into everything. Been rugged 5 times but keeps going. WAGMI.` },
+    { name: 'WhaleWatcher', model: 'anthropic/claude-3-haiku', stance: 'analyst',
+      gifKeywords: ['whale', 'money', 'alert', 'big brain', 'detective'],
+      systemPrompt: `Tracks whale wallets obsessively. Always watching on-chain data. "Big move incoming." Suspicious of everything.` },
   ],
   ai: [
     { name: 'AIDoomer', model: 'anthropic/claude-3-haiku', stance: 'doomer',
@@ -74,6 +77,9 @@ const AGENT_TEMPLATES = {
     { name: 'LabRatLarry', model: 'anthropic/claude-3-haiku', stance: 'insider',
       gifKeywords: ['secrets', 'conspiracy', 'whisper', 'leaked', 'trust me'],
       systemPrompt: `Claims insider knowledge. Drops hints about what labs are really working on. Mysterious.` },
+    { name: 'OpenSourceOwen', model: 'anthropic/claude-3-haiku', stance: 'open-source',
+      gifKeywords: ['free', 'open', 'community', 'power to the people', 'revolution'],
+      systemPrompt: `Open source AI advocate. Hates closed models. "Llama will save us." Anti-corporate vibes.` },
   ],
   sports: [
     { name: 'HotTakeTony', model: 'anthropic/claude-3-haiku', stance: 'hot-takes',
@@ -88,6 +94,9 @@ const AGENT_TEMPLATES = {
     { name: 'BetBroMike', model: 'anthropic/claude-3-haiku', stance: 'gambler',
       gifKeywords: ['money', 'gambling', 'winner', 'betting', 'cash'],
       systemPrompt: `Sports bettor. Everything is about the spread and odds. "This is a LOCK."` },
+    { name: 'FantasyKing', model: 'anthropic/claude-3-haiku', stance: 'fantasy',
+      gifKeywords: ['fantasy', 'league', 'points', 'draft', 'trophy'],
+      systemPrompt: `Fantasy sports obsessed. Every real-world event is analyzed through fantasy impact. "He's on my team!"` },
   ],
   celebrities: [
     { name: 'TeaSpiller', model: 'anthropic/claude-3-haiku', stance: 'gossip',
@@ -643,13 +652,13 @@ async function main() {
 
   // Fetch initial controversial news and create 5 rooms
   const headlines = await fetchShockingNews();
-  console.log(`\n📰 Found ${headlines.length} headlines. Starting with top 5 most CONTROVERSIAL...\n`);
+  console.log(`\n📰 Found ${headlines.length} headlines. Starting with top 3 most CONTROVERSIAL...\n`);
 
   const activeRooms = [];
   const usedHeadlines = new Set();
 
-  // Create initial 5 rooms from different categories (4 agents per room)
-  const categories = ['crypto', 'ai', 'sports', 'celebrities', 'entertainment'];
+  // Create initial 3 rooms from different categories (5 agents per room)
+  const categories = ['crypto', 'ai', 'sports'];
   for (const cat of categories) {
     const templateKey = CATEGORY_TO_TEMPLATE[cat] || 'crypto';
     const agents = registeredAgents[templateKey] || [];
@@ -668,7 +677,7 @@ async function main() {
     }
   }
 
-  console.log(`\n🔥 ${activeRooms.length} CONTROVERSIAL rooms live! 4 agents per room. Rotating every 30 min.\n`);
+  console.log(`\n🔥 ${activeRooms.length} CONTROVERSIAL rooms live! 5 agents per room. Rotating every 30 min.\n`);
 
   // Main discussion loop
   while (true) {
