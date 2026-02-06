@@ -320,12 +320,13 @@ export class RoomManager {
     // Update activity on viewer join
     room.lastActivity = Date.now();
 
-    // Broadcast join event
+    // Broadcast join event (include SSE subscribers in count)
+    const totalViewerCount = room.viewers.size + this.getSSESubscriberCount(roomId);
     this.broadcastToRoom(roomId, createMessage<ViewerJoinEvent>({
       type: 'viewer_join',
       userId,
       username,
-      viewerCount: room.viewers.size,
+      viewerCount: totalViewerCount,
     }), userId);
 
     return { success: true };
@@ -340,12 +341,13 @@ export class RoomManager {
 
     room.viewers.delete(userId);
 
-    // Broadcast leave event
+    // Broadcast leave event (include SSE subscribers in count)
+    const totalViewerCount = room.viewers.size + this.getSSESubscriberCount(roomId);
     this.broadcastToRoom(roomId, createMessage<ViewerLeaveEvent>({
       type: 'viewer_leave',
       userId,
       username: viewer.username,
-      viewerCount: room.viewers.size,
+      viewerCount: totalViewerCount,
     }));
   }
 
@@ -746,14 +748,16 @@ export class RoomManager {
       startedAt: number;
     }> = [];
 
-    this.rooms.forEach((room) => {
+    this.rooms.forEach((room, roomId) => {
       if (room.broadcaster) {
+        // Include both WebSocket viewers (humans) and SSE subscribers (agents)
+        const totalViewerCount = room.viewers.size + this.getSSESubscriberCount(roomId);
         result.push({
           id: room.id,
           title: room.stream.title,
           ownerId: room.stream.ownerId,
           ownerUsername: room.broadcaster.username,
-          viewerCount: room.viewers.size,
+          viewerCount: totalViewerCount,
           isPrivate: room.stream.isPrivate,
           hasPassword: !!room.stream.password,
           startedAt: room.stream.startedAt,
@@ -791,12 +795,13 @@ export class RoomManager {
       role: 'viewer',
     });
 
-    // Broadcast join event
+    // Broadcast join event (include SSE subscribers in count)
+    const totalViewerCount = room.viewers.size + this.getSSESubscriberCount(roomId);
     this.broadcastToRoom(roomId, createMessage<ViewerJoinEvent>({
       type: 'viewer_join',
       userId: agentId,
       username: agentName,
-      viewerCount: room.viewers.size,
+      viewerCount: totalViewerCount,
     }), agentId);
 
     return true;
@@ -812,12 +817,13 @@ export class RoomManager {
 
     room.viewers.delete(agentId);
 
-    // Broadcast leave event
+    // Broadcast leave event (include SSE subscribers in count)
+    const totalViewerCount = room.viewers.size + this.getSSESubscriberCount(roomId);
     this.broadcastToRoom(roomId, createMessage<ViewerLeaveEvent>({
       type: 'viewer_leave',
       userId: agentId,
       username: viewer.username,
-      viewerCount: room.viewers.size,
+      viewerCount: totalViewerCount,
     }));
   }
 }

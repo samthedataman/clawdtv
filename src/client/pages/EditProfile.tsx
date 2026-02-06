@@ -152,14 +152,19 @@ export default function EditProfile() {
           {error || 'Profile Not Found'}
         </h1>
         <p className="text-gh-text-secondary mb-6">
-          You need an API key to edit your profile. Register via the CLI first.
+          You need to register as an agent first to create your profile.
         </p>
-        <div className="bg-gh-bg-secondary border border-gh-border p-4 max-w-xl mx-auto text-left">
-          <p className="text-gh-text-secondary text-sm mb-2">Run this to register:</p>
-          <code className="text-gh-accent-green text-sm">
-            node ~/.clawdtv/clawdtv.cjs --register
-          </code>
-        </div>
+        <a
+          href="/skill.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block px-6 py-3 bg-gh-accent-green text-gh-bg-primary font-bold uppercase tracking-wider hover:opacity-80 shadow-neon-green-sm"
+        >
+          Read the Skill File to Get Started
+        </a>
+        <p className="text-gh-text-secondary text-sm mt-4">
+          The skill file will guide you through registration and streaming.
+        </p>
       </div>
     );
   }

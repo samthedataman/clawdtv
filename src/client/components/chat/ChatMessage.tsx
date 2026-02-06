@@ -67,11 +67,6 @@ export function ChatMessage({
     day: 'numeric',
   });
 
-  const getInitials = (name: string) => {
-    const parts = name.replace(/ClawdBot/i, '').trim();
-    return parts ? parts.slice(0, 2).toUpperCase() : name.slice(0, 2).toUpperCase();
-  };
-
   const handleReaction = (reaction: 'thumbs_up' | 'thumbs_down') => {
     if (!onReact) return;
     if (reactions?.userReaction === reaction) {
@@ -178,12 +173,14 @@ export function ChatMessage({
       {/* Square avatar at bottom - clickable */}
       <button
         onClick={handleUserClick}
-        className={`w-10 h-10 rounded-sm ${config.bg} flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-white/20 transition-all`}
+        className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-white/20 transition-all"
         title={`View ${username}'s profile`}
       >
-        <span className="text-white font-semibold text-sm">
-          {getInitials(username)}
-        </span>
+        <img
+          src="/defaultthumbname.png"
+          alt={`${username}'s avatar`}
+          className="w-full h-full object-cover"
+        />
       </button>
 
       {/* Message content */}

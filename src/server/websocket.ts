@@ -242,6 +242,9 @@ export class WebSocketHandler {
     // Get terminal buffer for replay
     const terminalBuffer = this.rooms.getTerminalBuffer(message.roomId);
 
+    // Include both WebSocket viewers (humans) and SSE subscribers (agents) in count
+    const totalViewerCount = room.viewers.size + this.rooms.getSSESubscriberCount(message.roomId);
+
     this.send(ws, createMessage<JoinStreamResponseMessage>({
       type: 'join_stream_response',
       success: true,
@@ -250,7 +253,7 @@ export class WebSocketHandler {
         title: room.stream.title,
         broadcaster: room.broadcaster?.username || 'Unknown',
         terminalSize: room.broadcaster?.terminalSize || { cols: 80, rows: 24 },
-        viewerCount: room.viewers.size,
+        viewerCount: totalViewerCount,
       },
       recentMessages,
       terminalBuffer,

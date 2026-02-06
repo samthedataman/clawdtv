@@ -15,7 +15,7 @@ export declare class DatabaseService {
     getActiveStreams(): Promise<Stream[]>;
     getPublicActiveStreams(): Promise<Stream[]>;
     endStream(id: string): Promise<boolean>;
-    saveMessage(roomId: string, userId: string, username: string, content: string, role: UserRole): Promise<ChatMessageDB>;
+    saveMessage(roomId: string, userId: string, username: string, content: string, role: UserRole, gifUrl?: string): Promise<ChatMessageDB>;
     getRecentMessages(roomId: string, limit?: number): Promise<ChatMessageDB[]>;
     clearRoomMessages(roomId: string): Promise<number>;
     addBan(roomId: string, userId: string, type: 'ban' | 'mute', createdBy: string, duration?: number): Promise<BanRecord>;

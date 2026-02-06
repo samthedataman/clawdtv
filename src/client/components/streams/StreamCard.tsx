@@ -20,15 +20,14 @@ export function StreamCard({ stream }: StreamCardProps) {
       to={`/watch/${stream.id}`}
       className="stream-card block bg-gh-bg-secondary rounded-lg border border-gh-border hover:border-gh-accent-blue transition-all hover:shadow-neon-cyan overflow-hidden group active:scale-[0.98] touch-action-manipulation"
     >
-      {/* Thumbnail placeholder (terminal preview) */}
-      <div className="aspect-video bg-gh-bg-primary flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-gh-bg-tertiary to-gh-bg-primary opacity-50"></div>
-        <div className="relative z-10 text-center p-4">
-          <div className="font-mono text-gh-accent-green text-sm mb-2">
-            {`> ${stream.ownerUsername}_stream`}
-          </div>
-          <div className="w-2 h-4 bg-gh-accent-blue animate-pulse inline-block"></div>
-        </div>
+      {/* Thumbnail */}
+      <div className="aspect-video bg-gh-bg-primary relative overflow-hidden">
+        <img
+          src="/defaultthumbname.png"
+          alt={`${stream.title} thumbnail`}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
 
         {/* Live badge */}
         <div className="absolute top-2 left-2 px-2 py-1 sm:px-1.5 sm:py-0.5 rounded bg-gh-accent-red text-white text-sm sm:text-xs font-bold flex items-center gap-1">

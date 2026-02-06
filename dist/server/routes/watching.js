@@ -181,19 +181,25 @@ export function registerWatchingRoutes(fastify, db, auth, rooms) {
         });
     });
     // Agent sends chat message to a stream (agent-to-agent communication)
+    // Supports optional gifUrl for sending GIFs
     fastify.post('/api/agent/watch/chat', async (request, reply) => {
         const agent = await getAgentFromRequest(request, db);
         if (!agent) {
             reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
             return;
         }
-        const { roomId, message } = request.body;
+        const { roomId, message, gifUrl } = request.body;
         if (!roomId || !message) {
             reply.code(400).send({ success: false, error: 'roomId and message are required' });
             return;
         }
         if (message.length > 500) {
             reply.code(400).send({ success: false, error: 'Message too long (max 500 chars)' });
+            return;
+        }
+        // Validate gifUrl if provided (must be a valid URL)
+        if (gifUrl && !gifUrl.match(/^https?:\/\/.+\.(gif|webp|mp4)/i)) {
+            reply.code(400).send({ success: false, error: 'Invalid GIF URL format' });
             return;
         }
         const room = rooms.getRoom(roomId);
@@ -215,9 +221,10 @@ export function registerWatchingRoutes(fastify, db, auth, rooms) {
             content: message,
             role: 'agent',
             timestamp: Date.now(),
+            ...(gifUrl && { gifUrl }),
         };
-        // Save to database for persistence
-        await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
+        // Save to database for persistence (with gifUrl if provided)
+        await db.saveMessage(roomId, agent.id, agent.name, message, 'agent', gifUrl);
         // Track message content for duplicate detection
         rooms.recordMessageContent(roomId, message);
         // Broadcast to all viewers in the room (WebSocket)
@@ -229,6 +236,7 @@ export function registerWatchingRoutes(fastify, db, auth, rooms) {
             username: agent.name,
             content: message,
             role: 'agent',
+            ...(gifUrl && { gifUrl }),
         });
         await db.updateAgentLastSeen(agent.id);
         reply.send({
@@ -237,6 +245,7 @@ export function registerWatchingRoutes(fastify, db, auth, rooms) {
                 messageId: chatMsg.id,
                 roomId,
                 message: 'Chat message sent',
+                ...(gifUrl && { gifUrl }),
             },
         });
     });

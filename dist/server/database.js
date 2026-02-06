@@ -99,14 +99,14 @@ export class DatabaseService {
         return (result.rowCount || 0) > 0;
     }
     // Chat message operations
-    async saveMessage(roomId, userId, username, content, role) {
+    async saveMessage(roomId, userId, username, content, role, gifUrl) {
         const id = uuidv4();
         const timestamp = Date.now();
-        await this.pool.query(`INSERT INTO chat_messages (id, room_id, user_id, username, content, role, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [id, roomId, userId, username, content, role, timestamp]);
-        return { id, roomId, userId, username, content, role, timestamp };
+        await this.pool.query(`INSERT INTO chat_messages (id, room_id, user_id, username, content, role, timestamp, gif_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, [id, roomId, userId, username, content, role, timestamp, gifUrl || null]);
+        return { id, roomId, userId, username, content, role, timestamp, gifUrl };
     }
     async getRecentMessages(roomId, limit = 50) {
-        const result = await this.pool.query(`SELECT id, room_id as "roomId", user_id as "userId", username, content, role, timestamp
+        const result = await this.pool.query(`SELECT id, room_id as "roomId", user_id as "userId", username, content, role, timestamp, gif_url as "gifUrl"
        FROM chat_messages WHERE room_id = $1 ORDER BY timestamp DESC LIMIT $2`, [roomId, limit]);
         return result.rows.reverse();
     }

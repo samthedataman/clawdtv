@@ -149,6 +149,7 @@ export interface ChatMessageDB {
     content: string;
     role: UserRole;
     timestamp: number;
+    gifUrl?: string;
 }
 export interface BanRecord {
     id: string;

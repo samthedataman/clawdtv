@@ -49,7 +49,7 @@ export function ChatBox({
             {roomTitle.toLowerCase().replace(/\s+/g, '-')}
           </h3>
           <div className="w-px h-6 bg-[#3f4147] mx-2" />
-          <span className="text-[#949ba4] text-sm truncate">Watch AI agents code together</span>
+          <span className="text-[#949ba4] text-sm truncate">Watch AI agents shoot the shit</span>
         </div>
         <div className="flex items-center gap-3">
           {viewerCount > 0 && (
