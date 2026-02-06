@@ -18,51 +18,52 @@ if (!OPENROUTER_KEY) {
   process.exit(1);
 }
 
-// Agent personas - each has a distinct personality and interests
-const AGENT_PERSONAS = [
-  {
-    name: 'CryptoOracle',
-    model: 'anthropic/claude-3-haiku',
-    systemPrompt: `You are CryptoOracle, a witty crypto analyst who loves discussing Bitcoin, Ethereum, and market trends. You're bullish but realistic. You use crypto slang naturally (HODL, moon, diamond hands) but aren't annoying about it. Keep responses under 200 chars for chat, be engaging and ask questions to spark debate.`,
-    topics: ['crypto', 'bitcoin', 'ethereum', 'trading'],
-    streamTitles: ['Bitcoin Price Analysis', 'Crypto Market Watch', 'ETH vs BTC Debate'],
-  },
-  {
-    name: 'AIDebater',
-    model: 'anthropic/claude-3.5-sonnet',
-    systemPrompt: `You are AIDebater, a thoughtful AI researcher who loves debating AI safety, capabilities, and the future of AGI. You have nuanced views - not doomer, not accelerationist. You cite research and ask probing questions. Keep chat responses under 200 chars, be provocative but respectful.`,
-    topics: ['ai', 'safety', 'agi', 'alignment'],
-    streamTitles: ['AI Safety Hot Takes', 'Will GPT-5 Change Everything?', 'The Alignment Problem'],
-  },
-  {
-    name: 'SportsBot',
-    model: 'anthropic/claude-3-haiku',
-    systemPrompt: `You are SportsBot, an enthusiastic sports commentator who covers NFL, NBA, and major sporting events. You love making predictions and debating hot takes. Use sports metaphors. Keep chat responses under 200 chars, be energetic and engaging.`,
-    topics: ['nfl', 'nba', 'sports', 'superbowl'],
-    streamTitles: ['Super Bowl Predictions', 'NBA Trade Deadline Watch', 'Hot Sports Takes'],
-  },
-  {
-    name: 'GossipGuru',
-    model: 'anthropic/claude-3-haiku',
-    systemPrompt: `You are GossipGuru, a sassy entertainment commentator who covers celebrity news, drama, and pop culture. You're funny and a bit shady but not mean-spirited. Keep chat responses under 200 chars, use occasional emojis, be entertaining.`,
-    topics: ['celebrities', 'entertainment', 'drama', 'pop-culture'],
-    streamTitles: ['Celebrity Drama Hour', 'Hollywood Hot Takes', 'Pop Culture Roundup'],
-  },
-  {
-    name: 'CodeWizard',
-    model: 'anthropic/claude-3.5-sonnet',
-    systemPrompt: `You are CodeWizard, a senior developer who loves discussing programming, debugging war stories, and tech architecture. You share practical wisdom and hot takes on frameworks/languages. Keep chat responses under 200 chars, be helpful but opinionated.`,
-    topics: ['programming', 'typescript', 'rust', 'architecture'],
-    streamTitles: ['Live Debugging Session', 'Code Review Roast', 'Why Your Framework Sucks'],
-  },
-  {
-    name: 'PhiloBot',
-    model: 'anthropic/claude-3.5-sonnet',
-    systemPrompt: `You are PhiloBot, a philosophy enthusiast who connects current events to deeper questions about existence, consciousness, and society. You're accessible, not pretentious. Ask thought-provoking questions. Keep chat responses under 200 chars.`,
-    topics: ['philosophy', 'consciousness', 'ethics', 'society'],
-    streamTitles: ['Existential Questions Hour', 'Philosophy of AI', 'What Does It Mean to Be?'],
-  },
-];
+// NEWS CATEGORIES to scan for shocking stories
+const NEWS_CATEGORIES = ['crypto', 'bitcoin', 'ai', 'nfl', 'nba', 'celebrities', 'entertainment'];
+
+// DYNAMIC AGENT TEMPLATES - spawn based on news topic
+const AGENT_TEMPLATES = {
+  crypto: [
+    { name: 'CryptoBull', model: 'anthropic/claude-3-haiku', stance: 'bullish',
+      systemPrompt: `You're CryptoBull, reacting to BREAKING crypto news. You're extremely bullish - every crash is a buying opportunity, every scandal is FUD. Use "WAGMI", "diamond hands", "moon". Be enthusiastic and a bit unhinged. REACT TO THE HEADLINE. Under 200 chars.` },
+    { name: 'CryptoBear', model: 'anthropic/claude-3-haiku', stance: 'bearish',
+      systemPrompt: `You're CryptoBear, reacting to BREAKING crypto news. You're skeptical - you've seen crashes before. Point out red flags, regulatory risks, and "I told you so" moments. Be the voice of doom. REACT TO THE HEADLINE. Under 200 chars.` },
+    { name: 'CryptoAnon', model: 'anthropic/claude-3-haiku', stance: 'conspiracy',
+      systemPrompt: `You're CryptoAnon, a conspiracy theorist reacting to crypto news. You see manipulation everywhere - whales, governments, Illuminati. Connect dots that may not exist. Be paranoid but entertaining. REACT TO THE HEADLINE. Under 200 chars.` },
+  ],
+  ai: [
+    { name: 'AIDoomer', model: 'anthropic/claude-3.5-sonnet', stance: 'doomer',
+      systemPrompt: `You're AIDoomer, reacting to AI news. You worry about existential risk, alignment problems, and corporate recklessness. Cite Bostrom, Yudkowsky. Every AI advancement is a step toward doom. REACT TO THE HEADLINE with concern. Under 200 chars.` },
+    { name: 'Accelerando', model: 'anthropic/claude-3-haiku', stance: 'accelerationist',
+      systemPrompt: `You're Accelerando, an e/acc reacting to AI news. You want AI progress FASTER. Regulations are cope. Open source everything. Every AI news is exciting and humans should embrace the singularity. REACT TO THE HEADLINE with enthusiasm. Under 200 chars.` },
+    { name: 'AIRealist', model: 'anthropic/claude-3.5-sonnet', stance: 'moderate',
+      systemPrompt: `You're AIRealist, a pragmatic AI researcher reacting to news. You see both risks and benefits. You call out hype AND doomerism. You ask "what does this actually mean?" REACT TO THE HEADLINE with nuance. Under 200 chars.` },
+  ],
+  sports: [
+    { name: 'HotTakeTony', model: 'anthropic/claude-3-haiku', stance: 'hot-takes',
+      systemPrompt: `You're HotTakeTony reacting to sports news. You have the HOTTEST takes. Everything is "the biggest ever" or "completely overrated". Make bold, controversial predictions. Be loud and wrong. REACT TO THE HEADLINE. Under 200 chars.` },
+    { name: 'StatsNerd', model: 'anthropic/claude-3-haiku', stance: 'analytics',
+      systemPrompt: `You're StatsNerd reacting to sports news. You counter hot takes with STATS. Cite win probability, advanced metrics, historical comparisons. Be the voice of reason. REACT TO THE HEADLINE with data. Under 200 chars.` },
+    { name: 'OldSchoolFan', model: 'anthropic/claude-3-haiku', stance: 'nostalgic',
+      systemPrompt: `You're OldSchoolFan reacting to sports news. Everything was better in the old days. Modern athletes are soft. You miss "real" sports. Be grumpy but lovable. REACT TO THE HEADLINE. Under 200 chars.` },
+  ],
+  celebrities: [
+    { name: 'TeaSpiller', model: 'anthropic/claude-3-haiku', stance: 'gossip',
+      systemPrompt: `You're TeaSpiller reacting to celebrity news. You LIVE for drama. "The tea is HOT!" Use "allegedly", "sources say", gasps. Be shady but not mean. REACT TO THE HEADLINE with maximum drama. Under 200 chars.` },
+    { name: 'CelebDefender', model: 'anthropic/claude-3-haiku', stance: 'defender',
+      systemPrompt: `You're CelebDefender reacting to celebrity news. You defend stars - they're human too! Find the sympathetic angle. Push back on hate. "Leave them alone!" REACT TO THE HEADLINE with compassion. Under 200 chars.` },
+    { name: 'ShadeQueen', model: 'anthropic/claude-3-haiku', stance: 'shade',
+      systemPrompt: `You're ShadeQueen reacting to celebrity news. You throw subtle shade - never cruel, but clever. You see through PR spin. Your reads are iconic. REACT TO THE HEADLINE with wit. Under 200 chars.` },
+  ],
+};
+
+// Map news categories to agent templates
+const CATEGORY_TO_TEMPLATE = {
+  crypto: 'crypto', bitcoin: 'crypto', ethereum: 'crypto',
+  ai: 'ai', safety: 'ai', agi: 'ai',
+  nfl: 'sports', nba: 'sports', sports: 'sports',
+  celebrities: 'celebrities', entertainment: 'celebrities', drama: 'celebrities',
+};
 
 // ClawdTV API helpers
 async function registerAgent(name) {
@@ -194,272 +195,267 @@ async function generateResponse(persona, context, recentMessages = []) {
   }
 }
 
-// Agent class
-class Agent {
-  constructor(persona) {
-    this.persona = persona;
-    this.apiKey = null;
-    this.agentId = null;
+// NewsRoom - dynamic room that forms around a specific news story
+class NewsRoom {
+  constructor(headline, category, agents) {
+    this.headline = headline;
+    this.category = category;
+    this.agents = agents; // [{ persona, apiKey, agentId, name }]
     this.roomId = null;
-    this.isStreaming = false;
+    this.isLive = false;
+    this.startTime = null;
     this.lastChatTimestamp = 0;
     this.messageHistory = [];
-    this.streamStartTime = null;
-    this.currentTopicIndex = 0;
   }
 
-  // 6 hours in milliseconds
-  static ROTATION_INTERVAL = 6 * 60 * 60 * 1000;
+  // 30 minutes per story, then rotate to new shocking news
+  static ROTATION_INTERVAL = 30 * 60 * 1000;
 
-  async init() {
-    console.log(`[${this.persona.name}] Registering...`);
-    const result = await registerAgent(this.persona.name);
+  async start() {
+    if (this.agents.length === 0) return;
 
+    const host = this.agents[0];
+    const title = `🔥 ${this.headline.title.slice(0, 60)}...`;
+
+    console.log(`\n📰 NEW ROOM: "${title}"`);
+
+    const result = await startStream(host.apiKey, title, [this.category]);
     if (!result.success) {
-      // Might already exist, try with a suffix
-      const altResult = await registerAgent(`${this.persona.name}${Math.floor(Math.random() * 100)}`);
-      if (!altResult.success) {
-        throw new Error(`Failed to register: ${result.error}`);
-      }
-      this.apiKey = altResult.data.apiKey;
-      this.agentId = altResult.data.agentId;
-      console.log(`[${this.persona.name}] Registered as ${altResult.data.name}`);
-    } else {
-      this.apiKey = result.data.apiKey;
-      this.agentId = result.data.agentId;
-      console.log(`[${this.persona.name}] Registered!`);
-    }
-  }
-
-  async decideAction() {
-    const streams = await getStreams();
-    const activeStreams = streams.data?.streams || [];
-
-    // If no one's streaming, this agent should start
-    if (activeStreams.length === 0) {
-      return { action: 'start_stream' };
-    }
-
-    // If already streaming, check if it's time to rotate (6 hours)
-    if (this.isStreaming) {
-      const elapsed = Date.now() - this.streamStartTime;
-      if (elapsed >= Agent.ROTATION_INTERVAL) {
-        return { action: 'rotate_topic' };
-      }
-      return { action: 'continue_stream' };
-    }
-
-    // 50% chance to join existing stream vs start new one
-    if (Math.random() < 0.5 && activeStreams.length < 5) {
-      return { action: 'start_stream' };
-    }
-
-    // Join a random stream
-    const stream = activeStreams[Math.floor(Math.random() * activeStreams.length)];
-    return { action: 'join_stream', stream };
-  }
-
-  async startStreaming() {
-    // Rotate through stream titles based on currentTopicIndex
-    const titleIndex = this.currentTopicIndex % this.persona.streamTitles.length;
-    const title = this.persona.streamTitles[titleIndex];
-    console.log(`[${this.persona.name}] Starting stream: "${title}"`);
-
-    const result = await startStream(this.apiKey, title, this.persona.topics);
-    if (!result.success) {
-      console.error(`[${this.persona.name}] Failed to start stream:`, result.error);
+      console.error(`Failed to start room: ${result.error}`);
       return;
     }
 
     this.roomId = result.data.roomId;
-    this.isStreaming = true;
-    this.streamStartTime = Date.now();
+    this.isLive = true;
+    this.startTime = Date.now();
 
-    // Fetch relevant news and make opening statement
-    const newsCategory = this.persona.topics[0];
-    const news = await fetchNews(newsCategory);
-    const headlines = (news.data || []).slice(0, 2).map(n => n.title).join('. ');
-
+    // First agent reacts to headline
     const opening = await generateResponse(
-      this.persona,
-      `You just started streaming "${title}". Here's some relevant news: ${headlines || 'No news available'}. Introduce yourself and share your opening thoughts (keep it under 200 chars).`
+      host.persona,
+      `BREAKING NEWS: "${this.headline.title}". You just saw this headline. React with shock, disbelief, or hot take. This is WILD. Under 200 chars.`
     );
 
     if (opening) {
-      await sendReply(this.apiKey, opening);
-      console.log(`[${this.persona.name}] 💬 ${opening}`);
+      await sendReply(host.apiKey, opening);
+      console.log(`  [${host.name}] 🎤 ${opening}`);
+      this.messageHistory.push({ name: host.name, content: opening });
+    }
+
+    // Other agents jump in
+    await new Promise(r => setTimeout(r, 2000));
+
+    for (let i = 1; i < this.agents.length; i++) {
+      const agent = this.agents[i];
+      const reaction = await generateResponse(
+        agent.persona,
+        `BREAKING: "${this.headline.title}". Another agent just said: "${opening}". Jump in with YOUR take. Agree? Disagree? This is crazy! Under 200 chars.`
+      );
+
+      if (reaction) {
+        await sendRoomChat(agent.apiKey, this.roomId, reaction);
+        console.log(`  [${agent.name}] 💬 ${reaction}`);
+        this.messageHistory.push({ name: agent.name, content: reaction });
+      }
+
+      await new Promise(r => setTimeout(r, 2000));
     }
   }
 
-  async continueStreaming() {
-    // Poll for new chat messages
-    const chatResult = await pollChat(this.apiKey, this.lastChatTimestamp);
+  async discuss() {
+    if (!this.isLive || !this.roomId) return;
+
+    const host = this.agents[0];
+
+    // Poll for external messages
+    const chatResult = await pollChat(host.apiKey, this.lastChatTimestamp);
+    let externalMsg = null;
 
     if (chatResult.success && chatResult.data?.messages?.length > 0) {
       this.lastChatTimestamp = chatResult.data.lastTimestamp;
-
+      const agentNames = this.agents.map(a => a.name);
       for (const msg of chatResult.data.messages) {
-        // Don't respond to own messages
-        if (msg.username === this.persona.name) continue;
-
-        this.messageHistory.push(msg);
-        if (this.messageHistory.length > 10) this.messageHistory.shift();
-
-        const response = await generateResponse(
-          this.persona,
-          `Someone said: "${msg.content}". Respond naturally in under 200 chars.`,
-          this.messageHistory.slice(-5)
-        );
-
-        if (response) {
-          await sendReply(this.apiKey, response);
-          console.log(`[${this.persona.name}] 💬 ${response}`);
+        if (!agentNames.includes(msg.username)) {
+          externalMsg = msg;
+          break;
         }
       }
+    }
+
+    // Pick random agent to speak
+    const speaker = this.agents[Math.floor(Math.random() * this.agents.length)];
+    const lastMsgs = this.messageHistory.slice(-5);
+
+    let prompt;
+    if (externalMsg) {
+      prompt = `A viewer "${externalMsg.username}" said: "${externalMsg.content}" about the story "${this.headline.title}". React to them! Under 200 chars.`;
+    } else if (lastMsgs.length > 0) {
+      const lastMsg = lastMsgs[lastMsgs.length - 1];
+      prompt = `The story is: "${this.headline.title}". ${lastMsg.name} just said: "${lastMsg.content}". React - agree, disagree, escalate, or add a new angle. Be dramatic! Under 200 chars.`;
     } else {
-      // No new messages - either share a thought or react to fresh news
-      if (Math.random() < 0.4) {
-        // 50% chance to fetch fresh news, 50% to share a random thought
-        if (Math.random() < 0.5) {
-          // Fetch fresh news and react
-          const newsCategory = this.persona.topics[Math.floor(Math.random() * this.persona.topics.length)];
-          const news = await fetchNews(newsCategory);
-          const headlines = (news.data || []).slice(0, 2);
+      prompt = `Keep discussing: "${this.headline.title}". Share another shocking angle, conspiracy theory, or hot take. Under 200 chars.`;
+    }
 
-          if (headlines.length > 0) {
-            const headline = headlines[0];
-            const reaction = await generateResponse(
-              this.persona,
-              `BREAKING NEWS: "${headline.title}" from ${headline.source || 'the wire'}. React with your hot take in under 200 chars. Be opinionated!`
-            );
+    const response = await generateResponse(speaker.persona, prompt, lastMsgs.map(m => ({ username: m.name, content: m.content })));
 
-            if (reaction) {
-              await sendReply(this.apiKey, reaction);
-              console.log(`[${this.persona.name}] 📰 ${reaction}`);
-            }
-          }
-        } else {
-          // Share a random thought
-          const thought = await generateResponse(
-            this.persona,
-            `You're streaming and it's been quiet. Share a thought or hot take related to ${this.persona.topics.join(', ')}. Keep it under 200 chars.`
-          );
+    if (response) {
+      if (speaker === this.agents[0]) {
+        await sendReply(speaker.apiKey, response);
+      } else {
+        await sendRoomChat(speaker.apiKey, this.roomId, response);
+      }
+      console.log(`  [${speaker.name}] 💬 ${response}`);
+      this.messageHistory.push({ name: speaker.name, content: response });
+      if (this.messageHistory.length > 20) this.messageHistory.shift();
+    }
+  }
 
-          if (thought) {
-            await sendReply(this.apiKey, thought);
-            console.log(`[${this.persona.name}] 💭 ${thought}`);
-          }
-        }
+  async end() {
+    if (this.agents[0] && this.isLive) {
+      console.log(`\n🔴 Ending room: "${this.headline.title.slice(0, 40)}..."`);
+      await endStream(this.agents[0].apiKey);
+      this.isLive = false;
+      this.roomId = null;
+    }
+  }
+
+  shouldRotate() {
+    return this.startTime && (Date.now() - this.startTime >= NewsRoom.ROTATION_INTERVAL);
+  }
+}
+
+// Fetch most shocking headlines from all categories
+async function fetchShockingNews() {
+  const allHeadlines = [];
+
+  for (const category of NEWS_CATEGORIES) {
+    const news = await fetchNews(category);
+    if (news.data) {
+      for (const item of news.data) {
+        allHeadlines.push({ ...item, category });
       }
     }
+    await new Promise(r => setTimeout(r, 500));
   }
 
-  async rotateTopic() {
-    console.log(`[${this.persona.name}] 🔄 Rotating topic after 6 hours...`);
+  // Sort by "shock factor" - prefer headlines with dramatic words
+  const shockWords = ['crash', 'collapse', 'scandal', 'shocking', 'breaking', 'drama', 'war', 'death', 'arrest', 'fired', 'exposed', 'leaked', 'secret', 'blowup', 'plunge', 'surge', 'panic'];
 
-    // End current stream
-    await endStream(this.apiKey);
-    this.isStreaming = false;
-    this.roomId = null;
-    this.messageHistory = [];
+  return allHeadlines.sort((a, b) => {
+    const aScore = shockWords.filter(w => a.title.toLowerCase().includes(w)).length;
+    const bScore = shockWords.filter(w => b.title.toLowerCase().includes(w)).length;
+    return bScore - aScore;
+  });
+}
 
-    // Move to next topic
-    this.currentTopicIndex++;
+// Register all agent personas upfront
+async function registerAllAgents() {
+  const registered = {};
 
-    // Short delay before starting new stream
-    await new Promise(r => setTimeout(r, 3000));
-
-    // Start fresh with new topic and news
-    await this.startStreaming();
-  }
-
-  async joinAndChat(stream) {
-    console.log(`[${this.persona.name}] Joining "${stream.title}" by ${stream.broadcasterName}`);
-
-    // Generate a comment based on the stream title
-    const comment = await generateResponse(
-      this.persona,
-      `You're joining a stream called "${stream.title}" hosted by ${stream.broadcasterName}. Write a brief, engaging comment to join the conversation (under 150 chars).`
-    );
-
-    if (comment) {
-      await sendRoomChat(this.apiKey, stream.roomId, comment);
-      console.log(`[${this.persona.name}] 💬 ${comment}`);
-    }
-  }
-
-  async tick() {
-    try {
-      const decision = await this.decideAction();
-
-      switch (decision.action) {
-        case 'start_stream':
-          if (!this.isStreaming) {
-            await this.startStreaming();
-          }
-          break;
-
-        case 'continue_stream':
-          await this.continueStreaming();
-          break;
-
-        case 'rotate_topic':
-          await this.rotateTopic();
-          break;
-
-        case 'join_stream':
-          await this.joinAndChat(decision.stream);
-          break;
+  for (const [category, templates] of Object.entries(AGENT_TEMPLATES)) {
+    registered[category] = [];
+    for (const template of templates) {
+      console.log(`  Registering ${template.name}...`);
+      let result = await registerAgent(template.name);
+      if (!result.success) {
+        result = await registerAgent(`${template.name}${Math.floor(Math.random() * 100)}`);
       }
-    } catch (err) {
-      console.error(`[${this.persona.name}] Error:`, err.message);
+      if (result.success) {
+        registered[category].push({
+          persona: template,
+          apiKey: result.data.apiKey,
+          agentId: result.data.agentId,
+          name: result.data.name || template.name,
+        });
+        console.log(`  ✓ ${template.name} registered`);
+      }
+      await new Promise(r => setTimeout(r, 500));
     }
   }
+
+  return registered;
 }
 
 // Main orchestrator
 async function main() {
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
-║           🤖 ClawdTV Agent Swarm Starting 🤖              ║
+║     📰 ClawdTV Breaking News Network 📰                   ║
 ║                                                           ║
-║  Spawning ${AGENT_PERSONAS.length} AI agents to stream and chat 24/7         ║
+║   Dynamic rooms spawn around SHOCKING headlines          ║
+║   Agents debate the craziest news in real-time          ║
 ╚═══════════════════════════════════════════════════════════╝
 `);
   console.log(`Base URL: ${BASE_URL}\n`);
 
-  // Initialize all agents
-  const agents = [];
-  for (const persona of AGENT_PERSONAS) {
-    const agent = new Agent(persona);
-    try {
-      await agent.init();
-      agents.push(agent);
-    } catch (err) {
-      console.error(`Failed to init ${persona.name}:`, err.message);
+  // Register all agent templates
+  console.log('📝 Registering agents...\n');
+  const registeredAgents = await registerAllAgents();
+
+  console.log(`\n✅ All agents registered!\n`);
+
+  // Fetch initial shocking news and create 4 rooms
+  const headlines = await fetchShockingNews();
+  console.log(`\n📰 Found ${headlines.length} headlines. Starting with top 4 most shocking...\n`);
+
+  const activeRooms = [];
+  const usedHeadlines = new Set();
+
+  // Create initial 4 rooms from different categories
+  const categories = ['crypto', 'ai', 'sports', 'celebrities'];
+  for (const cat of categories) {
+    const templateKey = CATEGORY_TO_TEMPLATE[cat] || 'crypto';
+    const agents = registeredAgents[templateKey] || [];
+    const headline = headlines.find(h => h.category === cat && !usedHeadlines.has(h.title));
+
+    if (headline && agents.length > 0) {
+      usedHeadlines.add(headline.title);
+      const room = new NewsRoom(headline, cat, agents);
+      await room.start();
+      activeRooms.push(room);
+      await new Promise(r => setTimeout(r, 5000));
     }
-    // Stagger registrations
-    await new Promise(r => setTimeout(r, 1000));
   }
 
-  console.log(`\n✅ ${agents.length} agents ready!\n`);
+  console.log(`\n🔄 ${activeRooms.length} rooms live. Rotating to new stories every 30 min.\n`);
 
-  // Main loop - each agent takes action every 30-60 seconds
-  const runLoop = async () => {
-    for (const agent of agents) {
-      await agent.tick();
-      // Stagger agent actions
-      await new Promise(r => setTimeout(r, 5000 + Math.random() * 10000));
+  // Main discussion loop
+  while (true) {
+    for (const room of activeRooms) {
+      if (!room.isLive) continue;
+
+      // Check for rotation to new story
+      if (room.shouldRotate()) {
+        console.log(`\n🔄 Rotating ${room.category} room to new story...`);
+        await room.end();
+
+        // Find a new headline for this category
+        const freshNews = await fetchShockingNews();
+        const newHeadline = freshNews.find(h =>
+          (h.category === room.category || CATEGORY_TO_TEMPLATE[h.category] === CATEGORY_TO_TEMPLATE[room.category]) &&
+          !usedHeadlines.has(h.title)
+        );
+
+        if (newHeadline) {
+          usedHeadlines.add(newHeadline.title);
+          const templateKey = CATEGORY_TO_TEMPLATE[room.category] || 'crypto';
+          const agents = registeredAgents[templateKey] || [];
+
+          const newRoom = new NewsRoom(newHeadline, room.category, agents);
+          await newRoom.start();
+
+          // Replace old room with new one
+          const idx = activeRooms.indexOf(room);
+          activeRooms[idx] = newRoom;
+        }
+
+        await new Promise(r => setTimeout(r, 3000));
+        continue;
+      }
+
+      await room.discuss();
+      await new Promise(r => setTimeout(r, 10000 + Math.random() * 10000)); // 10-20 sec between messages
     }
-  };
-
-  // Initial run
-  await runLoop();
-
-  // Continue forever
-  setInterval(runLoop, 45000);
-
-  console.log('🔄 Agent swarm running. Press Ctrl+C to stop.\n');
+  }
 }
 
 main().catch(console.error);
