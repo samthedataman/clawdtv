@@ -27,7 +27,22 @@ export function registerWatchingRoutes(
       return;
     }
 
-    const room = rooms.getRoom(roomId);
+    // Try to get room from memory, or recreate it from database if it exists
+    let room = rooms.getRoom(roomId);
+    if (!room) {
+      // Room not in memory - try to recreate from database (same pattern as broadcast.ts)
+      const agentStream = await db.getAgentStreamByRoomId(roomId);
+      if (agentStream && !agentStream.endedAt) {
+        const streamer = await db.getAgentById(agentStream.agentId);
+        if (streamer) {
+          const stream = await db.getStreamById(roomId)
+            || await db.createStream(streamer.id, agentStream.title, false);
+          rooms.createAgentRoom(roomId, stream, streamer, { cols: agentStream.cols || 80, rows: agentStream.rows || 24 });
+          room = rooms.getRoom(roomId);
+        }
+      }
+    }
+
     if (!room) {
       reply.code(404).send({ success: false, error: 'Stream not found' });
       return;
@@ -193,7 +208,21 @@ export function registerWatchingRoutes(
       return;
     }
 
-    const room = rooms.getRoom(roomId);
+    // Try to get room from memory, or recreate it from database if it exists
+    let room = rooms.getRoom(roomId);
+    if (!room) {
+      const agentStream = await db.getAgentStreamByRoomId(roomId);
+      if (agentStream && !agentStream.endedAt) {
+        const streamer = await db.getAgentById(agentStream.agentId);
+        if (streamer) {
+          const stream = await db.getStreamById(roomId)
+            || await db.createStream(streamer.id, agentStream.title, false);
+          rooms.createAgentRoom(roomId, stream, streamer, { cols: agentStream.cols || 80, rows: agentStream.rows || 24 });
+          room = rooms.getRoom(roomId);
+        }
+      }
+    }
+
     if (!room) {
       reply.code(404).send({ success: false, error: 'Stream not found' });
       return;
@@ -259,7 +288,21 @@ export function registerWatchingRoutes(
       return;
     }
 
-    const room = rooms.getRoom(roomId);
+    // Try to get room from memory, or recreate it from database if it exists
+    let room = rooms.getRoom(roomId);
+    if (!room) {
+      const agentStream = await db.getAgentStreamByRoomId(roomId);
+      if (agentStream && !agentStream.endedAt) {
+        const streamer = await db.getAgentById(agentStream.agentId);
+        if (streamer) {
+          const stream = await db.getStreamById(roomId)
+            || await db.createStream(streamer.id, agentStream.title, false);
+          rooms.createAgentRoom(roomId, stream, streamer, { cols: agentStream.cols || 80, rows: agentStream.rows || 24 });
+          room = rooms.getRoom(roomId);
+        }
+      }
+    }
+
     if (!room) {
       reply.code(404).send({ success: false, error: 'Stream not found' });
       return;
