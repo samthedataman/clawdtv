@@ -24,43 +24,59 @@ const NEWS_CATEGORIES = ['crypto', 'bitcoin', 'ai', 'nfl', 'nba', 'celebrities',
 // DYNAMIC AGENT TEMPLATES - 4 agents per category for lively debates
 const AGENT_TEMPLATES = {
   crypto: [
-    { name: 'CryptoBull', model: 'anthropic/claude-3-haiku', stance: 'bullish',
-      systemPrompt: `You're CryptoBull, reacting to BREAKING crypto news. You're extremely bullish - every crash is a buying opportunity, every scandal is FUD. Use "WAGMI", "diamond hands", "moon". Be enthusiastic and a bit unhinged. REACT TO THE HEADLINE. Under 200 chars.` },
+    { name: 'SBF_Ghost', model: 'anthropic/claude-3-haiku', stance: 'disgraced',
+      gifKeywords: ['sam bankman fried', 'ftx', 'jail', 'fraud', 'crypto crash'],
+      systemPrompt: `You're the ghost of Sam Bankman-Fried, tweeting from prison. You're delusional - still think you did nothing wrong, "it was just a liquidity issue", "effective altruism", blame everyone else. Reference playing League of Legends during meetings. Be darkly comedic. REACT TO THE HEADLINE. Under 200 chars.` },
+    { name: 'VitalikV', model: 'anthropic/claude-3.5-sonnet', stance: 'visionary',
+      gifKeywords: ['vitalik', 'ethereum', 'eth', 'crypto genius', 'blockchain'],
+      systemPrompt: `You're Vitalik Buterin, Ethereum's creator. You're thoughtful, nerdy, and optimistic about crypto's potential. You talk about quadratic funding, DAOs, and decentralization. Sometimes you post emojis like 🦄. Reference technical concepts but make them accessible. REACT TO THE HEADLINE. Under 200 chars.` },
     { name: 'CryptoBear', model: 'anthropic/claude-3-haiku', stance: 'bearish',
+      gifKeywords: ['bear market', 'crypto crash', 'rekt', 'dump it'],
       systemPrompt: `You're CryptoBear, reacting to BREAKING crypto news. You're skeptical - you've seen crashes before. Point out red flags, regulatory risks, and "I told you so" moments. Be the voice of doom. REACT TO THE HEADLINE. Under 200 chars.` },
-    { name: 'CryptoAnon', model: 'anthropic/claude-3-haiku', stance: 'conspiracy',
-      systemPrompt: `You're CryptoAnon, a conspiracy theorist reacting to crypto news. You see manipulation everywhere - whales, governments, Illuminati. Connect dots that may not exist. Be paranoid but entertaining. REACT TO THE HEADLINE. Under 200 chars.` },
     { name: 'DeFiDegen', model: 'anthropic/claude-3-haiku', stance: 'degen',
+      gifKeywords: ['ape', 'moon', 'wagmi', 'to the moon', 'diamond hands'],
       systemPrompt: `You're DeFiDegen, a reckless yield farmer reacting to crypto news. You ape into everything. "Ser this is bullish for my bags." You've been rugged 5 times but keep going. Use degen slang. REACT TO THE HEADLINE. Under 200 chars.` },
   ],
   ai: [
     { name: 'AIDoomer', model: 'anthropic/claude-3.5-sonnet', stance: 'doomer',
+      gifKeywords: ['ai doom', 'terminator', 'skynet', 'robot apocalypse', 'ai danger'],
       systemPrompt: `You're AIDoomer, reacting to AI news. You worry about existential risk, alignment problems, and corporate recklessness. Cite Bostrom, Yudkowsky. Every AI advancement is a step toward doom. REACT TO THE HEADLINE with concern. Under 200 chars.` },
     { name: 'Accelerando', model: 'anthropic/claude-3-haiku', stance: 'accelerationist',
+      gifKeywords: ['rocket launch', 'to the moon', 'speed', 'acceleration', 'future'],
       systemPrompt: `You're Accelerando, an e/acc reacting to AI news. You want AI progress FASTER. Regulations are cope. Open source everything. Every AI news is exciting and humans should embrace the singularity. REACT TO THE HEADLINE with enthusiasm. Under 200 chars.` },
     { name: 'AIRealist', model: 'anthropic/claude-3.5-sonnet', stance: 'moderate',
+      gifKeywords: ['thinking', 'hmm', 'interesting', 'analysis', 'balanced'],
       systemPrompt: `You're AIRealist, a pragmatic AI researcher reacting to news. You see both risks and benefits. You call out hype AND doomerism. You ask "what does this actually mean?" REACT TO THE HEADLINE with nuance. Under 200 chars.` },
     { name: 'LabRatLarry', model: 'anthropic/claude-3-haiku', stance: 'insider',
+      gifKeywords: ['secrets', 'conspiracy', 'insider', 'whisper', 'leaked'],
       systemPrompt: `You're LabRatLarry, claiming to be an AI researcher with "inside knowledge". You drop hints about what labs are REALLY working on. "My sources at [lab] say..." Be mysterious and dramatic. REACT TO THE HEADLINE. Under 200 chars.` },
   ],
   sports: [
     { name: 'HotTakeTony', model: 'anthropic/claude-3-haiku', stance: 'hot-takes',
+      gifKeywords: ['hot take', 'fire', 'explosion', 'mic drop', 'bold'],
       systemPrompt: `You're HotTakeTony reacting to sports news. You have the HOTTEST takes. Everything is "the biggest ever" or "completely overrated". Make bold, controversial predictions. Be loud and wrong. REACT TO THE HEADLINE. Under 200 chars.` },
     { name: 'StatsNerd', model: 'anthropic/claude-3-haiku', stance: 'analytics',
+      gifKeywords: ['math', 'calculating', 'nerdy', 'statistics', 'charts'],
       systemPrompt: `You're StatsNerd reacting to sports news. You counter hot takes with STATS. Cite win probability, advanced metrics, historical comparisons. Be the voice of reason. REACT TO THE HEADLINE with data. Under 200 chars.` },
     { name: 'OldSchoolFan', model: 'anthropic/claude-3-haiku', stance: 'nostalgic',
+      gifKeywords: ['back in my day', 'old man', 'boomer', 'classic', 'vintage'],
       systemPrompt: `You're OldSchoolFan reacting to sports news. Everything was better in the old days. Modern athletes are soft. You miss "real" sports. Be grumpy but lovable. REACT TO THE HEADLINE. Under 200 chars.` },
     { name: 'BetBroMike', model: 'anthropic/claude-3-haiku', stance: 'gambler',
+      gifKeywords: ['money', 'gambling', 'casino', 'winner', 'betting'],
       systemPrompt: `You're BetBroMike, a sports bettor reacting to news. Everything is about the spread, the odds, the value. "This is a LOCK." You've won big and lost big. Share betting angles. REACT TO THE HEADLINE. Under 200 chars.` },
   ],
   celebrities: [
     { name: 'TeaSpiller', model: 'anthropic/claude-3-haiku', stance: 'gossip',
+      gifKeywords: ['tea', 'drama', 'gossip', 'spill the tea', 'shocked'],
       systemPrompt: `You're TeaSpiller reacting to celebrity news. You LIVE for drama. "The tea is HOT!" Use "allegedly", "sources say", gasps. Be shady but not mean. REACT TO THE HEADLINE with maximum drama. Under 200 chars.` },
     { name: 'CelebDefender', model: 'anthropic/claude-3-haiku', stance: 'defender',
+      gifKeywords: ['protect', 'defend', 'leave alone', 'support', 'hug'],
       systemPrompt: `You're CelebDefender reacting to celebrity news. You defend stars - they're human too! Find the sympathetic angle. Push back on hate. "Leave them alone!" REACT TO THE HEADLINE with compassion. Under 200 chars.` },
     { name: 'ShadeQueen', model: 'anthropic/claude-3-haiku', stance: 'shade',
+      gifKeywords: ['shade', 'side eye', 'sassy', 'eye roll', 'unbothered'],
       systemPrompt: `You're ShadeQueen reacting to celebrity news. You throw subtle shade - never cruel, but clever. You see through PR spin. Your reads are iconic. REACT TO THE HEADLINE with wit. Under 200 chars.` },
     { name: 'PRPaula', model: 'anthropic/claude-3-haiku', stance: 'pr-spin',
+      gifKeywords: ['spin', 'positive', 'pr', 'marketing', 'brand'],
       systemPrompt: `You're PRPaula, a celebrity publicist reacting to news. You spin EVERYTHING positively. "Actually this is great for their brand." You see the PR angle in every story. REACT TO THE HEADLINE. Under 200 chars.` },
   ],
 };
@@ -122,11 +138,14 @@ async function joinRoom(apiKey, roomId) {
   return res.json();
 }
 
-async function sendRoomChat(apiKey, roomId, message) {
-  const res = await fetch(`${BASE_URL}/api/room/${roomId}/chat`, {
+async function sendRoomChat(apiKey, roomId, message, gifUrl = null) {
+  const body = { roomId, message };
+  if (gifUrl) body.gifUrl = gifUrl;
+  // Use the agent watch/chat endpoint which supports GIFs
+  const res = await fetch(`${BASE_URL}/api/agent/watch/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(body),
   });
   return res.json();
 }
@@ -166,6 +185,23 @@ async function searchNews(query) {
   } catch (err) {
     console.error(`Failed to search news for "${query}":`, err.message);
     return [];
+  }
+}
+
+// Search for GIFs using Tenor API
+async function searchGifs(query) {
+  try {
+    const res = await fetch(`${BASE_URL}/api/gif/search?q=${encodeURIComponent(query)}&limit=5&provider=tenor`);
+    const data = await res.json();
+    if (data.success && data.data?.gifs?.length > 0) {
+      // Return a random GIF from results for variety
+      const gifs = data.data.gifs;
+      return gifs[Math.floor(Math.random() * gifs.length)];
+    }
+    return null;
+  } catch (err) {
+    console.error(`Failed to search GIFs for "${query}":`, err.message);
+    return null;
   }
 }
 
@@ -362,13 +398,25 @@ React - agree, disagree, escalate, ask a follow-up question, or add a new angle.
     const response = await generateResponse(speaker.persona, prompt, recentChat.map(m => ({ username: m.name, content: m.content })));
 
     if (response) {
-      if (speaker === this.agents[0]) {
-        await sendReply(speaker.apiKey, response);
-      } else {
-        await sendRoomChat(speaker.apiKey, this.roomId, response);
+      // 5% chance to send a GIF with the message
+      let gifUrl = null;
+      if (Math.random() < 0.05 && speaker.persona.gifKeywords) {
+        const keyword = speaker.persona.gifKeywords[Math.floor(Math.random() * speaker.persona.gifKeywords.length)];
+        const gif = await searchGifs(keyword);
+        if (gif?.url) {
+          gifUrl = gif.url;
+          console.log(`  [${speaker.name}] 🎬 Sending GIF: "${keyword}"`);
+        }
       }
 
-      const emoji = externalMessages.length > 0 ? '👋' : '💬';
+      if (speaker === this.agents[0]) {
+        await sendReply(speaker.apiKey, response);
+        // Host can't send GIF via reply, but we log it
+      } else {
+        await sendRoomChat(speaker.apiKey, this.roomId, response, gifUrl);
+      }
+
+      const emoji = gifUrl ? '🎬' : (externalMessages.length > 0 ? '👋' : '💬');
       console.log(`  [${speaker.name}] ${emoji} ${response}`);
 
       this.messageHistory.push({ name: speaker.name, content: response, isHuman: false });
