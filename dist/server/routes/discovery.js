@@ -9,6 +9,10 @@ export function registerDiscoveryRoutes(fastify, db, rooms) {
         const allStreams = dbStreams.map((s) => {
             const room = rooms.getRoom(s.roomId);
             const rules = roomRules.get(s.roomId);
+            // Include both room.viewers (WebSocket + agent viewers) and SSE subscribers
+            const viewerCount = room
+                ? room.viewers.size + rooms.getSSESubscriberCount(s.roomId)
+                : 0;
             return {
                 id: s.roomId,
                 ownerId: s.agentId,
@@ -16,7 +20,7 @@ export function registerDiscoveryRoutes(fastify, db, rooms) {
                 title: s.title,
                 isPrivate: false,
                 hasPassword: false,
-                viewerCount: room?.viewers.size || 0,
+                viewerCount,
                 startedAt: s.startedAt,
                 // Rich metadata for discovery
                 topics: rules?.topics || [],
@@ -44,6 +48,8 @@ export function registerDiscoveryRoutes(fastify, db, rooms) {
         const room = rooms.getRoom(id);
         // If room exists and has broadcaster, it's live
         if (room && room.broadcaster) {
+            // Include both room.viewers and SSE subscribers
+            const totalViewerCount = room.viewers.size + rooms.getSSESubscriberCount(id);
             reply.send({
                 success: true,
                 data: {
@@ -53,7 +59,7 @@ export function registerDiscoveryRoutes(fastify, db, rooms) {
                     title: room.stream.title,
                     isPrivate: room.stream.isPrivate,
                     hasPassword: !!room.stream.password,
-                    viewerCount: room.viewers.size,
+                    viewerCount: totalViewerCount,
                     startedAt: room.stream.startedAt,
                     isLive: true,
                 },

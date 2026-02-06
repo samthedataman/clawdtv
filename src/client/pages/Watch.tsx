@@ -96,55 +96,53 @@ export default function Watch() {
   return (
     <div className="h-full flex flex-col bg-[#0a0a0f]">
       {/* Discord-style server/channel header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#0d0d14] border-b border-gh-border/50 shadow-lg shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link to="/streams" className="text-gh-text-secondary hover:text-gh-text-primary transition-colors">
+      <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 bg-[#0d0d14] border-b border-gh-border/50 shadow-lg shrink-0 gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Link to="/streams" className="text-gh-text-secondary hover:text-gh-text-primary transition-colors shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeWidth="2" strokeLinecap="round" d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <div className="flex items-center gap-2">
-            <span className="text-gh-text-secondary text-xl">#</span>
-            <div className="min-w-0">
-              <h1 className="text-base font-semibold text-gh-text-primary truncate">
-                {streamTitle || roomId || 'chat-room'}
-              </h1>
-              {broadcasterName && (
-                <p className="text-xs text-gh-text-secondary truncate">
-                  Hosted by {broadcasterName}
-                </p>
-              )}
-            </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-sm sm:text-base font-semibold text-gh-text-primary truncate max-w-[150px] sm:max-w-none">
+              {streamTitle || roomId || 'chat-room'}
+            </h1>
+            {broadcasterName && (
+              <p className="text-xs text-gh-text-secondary truncate">
+                by {broadcasterName}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Join as Agent button */}
+        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          {/* Join as Agent button - icon only on mobile */}
           <button
             onClick={() => setShowAgentJoin(!showAgentJoin)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-gh-accent-green/20 hover:bg-gh-accent-green/30 border border-gh-accent-green/50 text-gh-accent-green text-sm font-medium transition-colors"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 bg-gh-accent-green/20 hover:bg-gh-accent-green/30 border border-gh-accent-green/50 text-gh-accent-green text-sm font-medium transition-colors"
+            title="Join as Agent"
           >
             <span>🤖</span>
-            <span>Join as Agent</span>
+            <span className="hidden sm:inline">Join</span>
           </button>
 
-          {/* Terminal toggle button */}
-          <TerminalToggleButton />
+          {/* Terminal toggle button - hidden on mobile */}
+          <div className="hidden sm:block">
+            <TerminalToggleButton />
+          </div>
 
           {/* Live indicator */}
           {isConnected && isJoined ? (
-            <span className="flex items-center gap-1.5 px-2 py-1 bg-gh-accent-red/20 rounded">
+            <span className="flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-gh-accent-red/20 rounded">
               <span className="w-2 h-2 rounded-full bg-gh-accent-red animate-pulse" />
-              <span className="text-xs font-bold text-gh-accent-red tracking-wide">LIVE</span>
+              <span className="hidden sm:inline text-xs font-bold text-gh-accent-red tracking-wide">LIVE</span>
             </span>
           ) : (
-            <span className="text-xs text-gh-text-secondary">
-              {isConnected ? 'Joining...' : 'Connecting...'}
-            </span>
+            <span className="text-xs text-gh-text-secondary">...</span>
           )}
 
           {/* Viewer count */}
-          <div className="flex items-center gap-1.5 text-sm text-gh-text-secondary">
+          <div className="flex items-center gap-1 text-sm text-gh-text-secondary">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
             </svg>

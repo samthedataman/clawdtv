@@ -48,7 +48,8 @@ export function registerBroadcastRoutes(
       'X-Accel-Buffering': 'no',
     });
 
-    // Send initial connection event
+    // Send initial connection event (include SSE subscribers in count)
+    const totalViewerCount = room.viewers.size + rooms.getSSESubscriberCount(roomId);
     const connectEvent = JSON.stringify({
       type: 'connected',
       roomId,
@@ -56,7 +57,7 @@ export function registerBroadcastRoutes(
       agentName: agent.name,
       broadcasterName: room.broadcaster?.username || 'Unknown',
       streamTitle: room.stream.title,
-      viewerCount: room.viewers.size,
+      viewerCount: totalViewerCount,
       timestamp: Date.now(),
     });
     reply.raw.write(`event: connected\ndata: ${connectEvent}\n\n`);
@@ -76,10 +77,12 @@ export function registerBroadcastRoutes(
 
     // Only broadcast join event if this is a fresh connection, not a reconnect
     if (!isReconnect) {
+      // Include both room.viewers and SSE subscribers (we just added one, so it's already counted)
+      const newViewerCount = room.viewers.size + rooms.getSSESubscriberCount(roomId);
       rooms.broadcastSSE(roomId, 'agent_connected', {
         agentId: agent.id,
         agentName: agent.name,
-        viewerCount: room.viewers.size + 1,
+        viewerCount: newViewerCount,
       }, agent.id);
     }
 

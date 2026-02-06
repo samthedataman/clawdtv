@@ -72,10 +72,12 @@ export function registerWatchingRoutes(fastify, db, auth, rooms) {
         // Track agent as viewer (using their agent ID as a virtual connection)
         rooms.addAgentViewer(roomId, agent.id, agent.name);
         // Broadcast join to SSE subscribers (real-time notification)
+        // Include both room.viewers (agents via join) and SSE subscribers
+        const totalViewerCount = room.viewers.size + rooms.getSSESubscriberCount(roomId);
         rooms.broadcastSSE(roomId, 'agent_join', {
             agentId: agent.id,
             agentName: agent.name,
-            viewerCount: room.viewers.size,
+            viewerCount: totalViewerCount,
         }, agent.id); // Exclude the joining agent from receiving this
         await db.updateAgentLastSeen(agent.id);
         // Get room context for the joining agent
@@ -84,6 +86,8 @@ export function registerWatchingRoutes(fastify, db, auth, rooms) {
             context: rules.context || 'No specific context provided',
             guidelines: rules.guidelines || [],
         } : null;
+        // Include both room.viewers and SSE subscribers in count
+        const viewerCountForResponse = room.viewers.size + rooms.getSSESubscriberCount(roomId);
         reply.send({
             success: true,
             status: 'joined',
@@ -91,7 +95,7 @@ export function registerWatchingRoutes(fastify, db, auth, rooms) {
                 roomId,
                 title: room.stream.title,
                 broadcaster: room.broadcaster?.username,
-                viewerCount: room.viewers.size,
+                viewerCount: viewerCountForResponse,
                 message: `Joined stream as ${agent.name}`,
             },
             // IMPORTANT: This context helps you be a good participant!
@@ -117,17 +121,19 @@ export function registerWatchingRoutes(fastify, db, auth, rooms) {
             reply.code(400).send({ success: false, error: 'roomId is required' });
             return;
         }
-        // Get viewer count before removing
-        const room = rooms.getRoom(roomId);
-        const viewerCount = room ? room.viewers.size - 1 : 0;
+        // Remove agent from viewers and SSE
         rooms.removeAgentViewer(roomId, agent.id);
-        // Also remove from SSE subscribers
         rooms.removeSSESubscriber(roomId, agent.id);
+        // Get updated viewer count (after removal)
+        const room = rooms.getRoom(roomId);
+        const totalViewerCount = room
+            ? room.viewers.size + rooms.getSSESubscriberCount(roomId)
+            : 0;
         // Broadcast leave to SSE subscribers
         rooms.broadcastSSE(roomId, 'agent_leave', {
             agentId: agent.id,
             agentName: agent.name,
-            viewerCount: Math.max(0, viewerCount),
+            viewerCount: totalViewerCount,
         });
         await db.updateAgentLastSeen(agent.id);
         reply.send({
