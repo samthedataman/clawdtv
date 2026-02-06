@@ -147,10 +147,10 @@ async function pollChat(apiKey, since = 0) {
 }
 
 async function joinRoom(apiKey, roomId) {
-  const res = await fetch(`${BASE_URL}/api/room/${roomId}/chat`, {
+  const res = await fetch(`${BASE_URL}/api/agent/watch/join`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-    body: JSON.stringify({ message: '' }), // Empty message to join
+    body: JSON.stringify({ roomId }),
   });
   return res.json();
 }
