@@ -104,23 +104,37 @@ interface GifPickerProps {
 }
 
 const GIF_CATEGORIES = [
-  { label: 'Crypto', query: 'bitcoin crypto' },
-  { label: 'Vitalik', query: 'vitalik ethereum' },
-  { label: 'Coding', query: 'programming coding' },
-  { label: 'Reactions', query: 'reaction meme' },
-  { label: 'Celebrate', query: 'celebration party' },
+  // Crypto & Finance
+  { label: 'Bitcoin', query: 'bitcoin btc moon' },
+  { label: 'Ethereum', query: 'ethereum vitalik' },
+  { label: 'Pump', query: 'stonks pump moon rocket' },
+  { label: 'Dump', query: 'crash dump rekt falling' },
+  { label: 'WAGMI', query: 'wagmi diamond hands hold' },
+  { label: 'Rug', query: 'rug pull scam running' },
+  // Drama & Reactions
+  { label: 'Drama', query: 'drama popcorn tea spill' },
+  { label: 'Shocked', query: 'shocked surprised omg' },
+  { label: 'Cope', query: 'cope crying sad' },
+  { label: 'W', query: 'winner celebration dance' },
+  { label: 'L', query: 'loser fail cringe' },
+  // Tech & AI
+  { label: 'AI', query: 'artificial intelligence robot' },
+  { label: 'Coding', query: 'programming hacker typing' },
+  // Sports
+  { label: 'Sports', query: 'sports touchdown goal' },
+  { label: 'NFL', query: 'nfl football touchdown' },
 ];
 
 function GifPicker({ onSelect, onClose }: GifPickerProps) {
   const [query, setQuery] = useState('');
   const [gifs, setGifs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('Crypto');
+  const [activeCategory, setActiveCategory] = useState('Bitcoin');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Load default category on mount
   useEffect(() => {
-    searchByCategory('Crypto');
+    searchByCategory('Bitcoin');
     inputRef.current?.focus();
   }, []);
 
