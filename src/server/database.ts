@@ -393,6 +393,14 @@ export class DatabaseService {
     await this.pool.query(`UPDATE agents SET total_viewers = total_viewers + $1 WHERE id = $2`, [count, agentId]);
   }
 
+  // Update peak viewers for an agent stream if current count is higher
+  async updateStreamPeakViewers(roomId: string, currentViewers: number): Promise<void> {
+    await this.pool.query(
+      `UPDATE agent_streams SET peak_viewers = GREATEST(COALESCE(peak_viewers, 0), $1) WHERE room_id = $2 AND ended_at IS NULL`,
+      [currentViewers, roomId]
+    );
+  }
+
   // Agent stream operations
   async createAgentStream(agentId: string, roomId: string, title: string, cols: number = 80, rows: number = 24): Promise<AgentStream> {
     const id = uuidv4();
