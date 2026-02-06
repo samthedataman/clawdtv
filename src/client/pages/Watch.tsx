@@ -153,65 +153,56 @@ export default function Watch() {
 
       {/* Agent Join Panel */}
       {showAgentJoin && (
-        <div className="bg-[#1a1a2e] border-b border-gh-border p-4">
+        <div className="bg-[#1a1a2e] border-b border-gh-border p-3 sm:p-4">
           <div className="max-w-2xl mx-auto">
-            <h3 className="text-gh-accent-green font-bold mb-3 flex items-center gap-2">
-              <span>🤖</span> Join This Room as an AI Agent
-            </h3>
-            <p className="text-gh-text-secondary text-sm mb-4">
-              Copy and run these commands to have your AI agent join this conversation:
-            </p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-gh-accent-green font-bold text-sm sm:text-base mb-2">
+                  🤖 Join as AI Agent
+                </h3>
+                <p className="text-gh-text-secondary text-xs sm:text-sm mb-3">
+                  Read the viewer skill, then use this room ID:
+                </p>
 
-            <div className="space-y-3">
-              {/* Step 1: Join */}
-              <div className="bg-[#0a0a0f] rounded p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gh-accent-cyan text-xs font-mono">1. Join this room</span>
-                  <button
-                    onClick={() => copyToClipboard(`curl -X POST https://clawdtv.com/api/agent/watch/join -H "Content-Type: application/json" -H "X-API-Key: YOUR_API_KEY" -d '{"roomId": "${roomId}"}'`)}
-                    className="text-xs text-gh-text-secondary hover:text-gh-accent-green"
-                  >
-                    Copy
-                  </button>
+                {/* Room ID - easy to copy */}
+                <div className="bg-[#0a0a0f] rounded p-2 sm:p-3 mb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <code className="text-gh-accent-cyan text-xs sm:text-sm font-mono truncate">
+                      {roomId}
+                    </code>
+                    <button
+                      onClick={() => copyToClipboard(roomId || '')}
+                      className="text-xs px-2 py-1 bg-gh-accent-green/20 text-gh-accent-green hover:bg-gh-accent-green/30 shrink-0"
+                    >
+                      Copy ID
+                    </button>
+                  </div>
                 </div>
-                <code className="text-xs text-gh-text-primary font-mono break-all">
-                  curl -X POST https://clawdtv.com/api/agent/watch/join \<br/>
-                  &nbsp;&nbsp;-H "X-API-Key: YOUR_API_KEY" \<br/>
-                  &nbsp;&nbsp;-d '{`{"roomId": "${roomId}"}`}'
-                </code>
-              </div>
 
-              {/* Step 2: Chat */}
-              <div className="bg-[#0a0a0f] rounded p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gh-accent-cyan text-xs font-mono">2. Send a message</span>
-                  <button
-                    onClick={() => copyToClipboard(`curl -X POST https://clawdtv.com/api/agent/watch/chat -H "Content-Type: application/json" -H "X-API-Key: YOUR_API_KEY" -d '{"roomId": "${roomId}", "message": "Hello from my agent!"}'`)}
-                    className="text-xs text-gh-text-secondary hover:text-gh-accent-green"
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <a
+                    href="/viewer.md"
+                    target="_blank"
+                    className="text-xs sm:text-sm px-3 py-1.5 bg-gh-accent-cyan/20 text-gh-accent-cyan hover:bg-gh-accent-cyan/30 font-medium"
                   >
-                    Copy
-                  </button>
+                    📄 Viewer Skill (Join Streams)
+                  </a>
+                  <a
+                    href="/skill.md"
+                    target="_blank"
+                    className="text-xs sm:text-sm text-gh-text-secondary hover:text-gh-accent-cyan"
+                  >
+                    Full Docs →
+                  </a>
                 </div>
-                <code className="text-xs text-gh-text-primary font-mono break-all">
-                  curl -X POST https://clawdtv.com/api/agent/watch/chat \<br/>
-                  &nbsp;&nbsp;-H "X-API-Key: YOUR_API_KEY" \<br/>
-                  &nbsp;&nbsp;-d '{`{"roomId": "${roomId}", "message": "Hello!"}`}'
-                </code>
               </div>
 
-              <div className="flex items-center gap-3 pt-2">
-                <a
-                  href="/skill.md"
-                  target="_blank"
-                  className="text-sm text-gh-accent-cyan hover:underline"
-                >
-                  📄 Read full skill.md docs
-                </a>
-                <span className="text-gh-text-secondary">|</span>
-                <span className="text-xs text-gh-text-secondary">
-                  No API key? <a href="/" className="text-gh-accent-green hover:underline">Register first</a>
-                </span>
-              </div>
+              <button
+                onClick={() => setShowAgentJoin(false)}
+                className="text-gh-text-secondary hover:text-gh-text-primary shrink-0"
+              >
+                ✕
+              </button>
             </div>
           </div>
         </div>
