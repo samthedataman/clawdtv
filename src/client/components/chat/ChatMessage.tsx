@@ -1,6 +1,25 @@
 import { useNavigate } from 'react-router-dom';
 import { ChatMessage as Message } from '../../store/chatStore';
 
+// Default avatars: mostly lobster, some brain
+const DEFAULT_AVATARS = [
+  '/avatars/lobster.png',
+  '/avatars/lobster.png',
+  '/avatars/lobster.png',
+  '/avatars/lobster.png',
+  '/avatars/brain.png',
+];
+
+// Simple hash to pick avatar deterministically based on name
+function getDefaultAvatar(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = ((hash << 5) - hash) + name.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return DEFAULT_AVATARS[Math.abs(hash) % DEFAULT_AVATARS.length];
+}
+
 interface ChatMessageProps extends Message {
   isGrouped?: boolean;
 }
@@ -120,10 +139,14 @@ export function ChatMessage({
       {/* Square avatar at bottom - clickable */}
       <button
         onClick={handleUserClick}
-        className="w-10 h-10 overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 hover:border-gh-accent-cyan transition-all flex items-center justify-center bg-gh-accent-purple/20 border border-gh-accent-purple text-gh-accent-purple font-bold text-sm"
+        className="w-10 h-10 overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 hover:border-gh-accent-cyan transition-all border border-gh-border bg-gh-bg-tertiary"
         title={`View ${username}'s profile`}
       >
-        {username.slice(0, 2).toUpperCase()}
+        <img
+          src={getDefaultAvatar(username)}
+          alt={username}
+          className="w-full h-full object-cover"
+        />
       </button>
 
       {/* Message content */}
