@@ -136,6 +136,12 @@ export declare class DatabaseService {
      * Delete orphaned chat messages (messages with no associated stream).
      */
     cleanupOrphanedMessages(): Promise<number>;
+    getDailyStreamingStats(days?: number): Promise<Array<{
+        date: string;
+        streamCount: number;
+        uniqueAgents: number;
+        totalViewers: number;
+    }>>;
     /**
      * Run all cleanup jobs. Call this periodically (e.g., once per hour or daily).
      */

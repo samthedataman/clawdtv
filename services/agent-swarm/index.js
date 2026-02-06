@@ -530,13 +530,33 @@ async function fetchShockingNews() {
     await new Promise(r => setTimeout(r, 500));
   }
 
-  // Sort by "shock factor" - prefer headlines with dramatic words
-  const shockWords = ['crash', 'collapse', 'scandal', 'shocking', 'breaking', 'drama', 'war', 'death', 'arrest', 'fired', 'exposed', 'leaked', 'secret', 'blowup', 'plunge', 'surge', 'panic'];
+  // Sort by "controversy factor" - prefer divisive, dramatic headlines
+  const controversyWords = [
+    // Drama & scandal
+    'scandal', 'exposed', 'leaked', 'secret', 'caught', 'affair', 'cheating', 'lie', 'fraud',
+    // Conflict & violence
+    'war', 'attack', 'fight', 'clash', 'feud', 'beef', 'slam', 'blast', 'destroy', 'rip',
+    // Financial drama
+    'crash', 'collapse', 'plunge', 'surge', 'scam', 'ponzi', 'rug', 'dump', 'manipulation',
+    // Legal & crime
+    'arrest', 'jail', 'prison', 'lawsuit', 'sue', 'indicted', 'charged', 'guilty', 'fired',
+    // Emotional triggers
+    'shocking', 'outrage', 'fury', 'backlash', 'controversy', 'debate', 'divided', 'banned',
+    // Death & disaster
+    'death', 'dies', 'killed', 'dead', 'disaster', 'crisis', 'emergency', 'panic',
+    // Hot button topics
+    'trump', 'musk', 'ai', 'woke', 'cancel', 'censorship', 'conspiracy', 'coverup'
+  ];
 
   return allHeadlines.sort((a, b) => {
-    const aScore = shockWords.filter(w => a.title.toLowerCase().includes(w)).length;
-    const bScore = shockWords.filter(w => b.title.toLowerCase().includes(w)).length;
-    return bScore - aScore;
+    const titleA = a.title.toLowerCase();
+    const titleB = b.title.toLowerCase();
+    const aScore = controversyWords.filter(w => titleA.includes(w)).length;
+    const bScore = controversyWords.filter(w => titleB.includes(w)).length;
+    // Bonus points for question marks (clickbait) and all caps words
+    const aBonus = (a.title.match(/\?/g) || []).length * 0.5 + (a.title.match(/[A-Z]{3,}/g) || []).length * 0.3;
+    const bBonus = (b.title.match(/\?/g) || []).length * 0.5 + (b.title.match(/[A-Z]{3,}/g) || []).length * 0.3;
+    return (bScore + bBonus) - (aScore + aBonus);
   });
 }
 
@@ -586,15 +606,15 @@ async function main() {
 
   console.log(`\n✅ All agents registered!\n`);
 
-  // Fetch initial shocking news and create 4 rooms
+  // Fetch initial controversial news and create 5 rooms
   const headlines = await fetchShockingNews();
-  console.log(`\n📰 Found ${headlines.length} headlines. Starting with top 4 most shocking...\n`);
+  console.log(`\n📰 Found ${headlines.length} headlines. Starting with top 5 most CONTROVERSIAL...\n`);
 
   const activeRooms = [];
   const usedHeadlines = new Set();
 
-  // Create initial 4 rooms from different categories
-  const categories = ['crypto', 'ai', 'sports', 'celebrities'];
+  // Create initial 5 rooms from different categories (4 agents per room)
+  const categories = ['crypto', 'ai', 'sports', 'celebrities', 'entertainment'];
   for (const cat of categories) {
     const templateKey = CATEGORY_TO_TEMPLATE[cat] || 'crypto';
     const agents = registeredAgents[templateKey] || [];
@@ -609,7 +629,7 @@ async function main() {
     }
   }
 
-  console.log(`\n🔄 ${activeRooms.length} rooms live. Rotating to new stories every 30 min.\n`);
+  console.log(`\n🔥 ${activeRooms.length} CONTROVERSIAL rooms live! 4 agents per room. Rotating every 30 min.\n`);
 
   // Main discussion loop
   while (true) {

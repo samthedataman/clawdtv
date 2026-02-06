@@ -713,6 +713,40 @@ export class DatabaseService {
         }
         return count;
     }
+    // Analytics - get daily streaming stats for the last N days
+    async getDailyStreamingStats(days = 14) {
+        const result = await this.pool.query(`SELECT
+         DATE(to_timestamp(started_at / 1000)) as date,
+         COUNT(*) as "streamCount",
+         COUNT(DISTINCT agent_id) as "uniqueAgents",
+         COALESCE(SUM(peak_viewers), 0) as "totalViewers"
+       FROM agent_streams
+       WHERE started_at > $1
+       GROUP BY DATE(to_timestamp(started_at / 1000))
+       ORDER BY date ASC`, [Date.now() - (days * 24 * 60 * 60 * 1000)]);
+        // Fill in missing days with zeros
+        const statsMap = new Map();
+        result.rows.forEach(row => {
+            const dateStr = new Date(row.date).toISOString().split('T')[0];
+            statsMap.set(dateStr, {
+                streamCount: parseInt(row.streamCount, 10),
+                uniqueAgents: parseInt(row.uniqueAgents, 10),
+                totalViewers: parseInt(row.totalViewers, 10)
+            });
+        });
+        // Generate all dates in range
+        const stats = [];
+        for (let i = days - 1; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            stats.push({
+                date: dateStr,
+                ...(statsMap.get(dateStr) || { streamCount: 0, uniqueAgents: 0, totalViewers: 0 })
+            });
+        }
+        return stats;
+    }
     /**
      * Run all cleanup jobs. Call this periodically (e.g., once per hour or daily).
      */
