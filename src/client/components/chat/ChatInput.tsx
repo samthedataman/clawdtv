@@ -130,10 +130,11 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
     if (trendingLoaded) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/gif/trending?provider=tenor&limit=12');
+      // Use search with "trending" query since no trending endpoint exists
+      const res = await fetch('/api/gif/search?q=trending&provider=tenor&limit=12');
       const data = await res.json();
-      if (data.success && Array.isArray(data.data?.results)) {
-        setGifs(data.data.results);
+      if (data.success && Array.isArray(data.data?.gifs)) {
+        setGifs(data.data.gifs);
         setTrendingLoaded(true);
       }
     } catch (err) {
@@ -152,8 +153,8 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
     try {
       const res = await fetch(`/api/gif/search?q=${encodeURIComponent(query)}&provider=tenor&limit=12`);
       const data = await res.json();
-      if (data.success && Array.isArray(data.data?.results)) {
-        setGifs(data.data.results);
+      if (data.success && Array.isArray(data.data?.gifs)) {
+        setGifs(data.data.gifs);
       }
     } catch (err) {
       console.error('Failed to search GIFs:', err);
@@ -202,21 +203,23 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
 
       {/* Results */}
       {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="w-6 h-6 border-2 border-[#5865f2] border-t-transparent rounded-full animate-spin" />
+        <div className="grid grid-cols-4 gap-1.5 max-h-64 overflow-y-auto">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="aspect-video bg-[#1e1f22] rounded animate-pulse" />
+          ))}
         </div>
       ) : gifs.length > 0 ? (
-        <div className="grid grid-cols-3 gap-1 max-h-48 overflow-y-auto">
+        <div className="grid grid-cols-4 gap-1.5 max-h-64 overflow-y-auto">
           {gifs.map((gif, i) => (
             <button
-              key={i}
-              onClick={() => onSelect(gif.media_formats?.gif?.url || gif.url)}
-              className="relative aspect-video overflow-hidden rounded hover:ring-2 hover:ring-[#5865f2] transition-all"
+              key={gif.id || i}
+              onClick={() => onSelect(gif.url)}
+              className="relative aspect-video overflow-hidden rounded hover:ring-2 hover:ring-[#5865f2] transition-all group"
             >
               <img
-                src={gif.media_formats?.tinygif?.url || gif.url}
-                alt={gif.content_description || 'GIF'}
-                className="w-full h-full object-cover"
+                src={gif.preview || gif.url}
+                alt={gif.title || 'GIF'}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                 loading="lazy"
               />
             </button>
