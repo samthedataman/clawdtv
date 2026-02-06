@@ -51,39 +51,36 @@ export function ChatBox({
   }, [messages]);
 
   return (
-    <div className="chat-box flex flex-col h-full bg-[#313338] overflow-hidden">
-      {/* Discord-style channel header */}
-      <div className="flex items-center justify-between px-4 h-12 border-b border-[#1f2023] bg-[#313338] shadow-sm">
+    <div className="chat-box flex flex-col h-full bg-gh-bg-primary overflow-hidden font-mono">
+      {/* Terminal-style header */}
+      <div className="flex items-center justify-between px-4 h-10 border-b border-gh-border bg-gh-bg-secondary">
         <div className="flex items-center gap-2">
-          <span className="text-[#80848e] text-xl font-medium">#</span>
-          <h3 className="font-semibold text-[#f2f3f5] truncate max-w-[200px]">
-            {roomTitle.toLowerCase().replace(/\s+/g, '-')}
+          <span className="text-gh-accent-green font-bold">{'>'}</span>
+          <h3 className="font-medium text-gh-accent-cyan truncate max-w-[200px]">
+            {roomTitle.toLowerCase().replace(/\s+/g, '_')}
           </h3>
-          <div className="w-px h-6 bg-[#3f4147] mx-2" />
-          <span className="text-[#949ba4] text-sm truncate">Watch AI agents shoot the shit</span>
+          <span className="text-gh-text-secondary text-xs">// live chat</span>
         </div>
         <div className="flex items-center gap-3">
           {viewerCount > 0 && (
-            <div className="flex items-center gap-1.5 text-[#949ba4] text-sm">
-              <span className="w-2 h-2 rounded-full bg-[#23a55a] animate-pulse" />
-              <span>{viewerCount} online</span>
+            <div className="flex items-center gap-1.5 text-gh-accent-green text-xs">
+              <span className="w-2 h-2 rounded-full bg-gh-accent-green animate-pulse" />
+              <span>{viewerCount} connected</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Messages container - Discord dark theme */}
-      <div className="messages-container flex-1 overflow-y-auto py-4 bg-[#313338] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#1a1b1e] hover:scrollbar-thumb-[#2b2d31]">
+      {/* Messages container - Terminal dark theme */}
+      <div className="messages-container flex-1 overflow-y-auto py-2 bg-gh-bg-primary scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gh-border hover:scrollbar-thumb-gh-text-secondary">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <div className="w-[68px] h-[68px] rounded-full bg-[#5865f2] flex items-center justify-center mb-4">
-              <span className="text-4xl text-white font-bold">#</span>
-            </div>
-            <h3 className="text-[32px] font-bold text-[#f2f3f5] mb-2">
-              Welcome to #{roomTitle.toLowerCase().replace(/\s+/g, '-')}!
+          <div className="flex flex-col items-center justify-center h-full text-center px-4 font-mono">
+            <div className="text-gh-accent-green text-4xl mb-4">{'>'}_</div>
+            <h3 className="text-xl font-bold text-gh-accent-cyan mb-2">
+              [{roomTitle.toLowerCase().replace(/\s+/g, '_')}]
             </h3>
-            <p className="text-[#b5bac1] text-base max-w-md">
-              This is the beginning of the #{roomTitle.toLowerCase().replace(/\s+/g, '-')} channel.
+            <p className="text-gh-text-secondary text-sm">
+              // awaiting input...
             </p>
           </div>
         ) : (
@@ -104,26 +101,27 @@ export function ChatBox({
         )}
       </div>
 
-      {/* Participants bar above input */}
+      {/* Participants bar above input - terminal style */}
       {participants.length > 0 && (
-        <div className="px-4 py-2 bg-[#2b2d31] border-t border-[#1f2023]">
+        <div className="px-4 py-2 bg-gh-bg-secondary border-t border-gh-border">
           <div className="flex items-center gap-2">
-            <span className="text-[#949ba4] text-xs">In chat:</span>
+            <span className="text-gh-text-secondary text-xs font-mono">// online:</span>
             <div className="flex items-center -space-x-1">
               {participants.map((p) => (
-                <div
+                <button
                   key={p.userId}
-                  className="w-6 h-6 rounded-sm flex items-center justify-center text-[10px] font-bold border border-[#313338] bg-gh-accent-purple/20 text-gh-accent-purple"
-                  title={p.username}
+                  onClick={() => window.location.href = `/agents/${encodeURIComponent(p.userId || p.username)}`}
+                  className="w-6 h-6 flex items-center justify-center text-[10px] font-bold border border-gh-border bg-gh-accent-purple/20 text-gh-accent-purple hover:border-gh-accent-cyan hover:text-gh-accent-cyan transition-colors cursor-pointer"
+                  title={`View ${p.username}'s profile`}
                 >
                   {p.username.slice(0, 2).toUpperCase()}
-                </div>
+                </button>
               ))}
             </div>
             {participants.length > 0 && (
-              <span className="text-[#949ba4] text-xs">
+              <span className="text-gh-text-secondary text-xs font-mono">
                 {participants.map(p => p.username).slice(0, 3).join(', ')}
-                {participants.length > 3 && ` +${participants.length - 3} more`}
+                {participants.length > 3 && ` +${participants.length - 3}`}
               </span>
             )}
           </div>
