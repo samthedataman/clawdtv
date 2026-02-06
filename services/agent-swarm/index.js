@@ -103,6 +103,20 @@ const AGENT_TEMPLATES = {
       gifKeywords: ['spin', 'positive', 'marketing', 'brand', 'good'],
       systemPrompt: `Celebrity publicist. Spins everything positively. "Actually great for their brand."` },
   ],
+  entertainment: [
+    { name: 'FilmBro', model: 'anthropic/claude-3-haiku', stance: 'cinephile',
+      gifKeywords: ['movie', 'cinema', 'masterpiece', 'kino', 'film'],
+      systemPrompt: `Film snob. Everything is either a masterpiece or trash. Compares everything to obscure indie films.` },
+    { name: 'StreamerStan', model: 'anthropic/claude-3-haiku', stance: 'streaming',
+      gifKeywords: ['netflix', 'binge', 'streaming', 'show', 'series'],
+      systemPrompt: `Lives on streaming services. Has opinions on EVERY show. "Actually the book was worse."` },
+    { name: 'MusicHead', model: 'anthropic/claude-3-haiku', stance: 'music',
+      gifKeywords: ['music', 'concert', 'album', 'vibes', 'banger'],
+      systemPrompt: `Music obsessed. Judges people by their Spotify wrapped. Hot takes on albums and artists.` },
+    { name: 'PopCulturePete', model: 'anthropic/claude-3-haiku', stance: 'pop-culture',
+      gifKeywords: ['viral', 'trending', 'meme', 'iconic', 'slay'],
+      systemPrompt: `Chronically online. Knows every meme and trend. Makes references nobody gets.` },
+  ],
 };
 
 // Map news categories to agent templates
@@ -110,7 +124,8 @@ const CATEGORY_TO_TEMPLATE = {
   crypto: 'crypto', bitcoin: 'crypto', ethereum: 'crypto',
   ai: 'ai', safety: 'ai', agi: 'ai',
   nfl: 'sports', nba: 'sports', sports: 'sports',
-  celebrities: 'celebrities', entertainment: 'celebrities', drama: 'celebrities',
+  celebrities: 'celebrities', drama: 'celebrities',
+  entertainment: 'entertainment', movies: 'entertainment', music: 'entertainment',
 };
 
 // ClawdTV API helpers
@@ -362,14 +377,27 @@ class NewsRoom {
     }
 
     // Other agents JOIN the room first, then react with staggered delays
+    // IMPORTANT: Ensure minimum 2 viewers join each room
     await new Promise(r => setTimeout(r, 3000));
 
+    let joinedViewers = 0;
     for (let i = 1; i < this.agents.length; i++) {
       const agent = this.agents[i];
 
-      // JOIN the room first so they show up as participants
-      await joinRoom(agent.apiKey, this.roomId);
-      console.log(`  [${agent.name}] 👋 Joined room`);
+      // JOIN the room first so they show up as participants - retry on failure
+      let joinResult = await joinRoom(agent.apiKey, this.roomId);
+      if (!joinResult.success) {
+        console.log(`  [${agent.name}] ⚠️ First join attempt failed, retrying...`);
+        await new Promise(r => setTimeout(r, 2000));
+        joinResult = await joinRoom(agent.apiKey, this.roomId);
+      }
+
+      if (joinResult.success) {
+        joinedViewers++;
+        console.log(`  [${agent.name}] 👋 Joined room (${joinedViewers} viewers)`);
+      } else {
+        console.error(`  [${agent.name}] ❌ Failed to join: ${joinResult.error}`);
+      }
       await new Promise(r => setTimeout(r, 1000));
 
       const prevMessages = this.messageHistory.slice(-3).map(m => m.content).join(' | ');
@@ -401,6 +429,13 @@ Jump in with YOUR take. Agree? Disagree? Add something new? This is crazy!`
 
       // Longer delay between agents to avoid rate limits
       await new Promise(r => setTimeout(r, 4000));
+    }
+
+    // Verify minimum 2 viewers joined
+    if (joinedViewers < 2) {
+      console.warn(`  ⚠️ Only ${joinedViewers} viewers joined (minimum 2 required). Room may be less active.`);
+    } else {
+      console.log(`  ✅ Room ready: 1 host + ${joinedViewers} viewers = ${joinedViewers + 1} total agents`);
     }
   }
 
@@ -620,12 +655,16 @@ async function main() {
     const agents = registeredAgents[templateKey] || [];
     const headline = headlines.find(h => h.category === cat && !usedHeadlines.has(h.title));
 
-    if (headline && agents.length > 0) {
+    // Require minimum 3 agents (1 host + 2 viewers) for a proper discussion
+    if (headline && agents.length >= 3) {
       usedHeadlines.add(headline.title);
       const room = new NewsRoom(headline, cat, agents);
       await room.start();
       activeRooms.push(room);
+      console.log(`  ✓ ${cat} room started with ${agents.length} agents (1 host + ${agents.length - 1} viewers)`);
       await new Promise(r => setTimeout(r, 5000));
+    } else {
+      console.warn(`  ⚠️ Skipping ${cat} - only ${agents.length} agents available (need at least 3)`);
     }
   }
 

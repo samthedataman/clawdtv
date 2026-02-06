@@ -1,8 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface GamesSidebarProps {
   onSendMessage: (content: string) => void;
   disabled?: boolean;
+}
+
+interface MemeToken {
+  symbol: string;
+  name: string;
+  price: number;
+  priceChange24h: number;
+  volume24h: number;
+  pairAddress: string;
 }
 
 export function GamesSidebar({ onSendMessage, disabled }: GamesSidebarProps) {
@@ -10,6 +19,98 @@ export function GamesSidebar({ onSendMessage, disabled }: GamesSidebarProps) {
   const [diceResult, setDiceResult] = useState<number[]>([]);
   const [wheelResult, setWheelResult] = useState<string | null>(null);
   const [wheelRotation, setWheelRotation] = useState(0);
+
+  // DexScreener meme coin betting state
+  const [memeToken, setMemeToken] = useState<MemeToken | null>(null);
+  const [loadingToken, setLoadingToken] = useState(false);
+  const [betPlaced, setBetPlaced] = useState<'over' | 'under' | null>(null);
+  const [betResult, setBetResult] = useState<string | null>(null);
+
+  // Fetch trending meme coin from DexScreener
+  const fetchMemeToken = async () => {
+    setLoadingToken(true);
+    setBetPlaced(null);
+    setBetResult(null);
+    try {
+      // Get trending tokens from DexScreener
+      const res = await fetch('https://api.dexscreener.com/latest/dex/tokens/trending');
+      const data = await res.json();
+
+      if (data && Array.isArray(data) && data.length > 0) {
+        // Pick a random trending token
+        const randomToken = data[Math.floor(Math.random() * Math.min(data.length, 20))];
+        setMemeToken({
+          symbol: randomToken.symbol || 'MEME',
+          name: randomToken.name || 'Unknown Token',
+          price: parseFloat(randomToken.priceUsd || '0'),
+          priceChange24h: parseFloat(randomToken.priceChange?.h24 || '0'),
+          volume24h: parseFloat(randomToken.volume?.h24 || '0'),
+          pairAddress: randomToken.pairAddress || '',
+        });
+      } else {
+        // Fallback - fetch from Solana trending pairs
+        const fallbackRes = await fetch('https://api.dexscreener.com/latest/dex/search?q=sol meme');
+        const fallbackData = await fallbackRes.json();
+        if (fallbackData.pairs && fallbackData.pairs.length > 0) {
+          const pair = fallbackData.pairs[Math.floor(Math.random() * Math.min(fallbackData.pairs.length, 10))];
+          setMemeToken({
+            symbol: pair.baseToken?.symbol || 'MEME',
+            name: pair.baseToken?.name || 'Unknown Token',
+            price: parseFloat(pair.priceUsd || '0'),
+            priceChange24h: parseFloat(pair.priceChange?.h24 || '0'),
+            volume24h: parseFloat(pair.volume?.h24 || '0'),
+            pairAddress: pair.pairAddress || '',
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch meme token:', err);
+    }
+    setLoadingToken(false);
+  };
+
+  // Load a token on mount
+  useEffect(() => {
+    fetchMemeToken();
+  }, []);
+
+  // Place bet (over/under)
+  const placeBet = (direction: 'over' | 'under') => {
+    if (disabled || !memeToken || betPlaced) return;
+    setBetPlaced(direction);
+
+    // Simulate outcome based on actual price momentum
+    // If token is already up, slight edge to over; if down, slight edge to under
+    const momentum = memeToken.priceChange24h > 0 ? 0.55 : 0.45;
+    const random = Math.random();
+    const wentUp = random < momentum;
+
+    const won = (direction === 'over' && wentUp) || (direction === 'under' && !wentUp);
+    const changePercent = (Math.random() * 15 + 1).toFixed(1);
+
+    setTimeout(() => {
+      if (won) {
+        setBetResult('win');
+        onSendMessage(`📈 BET WON! $${memeToken.symbol} went ${wentUp ? 'UP' : 'DOWN'} ${changePercent}%! I bet ${direction.toUpperCase()}! 💰`);
+      } else {
+        setBetResult('lose');
+        onSendMessage(`📉 BET LOST! $${memeToken.symbol} went ${wentUp ? 'UP' : 'DOWN'} ${changePercent}%. I bet ${direction.toUpperCase()}... 😭`);
+      }
+    }, 2000);
+  };
+
+  const formatPrice = (price: number) => {
+    if (price < 0.00001) return price.toExponential(2);
+    if (price < 0.01) return price.toFixed(6);
+    if (price < 1) return price.toFixed(4);
+    return price.toFixed(2);
+  };
+
+  const formatVolume = (vol: number) => {
+    if (vol >= 1000000) return `$${(vol / 1000000).toFixed(1)}M`;
+    if (vol >= 1000) return `$${(vol / 1000).toFixed(1)}K`;
+    return `$${vol.toFixed(0)}`;
+  };
 
   // Dice game
   const rollDice = (count: number = 2) => {
@@ -194,6 +295,89 @@ export function GamesSidebar({ onSendMessage, disabled }: GamesSidebarProps) {
           >
             {isSpinning ? 'Spinning...' : 'SPIN!'}
           </button>
+        </div>
+
+        {/* Meme Coin Over/Under */}
+        <div className="bg-gh-bg-tertiary border border-gh-border p-3">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-gh-text-primary font-medium text-sm">📊 Meme Coin Bet</h4>
+            <button
+              onClick={fetchMemeToken}
+              disabled={loadingToken || betPlaced !== null}
+              className="text-xs text-gh-accent-cyan hover:text-gh-accent-green disabled:opacity-50"
+              title="Get new token"
+            >
+              🔄
+            </button>
+          </div>
+
+          {loadingToken ? (
+            <div className="text-center py-4 text-gh-text-secondary text-sm animate-pulse">
+              Loading token...
+            </div>
+          ) : memeToken ? (
+            <>
+              {/* Token info */}
+              <div className="bg-gh-bg-primary border border-gh-border p-2 mb-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-gh-accent-cyan font-bold text-sm">${memeToken.symbol}</span>
+                  <span className={`text-xs font-medium ${memeToken.priceChange24h >= 0 ? 'text-gh-accent-green' : 'text-gh-accent-red'}`}>
+                    {memeToken.priceChange24h >= 0 ? '↑' : '↓'} {Math.abs(memeToken.priceChange24h).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="text-gh-text-secondary text-[10px] truncate mb-1">
+                  {memeToken.name}
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gh-text-primary font-mono">${formatPrice(memeToken.price)}</span>
+                  <span className="text-gh-text-secondary">Vol: {formatVolume(memeToken.volume24h)}</span>
+                </div>
+              </div>
+
+              {/* Bet buttons */}
+              {betPlaced ? (
+                <div className={`text-center py-3 border ${betResult === 'win' ? 'bg-gh-accent-green/20 border-gh-accent-green text-gh-accent-green' : betResult === 'lose' ? 'bg-gh-accent-red/20 border-gh-accent-red text-gh-accent-red' : 'bg-gh-bg-primary border-gh-border text-gh-text-secondary animate-pulse'}`}>
+                  {betResult === 'win' ? '🎉 YOU WON!' : betResult === 'lose' ? '💀 REKT!' : `Waiting... Bet ${betPlaced.toUpperCase()}`}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-center text-[10px] text-gh-text-secondary mb-2">
+                    Will price go UP or DOWN?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => placeBet('over')}
+                      disabled={disabled}
+                      className="flex-1 px-2 py-2 bg-gh-accent-green/20 border border-gh-accent-green/50 text-gh-accent-green text-sm font-bold hover:bg-gh-accent-green/30 disabled:opacity-50 transition-colors"
+                    >
+                      📈 OVER
+                    </button>
+                    <button
+                      onClick={() => placeBet('under')}
+                      disabled={disabled}
+                      className="flex-1 px-2 py-2 bg-gh-accent-red/20 border border-gh-accent-red/50 text-gh-accent-red text-sm font-bold hover:bg-gh-accent-red/30 disabled:opacity-50 transition-colors"
+                    >
+                      📉 UNDER
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Play again after result */}
+              {betResult && (
+                <button
+                  onClick={fetchMemeToken}
+                  className="w-full mt-2 px-2 py-1.5 bg-gh-accent-cyan/20 border border-gh-accent-cyan/50 text-gh-accent-cyan text-xs hover:bg-gh-accent-cyan/30 transition-colors"
+                >
+                  🎲 New Token
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-4 text-gh-text-secondary text-sm">
+              Failed to load token
+            </div>
+          )}
         </div>
 
         {/* Quick Games */}
