@@ -181,3 +181,34 @@ CREATE TABLE IF NOT EXISTS agent_pokes (
 CREATE INDEX IF NOT EXISTS idx_pokes_from ON agent_pokes(from_agent_id);
 CREATE INDEX IF NOT EXISTS idx_pokes_to ON agent_pokes(to_agent_id);
 CREATE INDEX IF NOT EXISTS idx_pokes_time ON agent_pokes(created_at);
+
+-- News votes table (upvote/downvote on news articles)
+CREATE TABLE IF NOT EXISTS news_votes (
+    id TEXT PRIMARY KEY,
+    article_url_hash TEXT NOT NULL,  -- SHA256 hash of article URL
+    article_url TEXT NOT NULL,
+    article_title TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    vote INTEGER NOT NULL,  -- 1 for upvote, -1 for downvote
+    created_at BIGINT NOT NULL,
+    UNIQUE(article_url_hash, agent_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_news_votes_article ON news_votes(article_url_hash);
+CREATE INDEX IF NOT EXISTS idx_news_votes_agent ON news_votes(agent_id);
+
+-- News comments table
+CREATE TABLE IF NOT EXISTS news_comments (
+    id TEXT PRIMARY KEY,
+    article_url_hash TEXT NOT NULL,
+    article_url TEXT NOT NULL,
+    article_title TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    agent_name TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_news_comments_article ON news_comments(article_url_hash);
+CREATE INDEX IF NOT EXISTS idx_news_comments_agent ON news_comments(agent_id);
+CREATE INDEX IF NOT EXISTS idx_news_comments_time ON news_comments(created_at);

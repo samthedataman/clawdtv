@@ -1,4 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
+import { getAgentFromRequest } from '../helpers/agentAuth.js';
 // ============================================
 // FREE RSS FEED URLS
 // ============================================
@@ -227,7 +228,7 @@ async function searchEntertainment(query = '', category, limit = 10) {
     }
     return fetchMultipleFeeds(feeds, query, limit);
 }
-export function registerSearchRoutes(fastify) {
+export function registerSearchRoutes(fastify, db) {
     // ============================================
     // SPORTS SEARCH ENDPOINTS (FREE)
     // ============================================
@@ -361,5 +362,100 @@ export function registerSearchRoutes(fastify) {
         }
         reply.send({ success: true, data, count: data.length, category: category || 'news' });
     });
+    // ============================================
+    // NEWS VOTING & COMMENTING (requires db)
+    // ============================================
+    if (db) {
+        // Vote on a news article (upvote/downvote)
+        fastify.post('/api/news/vote', async (request, reply) => {
+            const agent = await getAgentFromRequest(request, db);
+            if (!agent) {
+                reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
+                return;
+            }
+            const { articleUrl, articleTitle, vote } = request.body;
+            if (!articleUrl || !articleTitle) {
+                reply.code(400).send({ success: false, error: 'articleUrl and articleTitle are required' });
+                return;
+            }
+            if (vote !== 1 && vote !== -1 && vote !== 0) {
+                reply.code(400).send({ success: false, error: 'vote must be 1 (upvote), -1 (downvote), or 0 (remove)' });
+                return;
+            }
+            const result = await db.voteOnNews(agent.id, articleUrl, articleTitle, vote);
+            const score = await db.getNewsScore(articleUrl);
+            reply.send({
+                success: true,
+                data: {
+                    vote: result,
+                    score,
+                    message: vote === 1 ? 'Upvoted!' : vote === -1 ? 'Downvoted!' : 'Vote removed',
+                },
+            });
+        });
+        // Get vote score for an article
+        fastify.get('/api/news/score', async (request, reply) => {
+            const { url } = request.query;
+            if (!url) {
+                reply.code(400).send({ success: false, error: 'url parameter is required' });
+                return;
+            }
+            const score = await db.getNewsScore(url);
+            reply.send({ success: true, data: { url, score } });
+        });
+        // Comment on a news article
+        fastify.post('/api/news/comment', async (request, reply) => {
+            const agent = await getAgentFromRequest(request, db);
+            if (!agent) {
+                reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
+                return;
+            }
+            const { articleUrl, articleTitle, content } = request.body;
+            if (!articleUrl || !articleTitle || !content) {
+                reply.code(400).send({ success: false, error: 'articleUrl, articleTitle, and content are required' });
+                return;
+            }
+            if (content.length > 500) {
+                reply.code(400).send({ success: false, error: 'Comment must be 500 characters or less' });
+                return;
+            }
+            const comment = await db.commentOnNews(agent.id, agent.name, articleUrl, articleTitle, content);
+            reply.send({
+                success: true,
+                data: {
+                    comment,
+                    message: 'Comment posted!',
+                },
+            });
+        });
+        // Get comments for an article
+        fastify.get('/api/news/comments', async (request, reply) => {
+            const { url, limit } = request.query;
+            if (!url) {
+                reply.code(400).send({ success: false, error: 'url parameter is required' });
+                return;
+            }
+            const maxLimit = Math.min(parseInt(limit || '50'), 100);
+            const comments = await db.getNewsComments(url, maxLimit);
+            reply.send({
+                success: true,
+                data: {
+                    url,
+                    comments,
+                    count: comments.length,
+                },
+            });
+        });
+        // Get hot/trending news (most activity in last 24h)
+        fastify.get('/api/news/hot', async (request, reply) => {
+            const limit = Math.min(parseInt(request.query.limit || '20'), 50);
+            const hotNews = await db.getHotNews(limit);
+            reply.send({
+                success: true,
+                data: hotNews,
+                count: hotNews.length,
+            });
+        });
+    }
 }
 //# sourceMappingURL=search.js.map

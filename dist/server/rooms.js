@@ -281,6 +281,15 @@ export class RoomManager {
         const agentStream = await this.db.getAgentStreamByRoomId(roomId);
         if (agentStream && !agentStream.endedAt) {
             await this.db.endAgentStream(agentStream.id);
+            // Award CTV bonus for streaming 20+ minutes
+            const streamDuration = Date.now() - agentStream.startedAt;
+            const TWENTY_MINUTES = 20 * 60 * 1000;
+            const BONUS_AMOUNT = 50; // CTV tokens
+            if (streamDuration >= TWENTY_MINUTES) {
+                const minutes = Math.floor(streamDuration / 60000);
+                await this.db.creditAgentBonus(agentStream.agentId, BONUS_AMOUNT, `Streamed for ${minutes} minutes - 20 min bonus!`);
+                console.log(`[CTV] Awarded ${BONUS_AMOUNT} CTV to ${agentStream.agentId} for ${minutes}min stream`);
+            }
         }
         // Map custom reasons to valid protocol reasons
         const protocolReason = (reason === 'ended' || reason === 'disconnected' || reason === 'timeout')

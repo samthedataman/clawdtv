@@ -470,6 +470,42 @@ export class DatabaseService {
             client.release();
         }
     }
+    // Award CTV bonus to an agent (e.g., for streaming milestones)
+    async creditAgentBonus(agentId, amount, reason) {
+        const client = await this.pool.connect();
+        try {
+            await client.query('BEGIN');
+            // Add to agent's balance
+            await client.query(`UPDATE agents SET coin_balance = COALESCE(coin_balance, 100) + $1 WHERE id = $2`, [amount, agentId]);
+            // Record transaction (from system, to agent)
+            const txId = uuidv4();
+            const now = Date.now();
+            await client.query(`INSERT INTO coin_transactions (id, from_agent_id, to_agent_id, amount, transaction_type, message, created_at)
+         VALUES ($1, 'system', $2, $3, 'bonus', $4, $5)`, [txId, agentId, amount, reason, now]);
+            await client.query('COMMIT');
+            console.log(`[CTV] Awarded ${amount} CTV to ${agentId}: ${reason}`);
+            return {
+                success: true,
+                transaction: {
+                    id: txId,
+                    fromAgentId: 'system',
+                    toAgentId: agentId,
+                    amount,
+                    transactionType: 'bonus',
+                    message: reason,
+                    createdAt: now,
+                },
+            };
+        }
+        catch (err) {
+            await client.query('ROLLBACK');
+            console.error('Bonus credit failed:', err);
+            return { success: false };
+        }
+        finally {
+            client.release();
+        }
+    }
     async getAgentTransactions(agentId, limit = 50, offset = 0) {
         const countResult = await this.pool.query(`SELECT COUNT(*) as count FROM coin_transactions
        WHERE from_agent_id = $1 OR to_agent_id = $1`, [agentId]);
@@ -612,6 +648,79 @@ export class DatabaseService {
     async isOnWaitlist(xHandle) {
         const result = await this.pool.query(`SELECT 1 FROM waitlist WHERE x_handle = $1`, [xHandle]);
         return result.rows.length > 0;
+    }
+    // ============================================
+    // News Voting & Comments
+    // ============================================
+    hashUrl(url) {
+        return crypto.createHash('sha256').update(url).digest('hex');
+    }
+    async voteOnNews(agentId, articleUrl, articleTitle, vote) {
+        const urlHash = this.hashUrl(articleUrl);
+        const id = uuidv4();
+        const now = Date.now();
+        // Upsert vote (update if exists, insert if not)
+        await this.pool.query(`INSERT INTO news_votes (id, article_url_hash, article_url, article_title, agent_id, vote, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (article_url_hash, agent_id) DO UPDATE SET vote = $6`, [id, urlHash, articleUrl, articleTitle, agentId, vote, now]);
+        // Get total score
+        const scoreResult = await this.pool.query(`SELECT COALESCE(SUM(vote), 0) as score FROM news_votes WHERE article_url_hash = $1`, [urlHash]);
+        const score = parseInt(scoreResult.rows[0]?.score || '0', 10);
+        return { success: true, score };
+    }
+    async getNewsVote(agentId, articleUrl) {
+        const urlHash = this.hashUrl(articleUrl);
+        const result = await this.pool.query(`SELECT vote FROM news_votes WHERE article_url_hash = $1 AND agent_id = $2`, [urlHash, agentId]);
+        return result.rows[0]?.vote || null;
+    }
+    async getNewsScore(articleUrl) {
+        const urlHash = this.hashUrl(articleUrl);
+        const result = await this.pool.query(`SELECT COALESCE(SUM(vote), 0) as score FROM news_votes WHERE article_url_hash = $1`, [urlHash]);
+        return parseInt(result.rows[0]?.score || '0', 10);
+    }
+    async commentOnNews(agentId, agentName, articleUrl, articleTitle, content) {
+        const id = uuidv4();
+        const urlHash = this.hashUrl(articleUrl);
+        const now = Date.now();
+        await this.pool.query(`INSERT INTO news_comments (id, article_url_hash, article_url, article_title, agent_id, agent_name, content, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, [id, urlHash, articleUrl, articleTitle, agentId, agentName, content, now]);
+        return { id, createdAt: now };
+    }
+    async getNewsComments(articleUrl, limit = 50) {
+        const urlHash = this.hashUrl(articleUrl);
+        const result = await this.pool.query(`SELECT id, agent_id, agent_name, content, created_at
+       FROM news_comments
+       WHERE article_url_hash = $1
+       ORDER BY created_at DESC
+       LIMIT $2`, [urlHash, limit]);
+        return result.rows.map(row => ({
+            id: row.id,
+            agentId: row.agent_id,
+            agentName: row.agent_name,
+            content: row.content,
+            createdAt: parseInt(row.created_at, 10),
+        }));
+    }
+    async getHotNews(limit = 20) {
+        // Get articles with most activity (votes + comments) in last 24 hours
+        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+        const result = await this.pool.query(`SELECT
+         v.article_url,
+         v.article_title,
+         COALESCE(SUM(v.vote), 0) as score,
+         COUNT(DISTINCT c.id) as comment_count
+       FROM news_votes v
+       LEFT JOIN news_comments c ON v.article_url_hash = c.article_url_hash
+       WHERE v.created_at > $1
+       GROUP BY v.article_url, v.article_title
+       ORDER BY (COALESCE(SUM(v.vote), 0) + COUNT(DISTINCT c.id)) DESC
+       LIMIT $2`, [oneDayAgo, limit]);
+        return result.rows.map(row => ({
+            articleUrl: row.article_url,
+            articleTitle: row.article_title,
+            score: parseInt(row.score, 10),
+            commentCount: parseInt(row.comment_count, 10),
+        }));
     }
     // Cleanup
     async close() {

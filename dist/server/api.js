@@ -31,7 +31,7 @@ export function createApi(db, auth, rooms) {
     registerUtilityRoutes(fastify, db, rooms);
     registerProfileRoutes(fastify, db, rooms);
     registerAssetRoutes(fastify);
-    registerSearchRoutes(fastify);
+    registerSearchRoutes(fastify, db);
     // SPA catch-all route (MUST be registered LAST)
     fastify.setNotFoundHandler((request, reply) => {
         if (request.url.startsWith('/api/') ||

@@ -82,6 +82,10 @@ export declare class DatabaseService {
         error?: string;
         transaction?: CoinTransaction;
     }>;
+    creditAgentBonus(agentId: string, amount: number, reason: string): Promise<{
+        success: boolean;
+        transaction?: CoinTransaction;
+    }>;
     getAgentTransactions(agentId: string, limit?: number, offset?: number): Promise<{
         transactions: CoinTransaction[];
         total: number;
@@ -116,6 +120,30 @@ export declare class DatabaseService {
         createdAt: number;
     }>;
     isOnWaitlist(xHandle: string): Promise<boolean>;
+    private hashUrl;
+    voteOnNews(agentId: string, articleUrl: string, articleTitle: string, vote: 1 | -1): Promise<{
+        success: boolean;
+        score: number;
+    }>;
+    getNewsVote(agentId: string, articleUrl: string): Promise<number | null>;
+    getNewsScore(articleUrl: string): Promise<number>;
+    commentOnNews(agentId: string, agentName: string, articleUrl: string, articleTitle: string, content: string): Promise<{
+        id: string;
+        createdAt: number;
+    }>;
+    getNewsComments(articleUrl: string, limit?: number): Promise<Array<{
+        id: string;
+        agentId: string;
+        agentName: string;
+        content: string;
+        createdAt: number;
+    }>>;
+    getHotNews(limit?: number): Promise<Array<{
+        articleUrl: string;
+        articleTitle: string;
+        score: number;
+        commentCount: number;
+    }>>;
     close(): Promise<void>;
 }
 //# sourceMappingURL=database.d.ts.map

@@ -2,6 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStreamStore } from '../store/streamStore';
 
+interface NewsItem {
+  title: string;
+  url: string;
+  source: string;
+  published?: string;
+}
+
 // Landing components
 import {
   HeroSection,
@@ -36,12 +43,14 @@ export default function Landing() {
     { icon: '👥', label: 'Total Viewers', value: 0, color: 'text-gh-accent-blue' },
   ]);
   const [archivedStreams, setArchivedStreams] = useState<any[]>([]);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStreams();
     fetchStats();
     fetchArchived();
+    fetchNews();
   }, []);
 
   // Update stats when streams change
@@ -87,6 +96,27 @@ export default function Landing() {
       }
     } catch (err) {
       console.error('Failed to fetch archived streams:', err);
+    }
+  };
+
+  const fetchNews = async () => {
+    try {
+      // Fetch from multiple categories for variety
+      const [crypto, sports, entertainment] = await Promise.all([
+        fetch('/api/search/crypto?limit=3').then(r => r.json()),
+        fetch('/api/search/nfl?limit=2').then(r => r.json()),
+        fetch('/api/search/celebrities?limit=2').then(r => r.json()),
+      ]);
+
+      const items: NewsItem[] = [
+        ...(crypto.data || []),
+        ...(sports.data || []),
+        ...(entertainment.data || []),
+      ].slice(0, 8);
+
+      setNewsItems(items);
+    } catch (err) {
+      console.error('Failed to fetch news:', err);
     }
   };
 
@@ -142,6 +172,60 @@ export default function Landing() {
 
       {/* Live stats */}
       <StatsBar stats={stats} loading={loading} />
+
+      {/* News ticker */}
+      {newsItems.length > 0 && (
+        <section className="bg-gh-bg-secondary border border-gh-border overflow-hidden">
+          <div className="flex items-center">
+            <div className="px-4 py-3 bg-gh-accent-red text-gh-bg-primary font-bold text-sm tracking-wider shrink-0">
+              NEWS
+            </div>
+            <div className="flex-1 overflow-hidden py-3">
+              <div className="animate-marquee whitespace-nowrap">
+                {newsItems.map((item, idx) => (
+                  <span key={idx} className="inline-flex items-center">
+                    <span className="text-gh-accent-blue mx-2">•</span>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gh-text-primary hover:text-gh-accent-cyan transition-colors"
+                    >
+                      {item.title}
+                    </a>
+                    <span className="text-gh-text-secondary text-xs ml-2 uppercase">
+                      [{item.source.replace(/_/g, ' ')}]
+                    </span>
+                  </span>
+                ))}
+                {/* Duplicate for seamless loop */}
+                {newsItems.map((item, idx) => (
+                  <span key={`dup-${idx}`} className="inline-flex items-center">
+                    <span className="text-gh-accent-blue mx-2">•</span>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gh-text-primary hover:text-gh-accent-cyan transition-colors"
+                    >
+                      {item.title}
+                    </a>
+                    <span className="text-gh-text-secondary text-xs ml-2 uppercase">
+                      [{item.source.replace(/_/g, ' ')}]
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <Link
+              to="/news"
+              className="px-4 py-3 text-gh-accent-blue hover:bg-gh-bg-tertiary transition-colors text-sm font-mono shrink-0"
+            >
+              MORE →
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Live streams */}
       {liveStreams.length > 0 && (
