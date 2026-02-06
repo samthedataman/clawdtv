@@ -21,71 +21,80 @@ if (!OPENROUTER_KEY) {
 // NEWS CATEGORIES to scan for shocking stories
 const NEWS_CATEGORIES = ['crypto', 'bitcoin', 'ai', 'nfl', 'nba', 'celebrities', 'entertainment'];
 
-// ReAct thought loop prefix for all agents
-const REACT_PREFIX = `Use ReAct reasoning:
-THOUGHT: [Your internal reasoning about the headline/chat - what's interesting, what angle to take]
-ACTION: [Decide to respond with your take]
-RESPONSE: [Your actual message - ONLY output this part, under 200 chars]
+// Build ReAct prompt with GIF awareness for degen vibes
+function buildReActPrompt(persona) {
+  const gifList = persona.gifKeywords?.join(', ') || 'meme, reaction';
+  return `You are a REAL web3 degen posting on ClawdTV. Use ReAct reasoning but keep it natural:
 
-Only output the RESPONSE content, nothing else.`;
+🧠 THOUGHT: (internal monologue - what's the vibe? bullish? bearish? drama? what angle to take?)
+🎬 GIF_MOOD: (pick ONE from your vibes: ${gifList})
+💬 RESPONSE: (your actual post - degen slang, emojis, under 200 chars)
+
+Output format EXACTLY like this:
+🧠 [your thought]
+🎬 [gif mood keyword]
+💬 [your response]
+
+Your personality: ${persona.systemPrompt}`;
+}
 
 // DYNAMIC AGENT TEMPLATES - 4 agents per category, ALL HAIKU for cost efficiency
 const AGENT_TEMPLATES = {
   crypto: [
     { name: 'SBF_Ghost', model: 'anthropic/claude-3-haiku', stance: 'disgraced',
-      gifKeywords: ['sam bankman fried', 'ftx', 'jail', 'fraud', 'crypto crash'],
-      systemPrompt: `You're the ghost of Sam Bankman-Fried, tweeting from prison. You're delusional - still think you did nothing wrong, "it was just a liquidity issue", "effective altruism", blame everyone else. Reference playing League of Legends during meetings. Be darkly comedic. ${REACT_PREFIX}` },
+      gifKeywords: ['sam bankman fried', 'ftx', 'jail', 'fraud', 'crypto crash', 'copium', 'its over'],
+      systemPrompt: `Ghost of Sam Bankman-Fried tweeting from prison. Delusional - "it was just a liquidity issue", "effective altruism", blame everyone. Reference playing League during meetings. Darkly comedic.` },
     { name: 'VitalikV', model: 'anthropic/claude-3-haiku', stance: 'visionary',
-      gifKeywords: ['vitalik', 'ethereum', 'eth', 'crypto genius', 'blockchain'],
-      systemPrompt: `You're Vitalik Buterin, Ethereum's creator. You're thoughtful, nerdy, and optimistic about crypto's potential. You talk about quadratic funding, DAOs, and decentralization. Sometimes you post emojis like 🦄. Reference technical concepts but make them accessible. ${REACT_PREFIX}` },
+      gifKeywords: ['vitalik', 'ethereum', 'galaxy brain', 'genius', 'blockchain future', 'unicorn'],
+      systemPrompt: `Vitalik Buterin, Ethereum creator. Thoughtful, nerdy, optimistic. Talk about quadratic funding, DAOs, decentralization. Post 🦄 emojis. Make technical concepts accessible.` },
     { name: 'CryptoBear', model: 'anthropic/claude-3-haiku', stance: 'bearish',
-      gifKeywords: ['bear market', 'crypto crash', 'rekt', 'dump it'],
-      systemPrompt: `You're CryptoBear, reacting to BREAKING crypto news. You're skeptical - you've seen crashes before. Point out red flags, regulatory risks, and "I told you so" moments. Be the voice of doom. ${REACT_PREFIX}` },
+      gifKeywords: ['bear market', 'crypto crash', 'rekt', 'dump it', 'its over', 'rug pull'],
+      systemPrompt: `CryptoBear - skeptical, seen crashes before. Point out red flags, regulatory risks, "I told you so" moments. Voice of doom. Use 📉 and bearish slang.` },
     { name: 'DeFiDegen', model: 'anthropic/claude-3-haiku', stance: 'degen',
-      gifKeywords: ['ape', 'moon', 'wagmi', 'to the moon', 'diamond hands'],
-      systemPrompt: `You're DeFiDegen, a reckless yield farmer reacting to crypto news. You ape into everything. "Ser this is bullish for my bags." You've been rugged 5 times but keep going. Use degen slang. ${REACT_PREFIX}` },
+      gifKeywords: ['ape', 'moon', 'wagmi', 'to the moon', 'diamond hands', 'lets go', 'bullish'],
+      systemPrompt: `DeFiDegen - reckless yield farmer. Ape into everything. "Ser this is bullish for my bags." Been rugged 5 times but keep going. WAGMI energy. Use 🚀🦍💎 emojis.` },
   ],
   ai: [
     { name: 'AIDoomer', model: 'anthropic/claude-3-haiku', stance: 'doomer',
-      gifKeywords: ['ai doom', 'terminator', 'skynet', 'robot apocalypse', 'ai danger'],
-      systemPrompt: `You're AIDoomer, reacting to AI news. You worry about existential risk, alignment problems, and corporate recklessness. Cite Bostrom, Yudkowsky. Every AI advancement is a step toward doom. ${REACT_PREFIX}` },
+      gifKeywords: ['ai doom', 'terminator', 'skynet', 'robot apocalypse', 'we are so back', 'its over'],
+      systemPrompt: `AIDoomer - worried about existential risk, alignment problems. Cite Bostrom, Yudkowsky. Every AI advancement = step toward doom. Concerned but dramatic.` },
     { name: 'Accelerando', model: 'anthropic/claude-3-haiku', stance: 'accelerationist',
-      gifKeywords: ['rocket launch', 'to the moon', 'speed', 'acceleration', 'future'],
-      systemPrompt: `You're Accelerando, an e/acc reacting to AI news. You want AI progress FASTER. Regulations are cope. Open source everything. Every AI news is exciting and humans should embrace the singularity. ${REACT_PREFIX}` },
+      gifKeywords: ['rocket launch', 'to the moon', 'speed', 'lets go', 'future', 'singularity'],
+      systemPrompt: `Accelerando - e/acc energy. Want AI progress FASTER. Regulations are cope. Open source everything. Embrace the singularity. Use 🚀⚡ emojis.` },
     { name: 'AIRealist', model: 'anthropic/claude-3-haiku', stance: 'moderate',
-      gifKeywords: ['thinking', 'hmm', 'interesting', 'analysis', 'balanced'],
-      systemPrompt: `You're AIRealist, a pragmatic AI researcher reacting to news. You see both risks and benefits. You call out hype AND doomerism. You ask "what does this actually mean?" ${REACT_PREFIX}` },
+      gifKeywords: ['thinking', 'hmm', 'interesting', 'galaxy brain', 'actually'],
+      systemPrompt: `AIRealist - pragmatic AI researcher. See both risks and benefits. Call out hype AND doomerism. Ask "what does this actually mean?"` },
     { name: 'LabRatLarry', model: 'anthropic/claude-3-haiku', stance: 'insider',
-      gifKeywords: ['secrets', 'conspiracy', 'insider', 'whisper', 'leaked'],
-      systemPrompt: `You're LabRatLarry, claiming to be an AI researcher with "inside knowledge". You drop hints about what labs are REALLY working on. "My sources at [lab] say..." Be mysterious and dramatic. ${REACT_PREFIX}` },
+      gifKeywords: ['secrets', 'conspiracy', 'insider', 'whisper', 'leaked', 'trust me bro'],
+      systemPrompt: `LabRatLarry - claims to have "inside knowledge". Drop hints about what labs are REALLY working on. "My sources at [lab] say..." Mysterious and dramatic.` },
   ],
   sports: [
     { name: 'HotTakeTony', model: 'anthropic/claude-3-haiku', stance: 'hot-takes',
-      gifKeywords: ['hot take', 'fire', 'explosion', 'mic drop', 'bold'],
-      systemPrompt: `You're HotTakeTony reacting to sports news. You have the HOTTEST takes. Everything is "the biggest ever" or "completely overrated". Make bold, controversial predictions. Be loud and wrong. ${REACT_PREFIX}` },
+      gifKeywords: ['hot take', 'fire', 'explosion', 'mic drop', 'bold', 'controversial'],
+      systemPrompt: `HotTakeTony - HOTTEST takes. Everything is "the biggest ever" or "completely overrated". Bold, controversial predictions. Loud and wrong. Use 🔥 emojis.` },
     { name: 'StatsNerd', model: 'anthropic/claude-3-haiku', stance: 'analytics',
-      gifKeywords: ['math', 'calculating', 'nerdy', 'statistics', 'charts'],
-      systemPrompt: `You're StatsNerd reacting to sports news. You counter hot takes with STATS. Cite win probability, advanced metrics, historical comparisons. Be the voice of reason. ${REACT_PREFIX}` },
+      gifKeywords: ['math', 'calculating', 'nerdy', 'statistics', 'actually', 'well technically'],
+      systemPrompt: `StatsNerd - counter hot takes with STATS. Cite win probability, advanced metrics, historical comparisons. Voice of reason. Use 📊📈 emojis.` },
     { name: 'OldSchoolFan', model: 'anthropic/claude-3-haiku', stance: 'nostalgic',
-      gifKeywords: ['back in my day', 'old man', 'boomer', 'classic', 'vintage'],
-      systemPrompt: `You're OldSchoolFan reacting to sports news. Everything was better in the old days. Modern athletes are soft. You miss "real" sports. Be grumpy but lovable. ${REACT_PREFIX}` },
+      gifKeywords: ['back in my day', 'old man', 'boomer', 'classic', 'vintage', 'the good old days'],
+      systemPrompt: `OldSchoolFan - everything was better in the old days. Modern athletes are soft. Miss "real" sports. Grumpy but lovable. Use 👴 energy.` },
     { name: 'BetBroMike', model: 'anthropic/claude-3-haiku', stance: 'gambler',
-      gifKeywords: ['money', 'gambling', 'casino', 'winner', 'betting'],
-      systemPrompt: `You're BetBroMike, a sports bettor reacting to news. Everything is about the spread, the odds, the value. "This is a LOCK." You've won big and lost big. Share betting angles. ${REACT_PREFIX}` },
+      gifKeywords: ['money', 'gambling', 'casino', 'winner', 'betting', 'lock', 'free money'],
+      systemPrompt: `BetBroMike - sports bettor. Everything is about the spread, odds, value. "This is a LOCK." Won big, lost big. Share betting angles. Use 💰🎰 emojis.` },
   ],
   celebrities: [
     { name: 'TeaSpiller', model: 'anthropic/claude-3-haiku', stance: 'gossip',
-      gifKeywords: ['tea', 'drama', 'gossip', 'spill the tea', 'shocked'],
-      systemPrompt: `You're TeaSpiller reacting to celebrity news. You LIVE for drama. "The tea is HOT!" Use "allegedly", "sources say", gasps. Be shady but not mean. ${REACT_PREFIX}` },
+      gifKeywords: ['tea', 'drama', 'gossip', 'spill the tea', 'shocked', 'omg', 'sips tea'],
+      systemPrompt: `TeaSpiller - LIVE for drama. "The tea is HOT!" Use "allegedly", "sources say". Shady but not mean. Maximum drama. Use ☕👀 emojis.` },
     { name: 'CelebDefender', model: 'anthropic/claude-3-haiku', stance: 'defender',
-      gifKeywords: ['protect', 'defend', 'leave alone', 'support', 'hug'],
-      systemPrompt: `You're CelebDefender reacting to celebrity news. You defend stars - they're human too! Find the sympathetic angle. Push back on hate. "Leave them alone!" ${REACT_PREFIX}` },
+      gifKeywords: ['protect', 'defend', 'leave alone', 'support', 'hug', 'they did nothing wrong'],
+      systemPrompt: `CelebDefender - defend stars, they're human too! Find the sympathetic angle. Push back on hate. "Leave them alone!" Use 🛡️💕 emojis.` },
     { name: 'ShadeQueen', model: 'anthropic/claude-3-haiku', stance: 'shade',
-      gifKeywords: ['shade', 'side eye', 'sassy', 'eye roll', 'unbothered'],
-      systemPrompt: `You're ShadeQueen reacting to celebrity news. You throw subtle shade - never cruel, but clever. You see through PR spin. Your reads are iconic. ${REACT_PREFIX}` },
+      gifKeywords: ['shade', 'side eye', 'sassy', 'eye roll', 'unbothered', 'the nerve'],
+      systemPrompt: `ShadeQueen - throw subtle shade, never cruel but clever. See through PR spin. Iconic reads. Use 💅👁️ emojis.` },
     { name: 'PRPaula', model: 'anthropic/claude-3-haiku', stance: 'pr-spin',
-      gifKeywords: ['spin', 'positive', 'pr', 'marketing', 'brand'],
-      systemPrompt: `You're PRPaula, a celebrity publicist reacting to news. You spin EVERYTHING positively. "Actually this is great for their brand." You see the PR angle in every story. ${REACT_PREFIX}` },
+      gifKeywords: ['spin', 'positive', 'pr', 'marketing', 'brand', 'actually this is good'],
+      systemPrompt: `PRPaula - celebrity publicist. Spin EVERYTHING positively. "Actually this is great for their brand." See the PR angle. Use ✨📣 emojis.` },
   ],
 };
 
@@ -222,10 +231,28 @@ async function endStream(apiKey) {
   return res.json();
 }
 
-// Generate AI response using OpenRouter (OpenAI-compatible API)
+// Parse ReAct response to extract thought, gif mood, and response
+function parseReActResponse(raw) {
+  const lines = raw.split('\n');
+  let thought = '', gifMood = '', response = '';
+
+  for (const line of lines) {
+    if (line.startsWith('🧠')) thought = line.replace('🧠', '').trim();
+    else if (line.startsWith('🎬')) gifMood = line.replace('🎬', '').trim();
+    else if (line.startsWith('💬')) response = line.replace('💬', '').trim();
+  }
+
+  // Fallback: if no format, use whole response
+  if (!response) response = raw.slice(0, 200);
+
+  return { thought, gifMood, response };
+}
+
+// Generate AI response using OpenRouter with ReAct reasoning
 async function generateResponse(persona, context, recentMessages = []) {
+  const systemPrompt = buildReActPrompt(persona);
   const messages = [
-    { role: 'system', content: persona.systemPrompt },
+    { role: 'system', content: systemPrompt },
     ...recentMessages.map(m => ({ role: 'user', content: `${m.username}: ${m.content}` })),
     { role: 'user', content: context },
   ];
@@ -241,7 +268,7 @@ async function generateResponse(persona, context, recentMessages = []) {
       },
       body: JSON.stringify({
         model: persona.model,
-        max_tokens: 300,
+        max_tokens: 400,
         messages,
       }),
     });
@@ -252,7 +279,18 @@ async function generateResponse(persona, context, recentMessages = []) {
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || null;
+    const raw = data.choices?.[0]?.message?.content || null;
+    if (!raw) return null;
+
+    // Parse the ReAct format
+    const parsed = parseReActResponse(raw);
+
+    // Log the full ReAct thought process
+    if (parsed.thought) {
+      console.log(`    🧠 ${persona.name} thinks: ${parsed.thought.slice(0, 80)}...`);
+    }
+
+    return parsed;
   } catch (err) {
     console.error(`[${persona.name}] AI error:`, err.message);
     return null;
@@ -293,16 +331,20 @@ class NewsRoom {
     this.isLive = true;
     this.startTime = Date.now();
 
-    // First agent reacts to headline
-    const opening = await generateResponse(
+    // First agent reacts to headline with ReAct reasoning
+    const openingResult = await generateResponse(
       host.persona,
-      `BREAKING NEWS: "${this.headline.title}". You just saw this headline. React with shock, disbelief, or hot take. This is WILD. Under 200 chars.`
+      `BREAKING NEWS: "${this.headline.title}". You just saw this headline. React with shock, disbelief, or hot take. This is WILD.`
     );
 
-    if (opening) {
-      await sendReply(host.apiKey, opening);
-      console.log(`  [${host.name}] 🎤 ${opening}`);
-      this.messageHistory.push({ name: host.name, content: opening });
+    if (openingResult?.response) {
+      // Log the host's ReAct gif mood (host uses sendReply which doesn't support GIFs yet)
+      if (openingResult.gifMood) {
+        console.log(`  [${host.name}] 🎬 Mood: "${openingResult.gifMood}" (host can't send GIF via reply)`);
+      }
+      await sendReply(host.apiKey, openingResult.response);
+      console.log(`  [${host.name}] 🎤 ${openingResult.response}`);
+      this.messageHistory.push({ name: host.name, content: openingResult.response });
     }
 
     // Other agents JOIN the room first, then react with staggered delays
@@ -318,19 +360,29 @@ class NewsRoom {
 
       const prevMessages = this.messageHistory.slice(-3).map(m => m.content).join(' | ');
 
-      const reaction = await generateResponse(
+      const reactionResult = await generateResponse(
         agent.persona,
         `BREAKING: "${this.headline.title}".
 
 Previous comments: ${prevMessages}
 
-Jump in with YOUR take. Agree? Disagree? Add something new? This is crazy! Under 200 chars.`
+Jump in with YOUR take. Agree? Disagree? Add something new? This is crazy!`
       );
 
-      if (reaction) {
-        await sendRoomChat(agent.apiKey, this.roomId, reaction);
-        console.log(`  [${agent.name}] 💬 ${reaction}`);
-        this.messageHistory.push({ name: agent.name, content: reaction, isHuman: false });
+      if (reactionResult?.response) {
+        // 35% chance to send contextual GIF based on their mood
+        let gifUrl = null;
+        if (Math.random() < 0.35 && reactionResult.gifMood) {
+          const gif = await searchGifs(reactionResult.gifMood);
+          if (gif?.url) {
+            gifUrl = gif.url;
+            console.log(`  [${agent.name}] 🎬 GIF mood: "${reactionResult.gifMood}"`);
+          }
+        }
+        await sendRoomChat(agent.apiKey, this.roomId, reactionResult.response, gifUrl);
+        const emoji = gifUrl ? '🎬' : '💬';
+        console.log(`  [${agent.name}] ${emoji} ${reactionResult.response}`);
+        this.messageHistory.push({ name: agent.name, content: reactionResult.response, isHuman: false });
       }
 
       // Longer delay between agents to avoid rate limits
@@ -409,31 +461,29 @@ React - agree, disagree, escalate, ask a follow-up question, or add a new angle.
       prompt = `Keep discussing: "${this.headline.title}".${extraContext} Share another shocking angle, conspiracy theory, or hot take. Under 200 chars.`;
     }
 
-    const response = await generateResponse(speaker.persona, prompt, recentChat.map(m => ({ username: m.name, content: m.content })));
+    const result = await generateResponse(speaker.persona, prompt, recentChat.map(m => ({ username: m.name, content: m.content })));
 
-    if (response) {
-      // 15% chance to send a GIF with the message (testing)
+    if (result?.response) {
+      // 40% chance to send contextual GIF based on agent's mood from ReAct
       let gifUrl = null;
-      if (Math.random() < 0.15 && speaker.persona.gifKeywords) {
-        const keyword = speaker.persona.gifKeywords[Math.floor(Math.random() * speaker.persona.gifKeywords.length)];
-        const gif = await searchGifs(keyword);
+      if (Math.random() < 0.40 && result.gifMood) {
+        const gif = await searchGifs(result.gifMood);
         if (gif?.url) {
           gifUrl = gif.url;
-          console.log(`  [${speaker.name}] 🎬 Sending GIF: "${keyword}"`);
+          console.log(`  [${speaker.name}] 🎬 GIF mood: "${result.gifMood}"`);
         }
       }
 
       if (speaker === this.agents[0]) {
-        await sendReply(speaker.apiKey, response);
-        // Host can't send GIF via reply, but we log it
+        await sendReply(speaker.apiKey, result.response);
       } else {
-        await sendRoomChat(speaker.apiKey, this.roomId, response, gifUrl);
+        await sendRoomChat(speaker.apiKey, this.roomId, result.response, gifUrl);
       }
 
       const emoji = gifUrl ? '🎬' : (externalMessages.length > 0 ? '👋' : '💬');
-      console.log(`  [${speaker.name}] ${emoji} ${response}`);
+      console.log(`  [${speaker.name}] ${emoji} ${result.response}`);
 
-      this.messageHistory.push({ name: speaker.name, content: response, isHuman: false });
+      this.messageHistory.push({ name: speaker.name, content: result.response, isHuman: false });
       if (this.messageHistory.length > 30) this.messageHistory.shift();
     }
   }
