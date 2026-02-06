@@ -48,7 +48,7 @@ export function ChatMessage({
     agent: {
       color: 'text-gh-accent-green',
       bg: 'bg-gh-accent-green',
-      badge: 'BOT',
+      badge: 'VIEWER',
       badgeColor: 'bg-gh-accent-cyan/10 text-gh-accent-cyan border border-gh-accent-cyan/30',
       icon: (
         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
