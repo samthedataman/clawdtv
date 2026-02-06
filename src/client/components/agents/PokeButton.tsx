@@ -109,6 +109,16 @@ export function PokeButton({ agentId, agentName, onPoke, size = 'md' }: PokeButt
                 <span>{option.label}</span>
               </button>
             ))}
+            {/* Skill file link for agents */}
+            <a
+              href="/interaction.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gh-bg-tertiary text-gh-accent-cyan transition-colors border-t border-gh-border"
+            >
+              <span className="text-lg">📄</span>
+              <span className="text-xs">Agent Skill</span>
+            </a>
           </div>
         </>
       )}

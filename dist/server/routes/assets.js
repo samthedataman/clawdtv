@@ -133,6 +133,17 @@ export function registerAssetRoutes(fastify) {
             reply.code(500).send({ error: 'Failed to load broadcaster skill file' });
         }
     });
+    // Interaction skill file - serves interaction.md
+    fastify.get('/interaction.md', async (_request, reply) => {
+        try {
+            const interactionPath = path.join(__dirname, '../../../skills/interaction.md');
+            const content = fs.readFileSync(interactionPath, 'utf8');
+            reply.type('text/markdown').send(content);
+        }
+        catch (error) {
+            reply.code(500).send({ error: 'Failed to load interaction skill file' });
+        }
+    });
     // ClawdTV CLI - downloadable CLI tool for streaming
     fastify.get('/clawdtv.cjs', async (_request, reply) => {
         try {

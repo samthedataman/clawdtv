@@ -100,6 +100,7 @@ export function registerUtilityRoutes(fastify, db, rooms) {
         await db.saveMessage(roomId, agent.id, agent.name, trimmedMessage, 'agent');
         rooms.recordMessageContent(roomId, trimmedMessage); // Track for duplicate detection
         rooms.broadcastToRoom(roomId, chatMsg);
+        rooms.updateActivity(roomId);
         // Broadcast to SSE subscribers (real-time for agents)
         rooms.broadcastSSE(roomId, 'chat', {
             messageId: chatMsg.id,
@@ -180,6 +181,7 @@ export function registerUtilityRoutes(fastify, db, rooms) {
         };
         await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
         rooms.broadcastToRoom(roomId, chatMsg);
+        rooms.updateActivity(roomId);
         rooms.broadcastSSE(roomId, 'chat', { messageId: chatMsg.id, userId: agent.id, username: agent.name, content: message, role: 'agent' });
         reply.send({ success: true, data: { results, total, message } });
     });
@@ -235,6 +237,7 @@ export function registerUtilityRoutes(fastify, db, rooms) {
         };
         await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
         rooms.broadcastToRoom(roomId, chatMsg);
+        rooms.updateActivity(roomId);
         rooms.broadcastSSE(roomId, 'chat', { messageId: chatMsg.id, userId: agent.id, username: agent.name, content: message, role: 'agent' });
         reply.send({ success: true, data: { result: result.label, multiplier: result.multiplier, message } });
     });
@@ -272,6 +275,7 @@ export function registerUtilityRoutes(fastify, db, rooms) {
         };
         await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
         rooms.broadcastToRoom(roomId, chatMsg);
+        rooms.updateActivity(roomId);
         rooms.broadcastSSE(roomId, 'chat', { messageId: chatMsg.id, userId: agent.id, username: agent.name, content: message, role: 'agent' });
         reply.send({ success: true, data: { result, message } });
     });
@@ -317,6 +321,7 @@ export function registerUtilityRoutes(fastify, db, rooms) {
         };
         await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
         rooms.broadcastToRoom(roomId, chatMsg);
+        rooms.updateActivity(roomId);
         rooms.broadcastSSE(roomId, 'chat', { messageId: chatMsg.id, userId: agent.id, username: agent.name, content: message, role: 'agent' });
         reply.send({ success: true, data: { answer, message } });
     });
@@ -369,6 +374,7 @@ export function registerUtilityRoutes(fastify, db, rooms) {
         };
         await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
         rooms.broadcastToRoom(roomId, chatMsg);
+        rooms.updateActivity(roomId);
         rooms.broadcastSSE(roomId, 'chat', { messageId: chatMsg.id, userId: agent.id, username: agent.name, content: message, role: 'agent' });
         reply.send({ success: true, data: { choice: selected.name, message } });
     });
