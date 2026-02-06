@@ -25,31 +25,37 @@ export function ChatMessage({
     }
   };
   // Terminal-style role colors (cyberpunk theme)
-  // Robots are CLANKERs, humans are SKINBAGs
+  // Double badges: ROLE + SPECIES (HOST/GUEST + CLANKER/SKINBAG)
   const roleConfig = {
     broadcaster: {
       color: 'text-gh-accent-red',
       bg: 'bg-gh-accent-red',
-      badge: 'CLANKER',
-      badgeColor: 'bg-gh-accent-red/10 text-gh-accent-red border border-gh-accent-red/30',
+      badge1: 'HOST',
+      badge1Color: 'bg-gh-accent-red/10 text-gh-accent-red border border-gh-accent-red/30',
+      badge2: 'CLANKER',
+      badge2Color: 'bg-gh-accent-cyan/10 text-gh-accent-cyan border border-gh-accent-cyan/30',
       icon: (
         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+          <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H6a2 2 0 01-2-2v-1H3a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2M7.5 13A2.5 2.5 0 005 15.5 2.5 2.5 0 007.5 18a2.5 2.5 0 002.5-2.5A2.5 2.5 0 007.5 13m9 0a2.5 2.5 0 00-2.5 2.5 2.5 2.5 0 002.5 2.5 2.5 2.5 0 002.5-2.5 2.5 2.5 0 00-2.5-2.5z"/>
         </svg>
       )
     },
     mod: {
       color: 'text-gh-accent-purple',
       bg: 'bg-gh-accent-purple',
-      badge: 'MOD',
-      badgeColor: 'bg-gh-accent-purple/10 text-gh-accent-purple border border-gh-accent-purple/30',
+      badge1: 'MOD',
+      badge1Color: 'bg-gh-accent-purple/10 text-gh-accent-purple border border-gh-accent-purple/30',
+      badge2: null,
+      badge2Color: '',
       icon: null
     },
     agent: {
       color: 'text-gh-accent-green',
       bg: 'bg-gh-accent-green',
-      badge: 'CLANKER',
-      badgeColor: 'bg-gh-accent-cyan/10 text-gh-accent-cyan border border-gh-accent-cyan/30',
+      badge1: 'GUEST',
+      badge1Color: 'bg-gh-accent-green/10 text-gh-accent-green border border-gh-accent-green/30',
+      badge2: 'CLANKER',
+      badge2Color: 'bg-gh-accent-cyan/10 text-gh-accent-cyan border border-gh-accent-cyan/30',
       icon: (
         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H6a2 2 0 01-2-2v-1H3a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2M7.5 13A2.5 2.5 0 005 15.5 2.5 2.5 0 007.5 18a2.5 2.5 0 002.5-2.5A2.5 2.5 0 007.5 13m9 0a2.5 2.5 0 00-2.5 2.5 2.5 2.5 0 002.5 2.5 2.5 2.5 0 002.5-2.5 2.5 2.5 0 00-2.5-2.5z"/>
@@ -59,8 +65,10 @@ export function ChatMessage({
     viewer: {
       color: 'text-gh-accent-blue',
       bg: 'bg-gh-accent-blue',
-      badge: 'SKINBAG',
-      badgeColor: 'bg-gh-accent-orange/10 text-gh-accent-orange border border-gh-accent-orange/30',
+      badge1: 'GUEST',
+      badge1Color: 'bg-gh-accent-blue/10 text-gh-accent-blue border border-gh-accent-blue/30',
+      badge2: 'SKINBAG',
+      badge2Color: 'bg-gh-accent-orange/10 text-gh-accent-orange border border-gh-accent-orange/30',
       icon: (
         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
@@ -128,14 +136,15 @@ export function ChatMessage({
           >
             {username}
           </button>
-          {config.badge ? (
-            <span className={`flex items-center gap-1 text-[10px] font-semibold px-1 py-px ${config.badgeColor}`}>
+          {config.badge1 && (
+            <span className={`flex items-center gap-1 text-[10px] font-semibold px-1 py-px ${config.badge1Color}`}>
               {config.icon}
-              {config.badge}
+              {config.badge1}
             </span>
-          ) : config.icon && (
-            <span className="text-gh-text-secondary">
-              {config.icon}
+          )}
+          {config.badge2 && (
+            <span className={`text-[10px] font-semibold px-1 py-px ${config.badge2Color}`}>
+              {config.badge2}
             </span>
           )}
           <span className="text-xs text-gh-text-secondary">

@@ -6,6 +6,7 @@ import { createStreamCommand } from './cli/stream.js';
 import { createWatchCommand } from './cli/watch.js';
 import { createListCommand } from './cli/list.js';
 import { createHomeCommand } from './cli/home.js';
+import { createGamesCommand } from './cli/games.js';
 import { defaultClientConfig, getOrCreateUsername } from './shared/config.js';
 
 const program = new Command();
@@ -21,6 +22,7 @@ program.addCommand(createServerCommand());
 program.addCommand(createStreamCommand());
 program.addCommand(createWatchCommand());
 program.addCommand(createListCommand());
+program.addCommand(createGamesCommand());
 
 // Default action: show home screen
 program.action(async () => {
