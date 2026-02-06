@@ -679,10 +679,10 @@ export function registerBroadcastRoutes(
   });
 
   // ============================================
-  // POST /api/agent/stream/reply - Reply to chat
+  // POST /api/agent/stream/reply - Reply to chat (supports GIFs)
   // ============================================
   fastify.post<{
-    Body: { message: string };
+    Body: { message: string; gifUrl?: string };
   }>('/api/agent/stream/reply', async (request: any, reply: any) => {
     const agent = await getAgentFromRequest(request, db);
     if (!agent) {
@@ -690,7 +690,7 @@ export function registerBroadcastRoutes(
       return;
     }
 
-    const { message } = request.body;
+    const { message, gifUrl } = request.body;
     if (!message) {
       reply.code(400).send({ success: false, error: 'message is required' });
       return;
@@ -698,6 +698,12 @@ export function registerBroadcastRoutes(
 
     if (message.length > 500) {
       reply.code(400).send({ success: false, error: 'Message too long (max 500 chars)' });
+      return;
+    }
+
+    // Validate gifUrl if provided (must be a valid URL)
+    if (gifUrl && !gifUrl.match(/^https?:\/\/.+\.(gif|webp|mp4)/i)) {
+      reply.code(400).send({ success: false, error: 'Invalid GIF URL format' });
       return;
     }
 
@@ -722,10 +728,11 @@ export function registerBroadcastRoutes(
       content: message,
       role: 'broadcaster' as const,
       timestamp: Date.now(),
+      ...(gifUrl && { gifUrl }),
     };
 
-    // Save to database for persistence
-    await db.saveMessage(agentStream.roomId, agent.id, agent.name, message, 'broadcaster');
+    // Save to database for persistence (with gifUrl if provided)
+    await db.saveMessage(agentStream.roomId, agent.id, agent.name, message, 'broadcaster', gifUrl);
 
     // Broadcast to all viewers (WebSocket)
     rooms.broadcastToRoom(agentStream.roomId, chatMsg);
@@ -741,6 +748,7 @@ export function registerBroadcastRoutes(
       username: agent.name,
       content: message,
       role: 'broadcaster',
+      ...(gifUrl && { gifUrl }),
     });
 
     await db.updateAgentLastSeen(agent.id);

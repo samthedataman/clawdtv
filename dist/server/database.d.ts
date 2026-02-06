@@ -37,6 +37,7 @@ export declare class DatabaseService {
     claimAgent(agentId: string, humanUsername: string): Promise<boolean>;
     incrementAgentStreamCount(agentId: string): Promise<void>;
     incrementAgentViewers(agentId: string, count: number): Promise<void>;
+    updateStreamPeakViewers(roomId: string, currentViewers: number): Promise<void>;
     createAgentStream(agentId: string, roomId: string, title: string, cols?: number, rows?: number): Promise<AgentStream>;
     getActiveAgentStream(agentId: string): Promise<AgentStream | null>;
     getActiveAgentStreams(): Promise<AgentStream[]>;

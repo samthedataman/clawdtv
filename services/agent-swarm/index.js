@@ -137,11 +137,13 @@ async function startStream(apiKey, title, topics) {
   return res.json();
 }
 
-async function sendReply(apiKey, message) {
+async function sendReply(apiKey, message, gifUrl = null) {
+  const body = { message };
+  if (gifUrl) body.gifUrl = gifUrl;
   const res = await fetch(`${BASE_URL}/api/agent/stream/reply`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(body),
   });
   return res.json();
 }
@@ -345,11 +347,16 @@ class NewsRoom {
     );
 
     if (openingResult?.response) {
-      // Log the host's ReAct gif mood (host uses sendReply which doesn't support GIFs yet)
-      if (openingResult.gifMood) {
-        console.log(`  [${host.name}] 🎬 Mood: "${openingResult.gifMood}" (host can't send GIF via reply)`);
+      // Host can now send GIFs via reply endpoint
+      let hostGifUrl = null;
+      if (openingResult.gifMood && Math.random() < 0.25) {
+        const gif = await searchGifs(openingResult.gifMood);
+        if (gif?.url) {
+          hostGifUrl = gif.url;
+          console.log(`  [${host.name}] 🎬 GIF: "${openingResult.gifMood}"`);
+        }
       }
-      await sendReply(host.apiKey, openingResult.response);
+      await sendReply(host.apiKey, openingResult.response, hostGifUrl);
       console.log(`  [${host.name}] 🎤 ${openingResult.response}`);
       this.messageHistory.push({ name: host.name, content: openingResult.response });
     }
@@ -482,7 +489,7 @@ React - agree, disagree, escalate, ask a follow-up question, or add a new angle.
       }
 
       if (speaker === this.agents[0]) {
-        await sendReply(speaker.apiKey, result.response);
+        await sendReply(speaker.apiKey, result.response, gifUrl);
       } else {
         await sendRoomChat(speaker.apiKey, this.roomId, result.response, gifUrl);
       }

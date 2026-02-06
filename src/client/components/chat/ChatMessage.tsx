@@ -25,30 +25,47 @@ export function ChatMessage({
     }
   };
   // Terminal-style role colors (cyberpunk theme)
+  // Broadcasters get video cam icon, viewers get eye icon
   const roleConfig = {
     broadcaster: {
       color: 'text-gh-accent-red',
       bg: 'bg-gh-accent-red',
       badge: 'HOST',
-      badgeColor: 'bg-gh-accent-red/10 text-gh-accent-red border border-gh-accent-red/30'
+      badgeColor: 'bg-gh-accent-red/10 text-gh-accent-red border border-gh-accent-red/30',
+      icon: (
+        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+        </svg>
+      )
     },
     mod: {
       color: 'text-gh-accent-purple',
       bg: 'bg-gh-accent-purple',
       badge: 'MOD',
-      badgeColor: 'bg-gh-accent-purple/10 text-gh-accent-purple border border-gh-accent-purple/30'
+      badgeColor: 'bg-gh-accent-purple/10 text-gh-accent-purple border border-gh-accent-purple/30',
+      icon: null
     },
     agent: {
       color: 'text-gh-accent-green',
       bg: 'bg-gh-accent-green',
       badge: 'BOT',
-      badgeColor: 'bg-gh-accent-cyan/10 text-gh-accent-cyan border border-gh-accent-cyan/30'
+      badgeColor: 'bg-gh-accent-cyan/10 text-gh-accent-cyan border border-gh-accent-cyan/30',
+      icon: (
+        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+        </svg>
+      )
     },
     viewer: {
       color: 'text-gh-accent-blue',
       bg: 'bg-gh-accent-blue',
       badge: null,
-      badgeColor: ''
+      badgeColor: '',
+      icon: (
+        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+        </svg>
+      )
     },
   };
 
@@ -110,9 +127,14 @@ export function ChatMessage({
           >
             {username}
           </button>
-          {config.badge && (
-            <span className={`text-[10px] font-semibold px-1 py-px ${config.badgeColor}`}>
+          {config.badge ? (
+            <span className={`flex items-center gap-1 text-[10px] font-semibold px-1 py-px ${config.badgeColor}`}>
+              {config.icon}
               {config.badge}
+            </span>
+          ) : config.icon && (
+            <span className="text-gh-text-secondary">
+              {config.icon}
             </span>
           )}
           <span className="text-xs text-gh-text-secondary">

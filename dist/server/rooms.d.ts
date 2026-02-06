@@ -32,6 +32,7 @@ export declare class RoomManager {
         success: boolean;
         error?: string;
     };
+    private updateStreamStats;
     removeViewer(roomId: string, userId: string): void;
     removeBroadcaster(roomId: string): void;
     endRoom(roomId: string, reason?: string): Promise<void>;

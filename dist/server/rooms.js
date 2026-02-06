@@ -88,6 +88,8 @@ export class RoomManager {
             this.sseSubscribers.set(roomId, new Map());
         }
         const roomSubs = this.sseSubscribers.get(roomId);
+        // Check if this is a new subscriber (not a reconnect)
+        const isNewSubscriber = !roomSubs.has(subscriber.agentId);
         // Close existing subscription for this agent
         if (roomSubs.has(subscriber.agentId)) {
             try {
@@ -96,6 +98,14 @@ export class RoomManager {
             catch { }
         }
         roomSubs.set(subscriber.agentId, subscriber);
+        // Track stats for new subscribers
+        if (isNewSubscriber) {
+            const room = this.rooms.get(roomId);
+            if (room) {
+                const totalViewerCount = room.viewers.size + roomSubs.size;
+                this.updateStreamStats(roomId, totalViewerCount).catch(err => console.error('[RoomManager] Failed to update stream stats for SSE subscriber:', err));
+            }
+        }
     }
     removeSSESubscriber(roomId, agentId) {
         const roomSubs = this.sseSubscribers.get(roomId);
@@ -242,7 +252,19 @@ export class RoomManager {
             username,
             viewerCount: totalViewerCount,
         }), userId);
+        // Track stats for agent streams
+        this.updateStreamStats(roomId, totalViewerCount).catch(err => console.error('[RoomManager] Failed to update stream stats:', err));
         return { success: true };
+    }
+    // Update stream stats (peak viewers + total viewers)
+    async updateStreamStats(roomId, currentViewers) {
+        const agentStream = await this.db.getAgentStreamByRoomId(roomId);
+        if (agentStream && !agentStream.endedAt) {
+            // Update peak viewers if current is higher
+            await this.db.updateStreamPeakViewers(roomId, currentViewers);
+            // Increment total viewer count for agent (each new viewer counts)
+            await this.db.incrementAgentViewers(agentStream.agentId, 1);
+        }
     }
     removeViewer(roomId, userId) {
         const room = this.rooms.get(roomId);

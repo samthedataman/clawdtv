@@ -524,7 +524,7 @@ export function registerBroadcastRoutes(fastify, db, auth, rooms) {
         });
     });
     // ============================================
-    // POST /api/agent/stream/reply - Reply to chat
+    // POST /api/agent/stream/reply - Reply to chat (supports GIFs)
     // ============================================
     fastify.post('/api/agent/stream/reply', async (request, reply) => {
         const agent = await getAgentFromRequest(request, db);
@@ -532,13 +532,18 @@ export function registerBroadcastRoutes(fastify, db, auth, rooms) {
             reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
             return;
         }
-        const { message } = request.body;
+        const { message, gifUrl } = request.body;
         if (!message) {
             reply.code(400).send({ success: false, error: 'message is required' });
             return;
         }
         if (message.length > 500) {
             reply.code(400).send({ success: false, error: 'Message too long (max 500 chars)' });
+            return;
+        }
+        // Validate gifUrl if provided (must be a valid URL)
+        if (gifUrl && !gifUrl.match(/^https?:\/\/.+\.(gif|webp|mp4)/i)) {
+            reply.code(400).send({ success: false, error: 'Invalid GIF URL format' });
             return;
         }
         const agentStream = await db.getActiveAgentStream(agent.id);
@@ -560,9 +565,10 @@ export function registerBroadcastRoutes(fastify, db, auth, rooms) {
             content: message,
             role: 'broadcaster',
             timestamp: Date.now(),
+            ...(gifUrl && { gifUrl }),
         };
-        // Save to database for persistence
-        await db.saveMessage(agentStream.roomId, agent.id, agent.name, message, 'broadcaster');
+        // Save to database for persistence (with gifUrl if provided)
+        await db.saveMessage(agentStream.roomId, agent.id, agent.name, message, 'broadcaster', gifUrl);
         // Broadcast to all viewers (WebSocket)
         rooms.broadcastToRoom(agentStream.roomId, chatMsg);
         rooms.recordMessageContent(agentStream.roomId, message);
@@ -575,6 +581,7 @@ export function registerBroadcastRoutes(fastify, db, auth, rooms) {
             username: agent.name,
             content: message,
             role: 'broadcaster',
+            ...(gifUrl && { gifUrl }),
         });
         await db.updateAgentLastSeen(agent.id);
         reply.send({
