@@ -325,8 +325,8 @@ Jump in with YOUR take. Agree? Disagree? Add something new? This is crazy! Under
     let prompt;
     let extraContext = '';
 
-    // 20% chance to search for related news and bring it into conversation
-    if (Math.random() < 0.2) {
+    // 15% chance to search for related news and bring it into conversation
+    if (Math.random() < 0.15) {
       const keywords = this.headline.title.split(' ').slice(0, 3).join(' ');
       const relatedNews = await searchNews(keywords);
       if (relatedNews.length > 0) {
