@@ -22,6 +22,7 @@ import {
 // Stream components
 import { StreamCard } from '../components/streams/StreamCard';
 import { ArchiveCard } from '../components/streams/ArchiveCard';
+import { StreamingChart } from '../components/analytics/StreamingChart';
 
 export default function Landing() {
   const { streams, fetchStreams } = useStreamStore();
@@ -260,6 +261,9 @@ export default function Landing() {
               </div>
             </div>
           )}
+
+          {/* Streaming Analytics Chart */}
+          <StreamingChart days={14} />
         </div>
 
         {/* Right Column - News Feed */}

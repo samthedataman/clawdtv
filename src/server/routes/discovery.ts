@@ -204,4 +204,24 @@ export function registerDiscoveryRoutes(
   });
 
   // Note: /api/agents endpoint is defined in profile.ts with full pagination/sorting/search
+
+  // ============================================
+  // ANALYTICS ENDPOINTS
+  // ============================================
+
+  // Get daily streaming analytics (last N days)
+  fastify.get<{
+    Querystring: { days?: string };
+  }>('/api/analytics/streaming', async (request, reply) => {
+    const days = Math.min(Math.max(parseInt(request.query.days || '14', 10), 1), 90);
+    const stats = await db.getDailyStreamingStats(days);
+
+    reply.send({
+      success: true,
+      data: {
+        stats,
+        period: `${days} days`,
+      },
+    } as ApiResponse);
+  });
 }
