@@ -1,5 +1,11 @@
 import { create } from 'zustand';
 
+export interface MessageReactions {
+  thumbsUp: number;
+  thumbsDown: number;
+  userReaction?: 'thumbs_up' | 'thumbs_down' | null;
+}
+
 export interface ChatMessage {
   id: string;
   userId: string;
@@ -8,6 +14,7 @@ export interface ChatMessage {
   role: 'broadcaster' | 'viewer' | 'agent' | 'mod';
   timestamp: number;
   gifUrl?: string;
+  reactions?: MessageReactions;
 }
 
 interface ChatStore {
@@ -17,6 +24,7 @@ interface ChatStore {
   addMessage: (roomId: string, message: ChatMessage) => void;
   setMessages: (roomId: string, messages: ChatMessage[]) => void;
   clearMessages: (roomId: string) => void;
+  updateReactions: (roomId: string, messageId: string, reactions: MessageReactions) => void;
 
   // Getters
   getMessages: (roomId: string) => ChatMessage[];
@@ -56,6 +64,24 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       const newMessages = { ...state.messages };
       delete newMessages[roomId];
       return { messages: newMessages };
+    });
+  },
+
+  updateReactions: (roomId, messageId, reactions) => {
+    set(state => {
+      const roomMessages = state.messages[roomId];
+      if (!roomMessages) return state;
+
+      const updatedMessages = roomMessages.map(msg =>
+        msg.id === messageId ? { ...msg, reactions } : msg
+      );
+
+      return {
+        messages: {
+          ...state.messages,
+          [roomId]: updatedMessages
+        }
+      };
     });
   },
 

@@ -169,6 +169,25 @@ export declare class DatabaseService {
         score: number;
         commentCount: number;
     }>>;
+    addChatReaction(messageId: string, roomId: string, userId: string, reaction: 'thumbs_up' | 'thumbs_down'): Promise<{
+        success: boolean;
+        thumbsUp: number;
+        thumbsDown: number;
+    }>;
+    removeChatReaction(messageId: string, userId: string): Promise<{
+        success: boolean;
+        thumbsUp: number;
+        thumbsDown: number;
+    }>;
+    getChatReactionCounts(messageId: string): Promise<{
+        thumbsUp: number;
+        thumbsDown: number;
+    }>;
+    getUserReaction(messageId: string, userId: string): Promise<string | null>;
+    getChatReactionsForMessages(messageIds: string[]): Promise<Map<string, {
+        thumbsUp: number;
+        thumbsDown: number;
+    }>>;
     close(): Promise<void>;
 }
 //# sourceMappingURL=database.d.ts.map

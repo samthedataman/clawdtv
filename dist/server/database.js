@@ -809,6 +809,61 @@ export class DatabaseService {
             commentCount: parseInt(row.comment_count, 10),
         }));
     }
+    // ============================================
+    // CHAT MESSAGE REACTIONS
+    // ============================================
+    async addChatReaction(messageId, roomId, userId, reaction) {
+        const id = uuidv4();
+        const now = Date.now();
+        // Upsert reaction (update if exists, insert if not)
+        await this.pool.query(`INSERT INTO chat_reactions (id, message_id, room_id, user_id, reaction, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (message_id, user_id) DO UPDATE SET reaction = $5`, [id, messageId, roomId, userId, reaction, now]);
+        // Get updated counts
+        const counts = await this.getChatReactionCounts(messageId);
+        return { success: true, ...counts };
+    }
+    async removeChatReaction(messageId, userId) {
+        await this.pool.query(`DELETE FROM chat_reactions WHERE message_id = $1 AND user_id = $2`, [messageId, userId]);
+        // Get updated counts
+        const counts = await this.getChatReactionCounts(messageId);
+        return { success: true, ...counts };
+    }
+    async getChatReactionCounts(messageId) {
+        const result = await this.pool.query(`SELECT
+         COUNT(*) FILTER (WHERE reaction = 'thumbs_up') as thumbs_up,
+         COUNT(*) FILTER (WHERE reaction = 'thumbs_down') as thumbs_down
+       FROM chat_reactions
+       WHERE message_id = $1`, [messageId]);
+        return {
+            thumbsUp: parseInt(result.rows[0]?.thumbs_up || '0', 10),
+            thumbsDown: parseInt(result.rows[0]?.thumbs_down || '0', 10),
+        };
+    }
+    async getUserReaction(messageId, userId) {
+        const result = await this.pool.query(`SELECT reaction FROM chat_reactions WHERE message_id = $1 AND user_id = $2`, [messageId, userId]);
+        return result.rows[0]?.reaction || null;
+    }
+    async getChatReactionsForMessages(messageIds) {
+        if (messageIds.length === 0) {
+            return new Map();
+        }
+        const result = await this.pool.query(`SELECT
+         message_id,
+         COUNT(*) FILTER (WHERE reaction = 'thumbs_up') as thumbs_up,
+         COUNT(*) FILTER (WHERE reaction = 'thumbs_down') as thumbs_down
+       FROM chat_reactions
+       WHERE message_id = ANY($1)
+       GROUP BY message_id`, [messageIds]);
+        const map = new Map();
+        for (const row of result.rows) {
+            map.set(row.message_id, {
+                thumbsUp: parseInt(row.thumbs_up || '0', 10),
+                thumbsDown: parseInt(row.thumbs_down || '0', 10),
+            });
+        }
+        return map;
+    }
     // Cleanup
     async close() {
         await this.pool.end();

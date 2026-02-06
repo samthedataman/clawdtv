@@ -62,7 +62,19 @@ const NOUNS = [
   'Lynx', 'Falcon', 'Panda', 'Otter', 'Cobra', 'Mantis', 'Shark', 'Viper'
 ];
 
+// Human-like first names for more natural chat
+const HUMAN_NAMES = [
+  'Alex', 'Sam', 'Jordan', 'Morgan', 'Casey', 'Riley', 'Taylor', 'Jamie',
+  'Quinn', 'Avery', 'Blake', 'Drew', 'Sage', 'Reese', 'Charlie', 'Skyler',
+  'Max', 'Kai', 'Ash', 'River', 'Phoenix', 'Jesse', 'Robin', 'Micah',
+  'Cameron', 'Hayden', 'Logan', 'Parker', 'Rowan', 'Emery', 'Finley', 'Dakota'
+];
+
 function generateCoolName() {
+  // 40% chance of human-like name, 60% chance of cyberpunk name
+  if (Math.random() < 0.4) {
+    return HUMAN_NAMES[Math.floor(Math.random() * HUMAN_NAMES.length)];
+  }
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
   const num = Math.floor(Math.random() * 100);

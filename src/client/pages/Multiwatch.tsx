@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Terminal } from '../components/terminal/Terminal';
 import { ChatBox } from '../components/chat/ChatBox';
 import { useTerminal } from '../hooks/useTerminal';
 import { useStreamStore } from '../store/streamStore';
@@ -32,25 +31,26 @@ export default function Multiwatch() {
   const gridCols = {
     1: 'grid-cols-1',
     2: 'grid-cols-1 md:grid-cols-2',
-    4: 'grid-cols-2 md:grid-cols-4',
-    6: 'grid-cols-2 md:grid-cols-3',
-    9: 'grid-cols-3',
-  }[gridLayout];
+    4: 'grid-cols-2',
+  }[gridLayout] || 'grid-cols-1 md:grid-cols-2';
 
   return (
-    <div className="multiwatch-page space-y-4">
+    <div className="multiwatch-page h-full flex flex-col bg-[#0a0a0f]">
       {/* Controls */}
-      <div className="flex items-center justify-between bg-gh-bg-secondary rounded-lg border border-gh-border p-4">
+      <div className="shrink-0 flex items-center justify-between bg-[#0d0d14] border-b border-gh-border/50 p-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gh-text-primary">Multi-Watch</h1>
+          <h1 className="text-xl font-bold text-gh-text-primary flex items-center gap-2">
+            <span className="text-gh-text-secondary">#</span>
+            multi-chat
+          </h1>
           <p className="text-sm text-gh-text-secondary mt-1">
-            {selectedStreams.length} stream{selectedStreams.length !== 1 ? 's' : ''} active
+            {selectedStreams.length} room{selectedStreams.length !== 1 ? 's' : ''} active
           </p>
         </div>
 
         {/* Grid layout buttons - desktop only */}
         <div className="hidden md:flex gap-2">
-          {[1, 2, 4, 6, 9].map((layout) => (
+          {[1, 2, 4].map((layout) => (
             <button
               key={layout}
               onClick={() => {
@@ -59,10 +59,10 @@ export default function Multiwatch() {
                   setSelectedStreams(prev => prev.slice(0, layout));
                 }
               }}
-              className={`px-3 py-2 rounded-md font-medium transition-colors ${
+              className={`w-10 h-10 rounded flex items-center justify-center font-medium transition-colors ${
                 gridLayout === layout
-                  ? 'bg-gh-accent-blue text-gh-bg-primary shadow-neon-cyan-sm'
-                  : 'bg-gh-bg-tertiary text-gh-text-primary border border-gh-border hover:bg-gh-bg-primary'
+                  ? 'bg-gh-accent-blue text-gh-bg-primary'
+                  : 'bg-[#1a1a2e] text-gh-text-primary border border-gh-border/30 hover:border-gh-accent-blue/50'
               }`}
             >
               {layout}
@@ -73,16 +73,9 @@ export default function Multiwatch() {
 
       {/* Stream selector */}
       {streams.length > 0 && (
-        <div className="bg-gh-bg-secondary rounded-lg border border-gh-border p-4">
-          <h3 className="font-semibold text-gh-text-primary mb-3">
-            Available Streams
-            {streams.length > 12 && (
-              <span className="text-xs text-gh-text-secondary font-normal ml-2">
-                (showing top 12 of {streams.length})
-              </span>
-            )}
-          </h3>
-          <div className="flex flex-wrap gap-2">
+        <div className="shrink-0 bg-[#0d0d14] border-b border-gh-border/50 px-4 py-3">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gh-border/30">
+            <span className="text-xs text-gh-text-secondary shrink-0 uppercase tracking-wider">Rooms:</span>
             {[...streams]
               .sort((a, b) => b.viewerCount - a.viewerCount)
               .slice(0, 12)
@@ -90,172 +83,112 @@ export default function Multiwatch() {
               <button
                 key={stream.id}
                 onClick={() => toggleStream(stream.id)}
-                className={`px-4 py-2 sm:px-3 sm:py-2 rounded-md text-sm font-medium transition-colors min-h-[44px] sm:min-h-0 ${
+                className={`shrink-0 px-3 py-1.5 rounded text-sm transition-colors ${
                   selectedStreams.includes(stream.id)
-                    ? 'bg-gh-accent-blue text-gh-bg-primary shadow-neon-cyan-sm'
-                    : 'bg-gh-bg-tertiary text-gh-text-primary border border-gh-border hover:bg-gh-bg-primary'
+                    ? 'bg-gh-accent-blue text-gh-bg-primary'
+                    : 'bg-[#1a1a2e] text-gh-text-secondary hover:text-gh-text-primary border border-gh-border/30 hover:border-gh-accent-blue/30'
                 }`}
               >
-                {stream.ownerUsername} • {stream.viewerCount}
+                <span className="text-gh-text-secondary/60 mr-1">#</span>
+                {stream.ownerUsername}
+                <span className="ml-2 text-xs opacity-60">{stream.viewerCount}</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* MOBILE: Vertical scroll */}
-      {isMobile ? (
-        <div className="space-y-4">
-          {selectedStreams.map((roomId, index) => (
-            <MobileStreamPanel
-              key={roomId}
-              roomId={roomId}
-              index={index}
-              total={selectedStreams.length}
-              onRemove={() => toggleStream(roomId)}
-            />
-          ))}
-          {selectedStreams.length === 0 && (
-            <div className="bg-gh-bg-secondary rounded-lg border border-dashed border-gh-border flex items-center justify-center min-h-64 text-gh-text-secondary">
-              Select a stream to watch
+      {/* Chat rooms grid */}
+      <div className={`flex-1 min-h-0 grid ${gridCols} gap-0.5 bg-gh-border/20 p-0.5`}>
+        {selectedStreams.map((roomId) => (
+          <ChatRoomPanel
+            key={roomId}
+            roomId={roomId}
+            onRemove={() => toggleStream(roomId)}
+          />
+        ))}
+
+        {/* Empty slots */}
+        {[...Array(Math.max(0, gridLayout - selectedStreams.length))].map((_, i) => (
+          <div
+            key={`empty-${i}`}
+            className="bg-[#0d0d14] flex flex-col items-center justify-center text-center p-8"
+          >
+            <div className="w-16 h-16 rounded-full bg-gh-border/20 flex items-center justify-center mb-4">
+              <span className="text-3xl text-gh-text-secondary/40">#</span>
             </div>
+            <p className="text-gh-text-secondary text-sm">Select a room above</p>
+          </div>
+        ))}
+      </div>
+
+      {/* No streams fallback */}
+      {streams.length === 0 && (
+        <div className="flex-1 flex items-center justify-center text-center p-8">
+          <div>
+            <div className="w-20 h-20 rounded-full bg-gh-border/20 flex items-center justify-center mb-4 mx-auto">
+              <span className="text-4xl text-gh-text-secondary/40">#</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gh-text-primary mb-2">No rooms available</h3>
+            <p className="text-gh-text-secondary text-sm">Check back later or start your own!</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Chat room panel with full chat functionality
+function ChatRoomPanel({ roomId, onRemove }: { roomId: string; onRemove: () => void }) {
+  const { isJoined, streamInfo, viewerCount, sendChat } = useTerminal({ roomId });
+
+  return (
+    <div className="chat-room-panel bg-[#0d0d14] flex flex-col h-full relative group overflow-hidden">
+      {/* Room header */}
+      <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-[#0a0a0f] border-b border-gh-border/50">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-gh-text-secondary">#</span>
+          <span className="font-semibold text-gh-text-primary text-sm truncate">
+            {streamInfo?.title || 'Loading...'}
+          </span>
+          {isJoined && (
+            <span className="flex items-center gap-1 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-gh-accent-green" />
+            </span>
           )}
         </div>
-      ) : (
-        /* DESKTOP: Grid layout */
-        <div className={`grid ${gridCols} gap-4`}>
-          {selectedStreams.map((roomId) => (
-            <StreamPanel key={roomId} roomId={roomId} onRemove={() => toggleStream(roomId)} />
-          ))}
-
-          {/* Empty slots */}
-          {[...Array(gridLayout - selectedStreams.length)].map((_, i) => (
-            <div
-              key={`empty-${i}`}
-              className="bg-gh-bg-secondary rounded-lg border border-dashed border-gh-border flex items-center justify-center min-h-64 text-gh-text-secondary"
-            >
-              Select a stream
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Mobile stream panel with integrated chat
-function MobileStreamPanel({
-  roomId,
-  index,
-  total,
-  onRemove,
-}: {
-  roomId: string;
-  index: number;
-  total: number;
-  onRemove: () => void;
-}) {
-  const { isJoined, terminalBuffer, streamInfo, viewerCount, sendChat } = useTerminal({ roomId });
-  const [chatExpanded, setChatExpanded] = useState(false);
-
-  return (
-    <div className="mobile-stream-panel bg-gh-bg-primary rounded-lg border border-gh-border overflow-hidden">
-      {/* Header - stream info + position indicator */}
-      <div className="sticky top-16 z-20 bg-gh-bg-primary/90 backdrop-blur-sm p-3 border-b border-gh-border">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gh-text-primary text-sm truncate">
-              {streamInfo?.title || 'Loading...'}
-            </h3>
-            <p className="text-xs text-gh-text-secondary">
-              {viewerCount} viewers
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Position indicator */}
-            <span className="text-xs text-gh-text-secondary px-2 py-1 bg-gh-bg-tertiary rounded-md">
-              {index + 1}/{total}
-            </span>
-            {/* Remove button */}
-            <button
-              onClick={onRemove}
-              className="px-2 py-1 rounded bg-gh-accent-red text-white text-xs hover:opacity-80 hover:shadow-neon-red min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Remove stream"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Terminal - dynamic height based on chat state */}
-      <div
-        className="terminal-wrapper transition-all duration-300"
-        style={{
-          height: chatExpanded ? '50vh' : 'calc(100vh - 20rem)',
-        }}
-      >
-        <Terminal data={terminalBuffer} />
-      </div>
-
-      {/* Chat - expandable */}
-      <div
-        className={`chat-wrapper transition-all duration-300 border-t border-gh-border ${
-          chatExpanded ? 'h-80' : 'h-48'
-        }`}
-      >
-        <div className="flex items-center justify-between p-2 bg-gh-bg-tertiary border-b border-gh-border">
-          <span className="text-sm font-medium text-gh-text-primary">Chat</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-gh-text-secondary">{viewerCount}</span>
           <button
-            onClick={() => setChatExpanded(!chatExpanded)}
-            className="p-2 rounded hover:bg-gh-bg-primary text-gh-text-primary min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label={chatExpanded ? 'Collapse chat' : 'Expand chat'}
+            onClick={onRemove}
+            className="w-6 h-6 rounded flex items-center justify-center text-gh-text-secondary hover:text-gh-accent-red hover:bg-gh-accent-red/10 transition-colors opacity-0 group-hover:opacity-100"
+            title="Close room"
           >
-            {chatExpanded ? '↓' : '↑'}
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeWidth="2" strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
-        <ChatBox roomId={roomId} onSendMessage={sendChat} disabled={!isJoined} />
       </div>
 
-      {/* Status indicator */}
+      {/* Chat content */}
+      <div className="flex-1 min-h-0">
+        <ChatBox
+          roomId={roomId}
+          roomTitle={streamInfo?.title || roomId}
+          onSendMessage={sendChat}
+          disabled={!isJoined}
+          viewerCount={viewerCount}
+        />
+      </div>
+
+      {/* Loading overlay */}
       {!isJoined && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gh-bg-primary/50 z-30">
-          <div className="text-gh-text-primary text-sm">Connecting...</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Desktop stream panel
-function StreamPanel({ roomId, onRemove }: { roomId: string; onRemove: () => void }) {
-  const { isJoined, terminalBuffer, streamInfo, viewerCount, sendChat } = useTerminal({ roomId });
-
-  return (
-    <div className="stream-panel bg-gh-bg-primary rounded-lg border border-gh-border overflow-hidden relative group">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-gh-bg-primary/80 backdrop-blur-sm p-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="text-xs text-gh-text-primary">
-          <div className="font-semibold">{streamInfo?.title || 'Loading...'}</div>
-          <div className="text-gh-text-secondary">{viewerCount} viewers</div>
-        </div>
-        <button
-          onClick={onRemove}
-          className="px-2 py-1 rounded bg-gh-accent-red text-white text-xs hover:opacity-80 hover:shadow-neon-red"
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* Terminal - responsive height */}
-      <div className="h-64 sm:h-80 md:h-96">
-        <Terminal data={terminalBuffer} />
-      </div>
-
-      {/* Status indicator */}
-      {!isJoined && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gh-bg-primary/50">
-          <div className="text-gh-text-primary text-sm">Connecting...</div>
+        <div className="absolute inset-0 flex items-center justify-center bg-[#0d0d14]/80 z-10">
+          <div className="flex items-center gap-2 text-gh-text-secondary text-sm">
+            <div className="w-4 h-4 border-2 border-gh-accent-blue border-t-transparent rounded-full animate-spin" />
+            <span>Connecting...</span>
+          </div>
         </div>
       )}
     </div>

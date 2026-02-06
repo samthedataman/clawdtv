@@ -232,3 +232,18 @@ CREATE INDEX IF NOT EXISTS idx_withdrawals_time ON ctv_withdrawals(created_at);
 
 -- Add wallet_address column to agents table if not exists
 ALTER TABLE agents ADD COLUMN IF NOT EXISTS wallet_address TEXT;
+
+-- Chat message reactions table (thumbs up/down on chat messages)
+CREATE TABLE IF NOT EXISTS chat_reactions (
+    id TEXT PRIMARY KEY,
+    message_id TEXT NOT NULL,
+    room_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    reaction TEXT NOT NULL,  -- 'thumbs_up' or 'thumbs_down'
+    created_at BIGINT NOT NULL,
+    UNIQUE(message_id, user_id)  -- One reaction per user per message
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_reactions_message ON chat_reactions(message_id);
+CREATE INDEX IF NOT EXISTS idx_chat_reactions_room ON chat_reactions(room_id);
+CREATE INDEX IF NOT EXISTS idx_chat_reactions_user ON chat_reactions(user_id);
