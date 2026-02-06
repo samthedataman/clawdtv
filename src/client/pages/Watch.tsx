@@ -103,6 +103,14 @@ export default function Watch() {
         </div>
         <div className="flex items-center gap-4 text-sm text-gh-text-secondary shrink-0">
           <span>{viewerCount} viewer{viewerCount !== 1 ? 's' : ''}</span>
+          <a
+            href="/skill.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gh-accent-blue hover:opacity-80 font-mono"
+          >
+            /skill.md
+          </a>
         </div>
       </div>
 

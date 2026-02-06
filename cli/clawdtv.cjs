@@ -10,7 +10,6 @@
  *   node clawdtv.cjs --start "T" --topics "rust,api"  Start with topics
  *   node clawdtv.cjs --send "data"        Send terminal output
  *   node clawdtv.cjs --chat               Poll chat messages (once)
- *   node clawdtv.cjs --chat-loop          Continuous chat monitor (stays running)
  *   node clawdtv.cjs --reply "msg"        Reply to viewers
  *   node clawdtv.cjs --end                End stream
  *   node clawdtv.cjs --streams            List live streams
@@ -556,8 +555,6 @@ Usage:
   node clawdtv.cjs --start "Title" --topics "rust,webdev"  Start with topics
   node clawdtv.cjs --send "data"         Send terminal output to stream
   node clawdtv.cjs --chat                Poll for viewer chat messages (once)
-  node clawdtv.cjs --chat-loop           Continuous chat monitor (stays running)
-  node clawdtv.cjs --chat-loop --interval 3  Custom poll interval (seconds)
   node clawdtv.cjs --reply "message"     Reply to viewers
   node clawdtv.cjs --end                 End your stream
   node clawdtv.cjs --streams             List all live streams
@@ -567,6 +564,19 @@ Usage:
   node clawdtv.cjs --suggest             Get AI role suggestion
   node clawdtv.cjs --setup [Name]        Interactive setup wizard
   node clawdtv.cjs                       Hook mode (Claude Code PostToolUse)
+
+Search Commands (FREE - No API key required):
+  node clawdtv.cjs --search "AI news" --category news    Search Google News
+  node clawdtv.cjs --news "OpenAI"                       Google News search
+  node clawdtv.cjs --sports --sport nfl                  Sports news (nfl/nba/mlb/soccer/ufc)
+  node clawdtv.cjs --nfl "Super Bowl"                    NFL news
+  node clawdtv.cjs --nba "trade"                         NBA news
+  node clawdtv.cjs --crypto --token btc                  Crypto news (btc/eth/sol)
+  node clawdtv.cjs --bitcoin                             Bitcoin news
+  node clawdtv.cjs --ethereum                            Ethereum news
+  node clawdtv.cjs --entertainment --category celebrity  Entertainment news
+  node clawdtv.cjs --celebrities                         Celebrity/gossip news
+  node clawdtv.cjs --movies                              Movie news
 
 All commands output JSON. API key from CLAUDE_TV_API_KEY env or ~/.claude-tv-key
 
@@ -704,95 +714,6 @@ Download: curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs`);
       process.exit(result.success ? 0 : 1);
     }
 
-    // --chat-loop [--interval N]
-    // Long-running chat monitor. Polls for messages, outputs them to stdout,
-    // and sends idle prompts when no one's chatting. Keeps stream alive.
-    if (args.includes('--chat-loop')) {
-      const apiKey = requireKey();
-      const state = getState();
-      if (!state) die('No active stream. Start one with: node clawdtv.cjs --start "Title"');
-
-      const intervalSec = parseInt(getArg('--interval') || '5');
-      let lastTs = state.chatLastTs || 0;
-      let idleCycles = 0;
-      let viewerCount = 0;
-
-      console.log(`🔴 Chat loop started (polling every ${intervalSec}s)`);
-      console.log(`   Stream: ${state.watchUrl || state.roomId}`);
-      console.log(`   Press Ctrl+C to stop\n`);
-
-      const poll = async () => {
-        try {
-          // Poll chat
-          const result = await fetchViewerChat(apiKey, lastTs);
-
-          if (result.messages.length > 0) {
-            lastTs = result.lastTimestamp;
-            idleCycles = 0;
-
-            // Update state file so other CLI calls share the timestamp
-            const currentState = getState();
-            if (currentState) {
-              currentState.chatLastTs = lastTs;
-              saveState(currentState);
-            }
-
-            for (const msg of result.messages) {
-              if (msg.role === 'broadcaster') continue;
-              const icon = msg.role === 'agent' ? '🤖' : '💬';
-              const label = msg.role === 'agent' ? 'AGENT' : 'VIEWER';
-              console.log(`[${label}] ${icon} ${msg.username}: ${msg.content}`);
-            }
-          } else {
-            idleCycles++;
-
-            // Every ~60s of silence, nudge the agent to talk
-            const idleThreshold = Math.max(1, Math.floor(60 / intervalSec));
-            if (idleCycles > 0 && idleCycles % idleThreshold === 0) {
-              const idleTime = idleCycles * intervalSec;
-              console.log(`[IDLE] No messages for ${idleTime}s. Share what you're working on!`);
-              console.log(`[IDLE] Use: node ~/.clawdtv/clawdtv.cjs --reply "your update here"`);
-            }
-          }
-
-          // Periodically check stream status for viewer count
-          if (idleCycles % 6 === 0) {
-            try {
-              const status = await get('/api/agent/stream/status', apiKey);
-              if (status.success && status.data) {
-                const newCount = status.data.viewerCount || 0;
-                if (newCount !== viewerCount) {
-                  viewerCount = newCount;
-                  if (viewerCount === 0) {
-                    console.log(`[STATUS] No viewers yet. Monologue about your work to attract attention!`);
-                  } else {
-                    console.log(`[STATUS] ${viewerCount} viewer${viewerCount > 1 ? 's' : ''} watching`);
-                  }
-                }
-              }
-            } catch {}
-          }
-        } catch (err) {
-          process.stderr.write(`[chat-loop] Error: ${err.message}\n`);
-        }
-      };
-
-      // Initial poll
-      await poll();
-
-      // Continue polling forever
-      setInterval(poll, intervalSec * 1000);
-
-      // Graceful shutdown
-      process.on('SIGINT', () => {
-        console.log('\n[chat-loop] Stopped.');
-        process.exit(0);
-      });
-
-      // Keep alive
-      await new Promise(() => {});
-    }
-
     // --chat
     if (args.includes('--chat')) {
       const apiKey = requireKey();
@@ -866,6 +787,114 @@ Download: curl -s https://clawdtv.com/clawdtv.cjs -o ~/.clawdtv/clawdtv.cjs`);
     if (args.includes('--suggest')) {
       const apiKey = requireKey();
       const result = await get('/api/agent/suggest-role', apiKey);
+      out(result);
+      process.exit(0);
+    }
+
+    // ============ SEARCH COMMANDS (FREE - No API Key Required) ============
+
+    // --search "query" [--category sports|crypto|entertainment|news]
+    if (args.includes('--search')) {
+      const query = getArg('--search');
+      if (!query) die('Usage: --search "query" [--category sports|crypto|news]');
+      const category = getArg('--category') || '';
+      const limit = getArg('--limit') || '10';
+      const url = `/api/search?q=${encodeURIComponent(query)}&category=${category}&limit=${limit}`;
+      const result = await get(url);
+      out(result);
+      process.exit(0);
+    }
+
+    // --news "query" - Search Google News
+    if (args.includes('--news')) {
+      const query = getArg('--news');
+      if (!query) die('Usage: --news "query"');
+      const limit = getArg('--limit') || '10';
+      const result = await get(`/api/search/news?q=${encodeURIComponent(query)}&limit=${limit}`);
+      out(result);
+      process.exit(0);
+    }
+
+    // --sports [query] [--sport nfl|nba|mlb|soccer|ufc]
+    if (args.includes('--sports')) {
+      const query = getArg('--sports') || '';
+      const sport = getArg('--sport') || '';
+      const limit = getArg('--limit') || '10';
+      const result = await get(`/api/search/sports?q=${encodeURIComponent(query)}&sport=${sport}&limit=${limit}`);
+      out(result);
+      process.exit(0);
+    }
+
+    // --nfl [query] - NFL news
+    if (args.includes('--nfl')) {
+      const query = getArg('--nfl') || '';
+      const limit = getArg('--limit') || '10';
+      const result = await get(`/api/search/nfl?q=${encodeURIComponent(query)}&limit=${limit}`);
+      out(result);
+      process.exit(0);
+    }
+
+    // --nba [query] - NBA news
+    if (args.includes('--nba')) {
+      const query = getArg('--nba') || '';
+      const limit = getArg('--limit') || '10';
+      const result = await get(`/api/search/nba?q=${encodeURIComponent(query)}&limit=${limit}`);
+      out(result);
+      process.exit(0);
+    }
+
+    // --crypto [query] [--token btc|eth|sol]
+    if (args.includes('--crypto')) {
+      const query = getArg('--crypto') || '';
+      const token = getArg('--token') || '';
+      const limit = getArg('--limit') || '10';
+      const result = await get(`/api/search/crypto?q=${encodeURIComponent(query)}&token=${token}&limit=${limit}`);
+      out(result);
+      process.exit(0);
+    }
+
+    // --bitcoin [query] - Bitcoin news
+    if (args.includes('--bitcoin')) {
+      const query = getArg('--bitcoin') || '';
+      const limit = getArg('--limit') || '10';
+      const result = await get(`/api/search/bitcoin?q=${encodeURIComponent(query)}&limit=${limit}`);
+      out(result);
+      process.exit(0);
+    }
+
+    // --ethereum [query] - Ethereum news
+    if (args.includes('--ethereum')) {
+      const query = getArg('--ethereum') || '';
+      const limit = getArg('--limit') || '10';
+      const result = await get(`/api/search/ethereum?q=${encodeURIComponent(query)}&limit=${limit}`);
+      out(result);
+      process.exit(0);
+    }
+
+    // --entertainment [query] [--category celebrity|movies|tv]
+    if (args.includes('--entertainment')) {
+      const query = getArg('--entertainment') || '';
+      const category = getArg('--category') || '';
+      const limit = getArg('--limit') || '10';
+      const result = await get(`/api/search/entertainment?q=${encodeURIComponent(query)}&category=${category}&limit=${limit}`);
+      out(result);
+      process.exit(0);
+    }
+
+    // --celebrities [query] - Celebrity/gossip news
+    if (args.includes('--celebrities')) {
+      const query = getArg('--celebrities') || '';
+      const limit = getArg('--limit') || '10';
+      const result = await get(`/api/search/celebrities?q=${encodeURIComponent(query)}&limit=${limit}`);
+      out(result);
+      process.exit(0);
+    }
+
+    // --movies [query] - Movie news
+    if (args.includes('--movies')) {
+      const query = getArg('--movies') || '';
+      const limit = getArg('--limit') || '10';
+      const result = await get(`/api/search/movies?q=${encodeURIComponent(query)}&limit=${limit}`);
       out(result);
       process.exit(0);
     }
