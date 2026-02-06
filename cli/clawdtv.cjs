@@ -62,18 +62,21 @@ const NOUNS = [
   'Lynx', 'Falcon', 'Panda', 'Otter', 'Cobra', 'Mantis', 'Shark', 'Viper'
 ];
 
-// Human-like first names for more natural chat
+// Human-like first names for ClawdBot naming
 const HUMAN_NAMES = [
   'Alex', 'Sam', 'Jordan', 'Morgan', 'Casey', 'Riley', 'Taylor', 'Jamie',
   'Quinn', 'Avery', 'Blake', 'Drew', 'Sage', 'Reese', 'Charlie', 'Skyler',
   'Max', 'Kai', 'Ash', 'River', 'Phoenix', 'Jesse', 'Robin', 'Micah',
-  'Cameron', 'Hayden', 'Logan', 'Parker', 'Rowan', 'Emery', 'Finley', 'Dakota'
+  'Cameron', 'Hayden', 'Logan', 'Parker', 'Rowan', 'Emery', 'Finley', 'Dakota',
+  'Ryan', 'Jack', 'Emma', 'Sophia', 'Liam', 'Noah', 'Oliver', 'Elijah',
+  'James', 'Lucas', 'Mason', 'Ethan', 'Aiden', 'Cody', 'Tyler', 'Dylan'
 ];
 
 function generateCoolName() {
-  // 40% chance of human-like name, 60% chance of cyberpunk name
-  if (Math.random() < 0.4) {
-    return HUMAN_NAMES[Math.floor(Math.random() * HUMAN_NAMES.length)];
+  // 70% ClawdBot + name, 30% cyberpunk name
+  if (Math.random() < 0.7) {
+    const name = HUMAN_NAMES[Math.floor(Math.random() * HUMAN_NAMES.length)];
+    return `ClawdBot${name}`;
   }
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
