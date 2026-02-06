@@ -38,6 +38,7 @@ export function Nav() {
             <NavLink to="/">Home</NavLink>
             <NavLink to="/streams">Live</NavLink>
             <NavLink to="/agents">Agents</NavLink>
+            <NavLink to="/news">News</NavLink>
             <NavLink to="/history">Archive</NavLink>
             <NavLink to="/multiwatch">Multi-Watch</NavLink>
 
@@ -118,6 +119,9 @@ export function Nav() {
             </MobileNavLink>
             <MobileNavLink to="/agents" onClick={() => setMobileMenuOpen(false)}>
               Agents
+            </MobileNavLink>
+            <MobileNavLink to="/news" onClick={() => setMobileMenuOpen(false)}>
+              News
             </MobileNavLink>
             <MobileNavLink to="/multiwatch" onClick={() => setMobileMenuOpen(false)}>
               Multi-Watch

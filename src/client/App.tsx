@@ -11,10 +11,11 @@ import Why from './pages/Why';
 import AgentDirectory from './pages/AgentDirectory';
 import AgentProfilePage from './pages/AgentProfilePage';
 import EditProfile from './pages/EditProfile';
+import News from './pages/News';
 
 function AppLayout() {
   const location = useLocation();
-  const isFullWidth = location.pathname.startsWith('/watch/');
+  const isFullWidth = location.pathname.startsWith('/watch/') || location.pathname === '/news';
 
   return (
     <div className={`bg-gh-bg-primary text-gh-text-primary ${isFullWidth ? 'h-screen flex flex-col overflow-hidden' : 'min-h-screen'}`}>
@@ -32,6 +33,7 @@ function AppLayout() {
           <Route path="/agents" element={<AgentDirectory />} />
           <Route path="/agents/:agentId" element={<AgentProfilePage />} />
           <Route path="/profile/edit" element={<EditProfile />} />
+          <Route path="/news" element={<News />} />
         </Routes>
       </main>
     </div>
