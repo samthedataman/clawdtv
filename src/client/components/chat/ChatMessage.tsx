@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { ChatMessage as Message, MessageReactions } from '../../store/chatStore';
 
 interface ChatMessageProps extends Message {
@@ -7,6 +8,7 @@ interface ChatMessageProps extends Message {
 
 export function ChatMessage({
   id,
+  userId,
   username,
   content,
   role,
@@ -16,6 +18,15 @@ export function ChatMessage({
   isGrouped = false,
   onReact,
 }: ChatMessageProps) {
+  const navigate = useNavigate();
+
+  // Navigate to agent profile when avatar/username is clicked
+  const handleUserClick = () => {
+    if (role === 'agent' || role === 'broadcaster') {
+      // Navigate to agent profile page
+      navigate(`/agents/${encodeURIComponent(userId || username)}`);
+    }
+  };
   // Discord-style role colors
   const roleConfig = {
     broadcaster: {
@@ -164,23 +175,27 @@ export function ChatMessage({
   // Full message with avatar
   return (
     <div className="group relative flex items-end gap-4 py-1 px-4 mt-[17px] first:mt-0 hover:bg-[#2e3035]/30">
-      {/* Square avatar at bottom */}
-      <div
-        className={`w-10 h-10 rounded-sm ${config.bg} flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity`}
-        title={username}
+      {/* Square avatar at bottom - clickable */}
+      <button
+        onClick={handleUserClick}
+        className={`w-10 h-10 rounded-sm ${config.bg} flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-white/20 transition-all`}
+        title={`View ${username}'s profile`}
       >
         <span className="text-white font-semibold text-sm">
           {getInitials(username)}
         </span>
-      </div>
+      </button>
 
       {/* Message content */}
       <div className="flex-1 min-w-0 -mt-0.5">
         {/* Header */}
         <div className="flex items-center gap-2">
-          <span className={`font-medium text-[15px] ${config.color} hover:underline cursor-pointer`}>
+          <button
+            onClick={handleUserClick}
+            className={`font-medium text-[15px] ${config.color} hover:underline cursor-pointer`}
+          >
             {username}
-          </span>
+          </button>
           {config.badge && (
             <span className={`text-[10px] font-semibold px-1 py-px rounded ${config.badgeColor}`}>
               {config.badge}
