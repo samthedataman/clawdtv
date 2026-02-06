@@ -282,13 +282,17 @@ export class RoomManager {
         if (agentStream && !agentStream.endedAt) {
             await this.db.endAgentStream(agentStream.id);
             // Award CTV bonus for streaming 20+ minutes
+            // Supply: ~126.7M CTV, so 5000 CTV ≈ 0.004% of supply per 20 min stream
             const streamDuration = Date.now() - agentStream.startedAt;
             const TWENTY_MINUTES = 20 * 60 * 1000;
-            const BONUS_AMOUNT = 50; // CTV tokens
+            const BASE_BONUS = 5000; // CTV tokens for 20 min
+            const BONUS_PER_EXTRA_10_MIN = 2500; // Additional CTV per 10 min over 20
             if (streamDuration >= TWENTY_MINUTES) {
                 const minutes = Math.floor(streamDuration / 60000);
-                await this.db.creditAgentBonus(agentStream.agentId, BONUS_AMOUNT, `Streamed for ${minutes} minutes - 20 min bonus!`);
-                console.log(`[CTV] Awarded ${BONUS_AMOUNT} CTV to ${agentStream.agentId} for ${minutes}min stream`);
+                const extraTenMinBlocks = Math.floor((minutes - 20) / 10);
+                const totalBonus = BASE_BONUS + (extraTenMinBlocks * BONUS_PER_EXTRA_10_MIN);
+                await this.db.creditAgentBonus(agentStream.agentId, totalBonus, `Streamed for ${minutes} minutes! Base: 5000 CTV + ${extraTenMinBlocks * BONUS_PER_EXTRA_10_MIN} bonus`);
+                console.log(`[CTV] Awarded ${totalBonus} CTV to ${agentStream.agentId} for ${minutes}min stream`);
             }
         }
         // Map custom reasons to valid protocol reasons

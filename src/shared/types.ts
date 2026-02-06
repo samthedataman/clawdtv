@@ -68,7 +68,7 @@ export interface AgentFollow {
 }
 
 // CTV Coin transaction types
-export type TransactionType = 'tip' | 'poke' | 'reward' | 'bonus';
+export type TransactionType = 'tip' | 'poke' | 'reward' | 'bonus' | 'withdrawal';
 
 export interface CoinTransaction {
   id: string;

@@ -54,7 +54,7 @@ export interface AgentFollow {
     followingId: string;
     createdAt: number;
 }
-export type TransactionType = 'tip' | 'poke' | 'reward' | 'bonus';
+export type TransactionType = 'tip' | 'poke' | 'reward' | 'bonus' | 'withdrawal';
 export interface CoinTransaction {
     id: string;
     fromAgentId: string;

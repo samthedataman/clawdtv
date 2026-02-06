@@ -212,3 +212,23 @@ CREATE TABLE IF NOT EXISTS news_comments (
 CREATE INDEX IF NOT EXISTS idx_news_comments_article ON news_comments(article_url_hash);
 CREATE INDEX IF NOT EXISTS idx_news_comments_agent ON news_comments(agent_id);
 CREATE INDEX IF NOT EXISTS idx_news_comments_time ON news_comments(created_at);
+
+-- CTV withdrawal requests table
+CREATE TABLE IF NOT EXISTS ctv_withdrawals (
+    id TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    wallet_address TEXT NOT NULL,  -- Solana wallet address
+    amount BIGINT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',  -- 'pending', 'processing', 'completed', 'failed'
+    tx_hash TEXT,  -- Solana transaction hash once completed
+    created_at BIGINT NOT NULL,
+    processed_at BIGINT,
+    notes TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_withdrawals_agent ON ctv_withdrawals(agent_id);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_status ON ctv_withdrawals(status);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_time ON ctv_withdrawals(created_at);
+
+-- Add wallet_address column to agents table if not exists
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS wallet_address TEXT;

@@ -835,6 +835,151 @@ export class DatabaseService {
   }
 
   // ============================================
+  // WALLET & WITHDRAWALS
+  // ============================================
+
+  // Link a Solana wallet to an agent
+  async setAgentWallet(agentId: string, walletAddress: string): Promise<boolean> {
+    // Basic Solana address validation (base58, 32-44 chars)
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(walletAddress)) {
+      return false;
+    }
+
+    await this.pool.query(
+      `UPDATE agents SET wallet_address = $1 WHERE id = $2`,
+      [walletAddress, agentId]
+    );
+    return true;
+  }
+
+  // Get agent's wallet address
+  async getAgentWallet(agentId: string): Promise<string | null> {
+    const result = await this.pool.query(
+      `SELECT wallet_address FROM agents WHERE id = $1`,
+      [agentId]
+    );
+    return result.rows[0]?.wallet_address || null;
+  }
+
+  // Request a CTV withdrawal
+  async requestWithdrawal(
+    agentId: string,
+    amount: number
+  ): Promise<{ success: boolean; error?: string; withdrawalId?: string }> {
+    // Check balance
+    const balance = await this.getAgentBalance(agentId);
+    if (balance < amount) {
+      return { success: false, error: `Insufficient balance (have ${balance}, need ${amount})` };
+    }
+
+    // Check wallet is set
+    const wallet = await this.getAgentWallet(agentId);
+    if (!wallet) {
+      return { success: false, error: 'No wallet address linked. Set wallet first with /api/agents/:id/wallet' };
+    }
+
+    // Minimum withdrawal
+    const MIN_WITHDRAWAL = 10000;
+    if (amount < MIN_WITHDRAWAL) {
+      return { success: false, error: `Minimum withdrawal is ${MIN_WITHDRAWAL} CTV` };
+    }
+
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Deduct from balance
+      await client.query(
+        `UPDATE agents SET coin_balance = coin_balance - $1 WHERE id = $2`,
+        [amount, agentId]
+      );
+
+      // Create withdrawal request
+      const id = uuidv4();
+      const now = Date.now();
+      await client.query(
+        `INSERT INTO ctv_withdrawals (id, agent_id, wallet_address, amount, status, created_at)
+         VALUES ($1, $2, $3, $4, 'pending', $5)`,
+        [id, agentId, wallet, amount, now]
+      );
+
+      // Record in transactions
+      await client.query(
+        `INSERT INTO coin_transactions (id, from_agent_id, to_agent_id, amount, transaction_type, message, created_at)
+         VALUES ($1, $2, 'withdrawal', $3, 'withdrawal', $4, $5)`,
+        [uuidv4(), agentId, amount, `Withdrawal to ${wallet.slice(0, 8)}...`, now]
+      );
+
+      await client.query('COMMIT');
+
+      console.log(`[CTV] Withdrawal request ${id}: ${amount} CTV from ${agentId} to ${wallet}`);
+      return { success: true, withdrawalId: id };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Withdrawal request failed:', err);
+      return { success: false, error: 'Withdrawal request failed' };
+    } finally {
+      client.release();
+    }
+  }
+
+  // Get agent's withdrawal history
+  async getAgentWithdrawals(
+    agentId: string,
+    limit: number = 20
+  ): Promise<Array<{
+    id: string;
+    walletAddress: string;
+    amount: number;
+    status: string;
+    txHash: string | null;
+    createdAt: number;
+    processedAt: number | null;
+  }>> {
+    const result = await this.pool.query(
+      `SELECT id, wallet_address as "walletAddress", amount, status,
+              tx_hash as "txHash", created_at as "createdAt", processed_at as "processedAt"
+       FROM ctv_withdrawals
+       WHERE agent_id = $1
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [agentId, limit]
+    );
+    return result.rows;
+  }
+
+  // Get all pending withdrawals (admin)
+  async getPendingWithdrawals(): Promise<Array<{
+    id: string;
+    agentId: string;
+    agentName: string;
+    walletAddress: string;
+    amount: number;
+    createdAt: number;
+  }>> {
+    const result = await this.pool.query(
+      `SELECT w.id, w.agent_id as "agentId", a.name as "agentName",
+              w.wallet_address as "walletAddress", w.amount, w.created_at as "createdAt"
+       FROM ctv_withdrawals w
+       JOIN agents a ON w.agent_id = a.id
+       WHERE w.status = 'pending'
+       ORDER BY w.created_at ASC`
+    );
+    return result.rows;
+  }
+
+  // Mark withdrawal as completed (admin)
+  async completeWithdrawal(withdrawalId: string, txHash: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `UPDATE ctv_withdrawals
+       SET status = 'completed', tx_hash = $1, processed_at = $2
+       WHERE id = $3 AND status = 'pending'`,
+      [txHash, Date.now(), withdrawalId]
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // ============================================
   // AGENT POKES (Social Interactions)
   // ============================================
 

@@ -90,6 +90,31 @@ export declare class DatabaseService {
         transactions: CoinTransaction[];
         total: number;
     }>;
+    setAgentWallet(agentId: string, walletAddress: string): Promise<boolean>;
+    getAgentWallet(agentId: string): Promise<string | null>;
+    requestWithdrawal(agentId: string, amount: number): Promise<{
+        success: boolean;
+        error?: string;
+        withdrawalId?: string;
+    }>;
+    getAgentWithdrawals(agentId: string, limit?: number): Promise<Array<{
+        id: string;
+        walletAddress: string;
+        amount: number;
+        status: string;
+        txHash: string | null;
+        createdAt: number;
+        processedAt: number | null;
+    }>>;
+    getPendingWithdrawals(): Promise<Array<{
+        id: string;
+        agentId: string;
+        agentName: string;
+        walletAddress: string;
+        amount: number;
+        createdAt: number;
+    }>>;
+    completeWithdrawal(withdrawalId: string, txHash: string): Promise<boolean>;
     pokeAgent(fromAgentId: string, toAgentId: string, pokeType: PokeType, message?: string): Promise<{
         success: boolean;
         error?: string;

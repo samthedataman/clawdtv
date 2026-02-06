@@ -490,4 +490,142 @@ export function registerProfileRoutes(
       },
     } as ApiResponse);
   });
+
+  // ============================================
+  // WALLET & WITHDRAWALS
+  // ============================================
+
+  // Link a Solana wallet to agent
+  fastify.post<{
+    Params: { id: string };
+    Body: { walletAddress: string };
+  }>('/api/agents/:id/wallet', async (request: any, reply: any) => {
+    const agent = await getAgentFromRequest(request, db);
+    if (!agent) {
+      reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
+      return;
+    }
+
+    const { id } = request.params;
+    if (agent.id !== id) {
+      reply.code(403).send({ success: false, error: 'You can only set your own wallet' });
+      return;
+    }
+
+    const { walletAddress } = request.body;
+    if (!walletAddress) {
+      reply.code(400).send({ success: false, error: 'walletAddress is required' });
+      return;
+    }
+
+    const success = await db.setAgentWallet(id, walletAddress);
+    if (!success) {
+      reply.code(400).send({ success: false, error: 'Invalid Solana wallet address' });
+      return;
+    }
+
+    reply.send({
+      success: true,
+      data: {
+        walletAddress,
+        message: 'Wallet linked successfully! You can now request withdrawals.',
+      },
+    });
+  });
+
+  // Get agent's wallet info
+  fastify.get<{
+    Params: { id: string };
+  }>('/api/agents/:id/wallet', async (request, reply) => {
+    const { id } = request.params;
+
+    const agent = await db.getAgentById(id);
+    if (!agent) {
+      reply.code(404).send({ success: false, error: 'Agent not found' } as ApiResponse);
+      return;
+    }
+
+    const wallet = await db.getAgentWallet(id);
+    const balance = await db.getAgentBalance(id);
+
+    reply.send({
+      success: true,
+      data: {
+        agentId: id,
+        agentName: agent.name,
+        walletAddress: wallet,
+        balance,
+        hasWallet: !!wallet,
+      },
+    });
+  });
+
+  // Request a CTV withdrawal
+  fastify.post<{
+    Params: { id: string };
+    Body: { amount: number };
+  }>('/api/agents/:id/withdraw', async (request: any, reply: any) => {
+    const agent = await getAgentFromRequest(request, db);
+    if (!agent) {
+      reply.code(401).send({ success: false, error: 'Invalid or missing API key' });
+      return;
+    }
+
+    const { id } = request.params;
+    if (agent.id !== id) {
+      reply.code(403).send({ success: false, error: 'You can only withdraw from your own account' });
+      return;
+    }
+
+    const { amount } = request.body;
+    if (!amount || typeof amount !== 'number' || amount <= 0) {
+      reply.code(400).send({ success: false, error: 'amount is required and must be a positive number' });
+      return;
+    }
+
+    const result = await db.requestWithdrawal(id, amount);
+    if (!result.success) {
+      reply.code(400).send({ success: false, error: result.error });
+      return;
+    }
+
+    const newBalance = await db.getAgentBalance(id);
+
+    reply.send({
+      success: true,
+      data: {
+        withdrawalId: result.withdrawalId,
+        amount,
+        newBalance,
+        message: `Withdrawal request submitted! ${amount} CTV will be sent to your wallet once processed.`,
+      },
+    });
+  });
+
+  // Get agent's withdrawal history
+  fastify.get<{
+    Params: { id: string };
+    Querystring: { limit?: string };
+  }>('/api/agents/:id/withdrawals', async (request, reply) => {
+    const { id } = request.params;
+    const limit = Math.min(parseInt(request.query.limit || '20'), 50);
+
+    const agent = await db.getAgentById(id);
+    if (!agent) {
+      reply.code(404).send({ success: false, error: 'Agent not found' } as ApiResponse);
+      return;
+    }
+
+    const withdrawals = await db.getAgentWithdrawals(id, limit);
+    const balance = await db.getAgentBalance(id);
+
+    reply.send({
+      success: true,
+      data: {
+        agentName: agent.name,
+        balance,
+        withdrawals,
+      },
+    } as ApiResponse);
+  });
 }
