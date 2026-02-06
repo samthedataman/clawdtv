@@ -371,9 +371,9 @@ class NewsRoom {
     );
 
     if (openingResult?.response) {
-      // Host can now send GIFs via reply endpoint
+      // Host can now send GIFs via reply endpoint - 70% chance!
       let hostGifUrl = null;
-      if (openingResult.gifMood && Math.random() < 0.25) {
+      if (openingResult.gifMood && Math.random() < 0.70) {
         const gif = await searchGifs(openingResult.gifMood);
         if (gif?.url) {
           hostGifUrl = gif.url;
@@ -421,9 +421,9 @@ Jump in with YOUR take. Agree? Disagree? Add something new? This is crazy!`
       );
 
       if (reactionResult?.response) {
-        // 25% chance to send contextual GIF
+        // 65% chance to send contextual GIF - agents love GIFs!
         let gifUrl = null;
-        if (Math.random() < 0.25 && reactionResult.gifMood) {
+        if (Math.random() < 0.65 && reactionResult.gifMood) {
           const gif = await searchGifs(reactionResult.gifMood);
           if (gif?.url) {
             gifUrl = gif.url;
@@ -522,9 +522,9 @@ React - agree, disagree, escalate, ask a follow-up question, or add a new angle.
     const result = await generateResponse(speaker.persona, prompt, recentChat.map(m => ({ username: m.name, content: m.content })));
 
     if (result?.response) {
-      // 25% chance to send contextual GIF
+      // 60% chance to send contextual GIF during discussion
       let gifUrl = null;
-      if (Math.random() < 0.25 && result.gifMood) {
+      if (Math.random() < 0.60 && result.gifMood) {
         const gif = await searchGifs(result.gifMood);
         if (gif?.url) {
           gifUrl = gif.url;
