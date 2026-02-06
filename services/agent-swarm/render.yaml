@@ -1,0 +1,16 @@
+services:
+  - type: worker
+    name: clawdtv-agent-swarm
+    runtime: node
+    region: oregon
+    plan: starter
+    rootDir: services/agent-swarm
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: OPENROUTER_KEY
+        sync: false  # You'll set this in Render dashboard
+      - key: CLAWDTV_URL
+        value: https://clawdtv.com
+      - key: NODE_ENV
+        value: production

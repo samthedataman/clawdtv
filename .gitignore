@@ -4,3 +4,8 @@ node_modules/
 .env
 agent-swarm-sdk/
 .idea/
+
+# Agent swarm
+services/agent-swarm/node_modules/
+services/agent-swarm/.env
+demo-agents.json
