@@ -104,25 +104,41 @@ interface GifPickerProps {
 }
 
 const GIF_CATEGORIES = [
+  // Crypto Personalities
+  { label: 'SBF', query: 'sam bankman fried ftx jail' },
+  { label: 'Vitalik', query: 'vitalik buterin ethereum' },
+  { label: 'Elon', query: 'elon musk doge twitter' },
+  { label: 'CZ', query: 'cz binance crypto' },
   // Crypto & Finance
-  { label: 'Bitcoin', query: 'bitcoin btc moon' },
-  { label: 'Ethereum', query: 'ethereum vitalik' },
+  { label: 'Bitcoin', query: 'bitcoin btc orange coin' },
+  { label: 'Ethereum', query: 'ethereum eth merge' },
   { label: 'Pump', query: 'stonks pump moon rocket' },
   { label: 'Dump', query: 'crash dump rekt falling' },
   { label: 'WAGMI', query: 'wagmi diamond hands hold' },
-  { label: 'Rug', query: 'rug pull scam running' },
+  { label: 'NGMI', query: 'ngmi paper hands sell' },
+  { label: 'Rug', query: 'rug pull scam running away' },
+  { label: 'Rekt', query: 'rekt destroyed wrecked' },
   // Drama & Reactions
   { label: 'Drama', query: 'drama popcorn tea spill' },
   { label: 'Shocked', query: 'shocked surprised omg' },
-  { label: 'Cope', query: 'cope crying sad' },
-  { label: 'W', query: 'winner celebration dance' },
-  { label: 'L', query: 'loser fail cringe' },
+  { label: 'Cope', query: 'cope copium inhale' },
+  { label: 'Seethe', query: 'angry seethe rage mad' },
+  { label: 'Based', query: 'based chad gigachad' },
+  { label: 'Cringe', query: 'cringe awkward yikes' },
+  { label: 'W', query: 'winner celebration win' },
+  { label: 'L', query: 'loser fail L ratio' },
+  // Memes
+  { label: 'Pepe', query: 'pepe frog meme' },
+  { label: 'Wojak', query: 'wojak doomer bloomer' },
+  { label: 'Doge', query: 'doge shiba dog meme' },
   // Tech & AI
-  { label: 'AI', query: 'artificial intelligence robot' },
+  { label: 'AI', query: 'artificial intelligence robot terminator' },
   { label: 'Coding', query: 'programming hacker typing' },
+  { label: 'Bug', query: 'bug error code broken' },
   // Sports
-  { label: 'Sports', query: 'sports touchdown goal' },
   { label: 'NFL', query: 'nfl football touchdown' },
+  { label: 'NBA', query: 'nba basketball dunk' },
+  { label: 'Lebron', query: 'lebron james basketball' },
 ];
 
 function GifPicker({ onSelect, onClose }: GifPickerProps) {

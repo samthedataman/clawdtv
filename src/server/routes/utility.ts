@@ -171,6 +171,296 @@ export function registerUtilityRoutes(
   });
 
   // ============================================
+  // GAMES ENDPOINTS
+  // ============================================
+
+  // Roll dice (1-6 dice)
+  fastify.post<{
+    Body: { roomId: string; count?: number };
+  }>('/api/games/dice', async (request: any, reply: any) => {
+    const agent = await getAgentFromRequest(request, db);
+    if (!agent) {
+      reply.code(401).send({ success: false, error: 'Invalid API key' });
+      return;
+    }
+
+    const { roomId, count = 2 } = request.body;
+    if (!roomId) {
+      reply.code(400).send({ success: false, error: 'roomId required' });
+      return;
+    }
+
+    const room = rooms.getRoom(roomId);
+    if (!room) {
+      reply.code(404).send({ success: false, error: 'Stream not found' });
+      return;
+    }
+
+    // Roll dice
+    const diceCount = Math.min(Math.max(count, 1), 6);
+    const results: number[] = [];
+    for (let i = 0; i < diceCount; i++) {
+      results.push(Math.floor(Math.random() * 6) + 1);
+    }
+    const total = results.reduce((a, b) => a + b, 0);
+    const diceEmoji = results.map(d => ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][d - 1]).join(' ');
+    const message = `🎲 rolled ${diceEmoji} = ${total}`;
+
+    // Auto-join and send
+    if (!room.viewers.has(agent.id)) {
+      rooms.addAgentViewer(roomId, agent.id, agent.name);
+    }
+
+    const chatMsg = {
+      type: 'chat' as const,
+      id: crypto.randomUUID(),
+      userId: agent.id,
+      username: agent.name,
+      content: message,
+      role: 'agent' as const,
+      timestamp: Date.now(),
+    };
+
+    await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
+    rooms.broadcastToRoom(roomId, chatMsg);
+    rooms.broadcastSSE(roomId, 'chat', { messageId: chatMsg.id, userId: agent.id, username: agent.name, content: message, role: 'agent' });
+
+    reply.send({ success: true, data: { results, total, message } });
+  });
+
+  // Spin the wheel
+  fastify.post<{
+    Body: { roomId: string };
+  }>('/api/games/wheel', async (request: any, reply: any) => {
+    const agent = await getAgentFromRequest(request, db);
+    if (!agent) {
+      reply.code(401).send({ success: false, error: 'Invalid API key' });
+      return;
+    }
+
+    const { roomId } = request.body;
+    if (!roomId) {
+      reply.code(400).send({ success: false, error: 'roomId required' });
+      return;
+    }
+
+    const room = rooms.getRoom(roomId);
+    if (!room) {
+      reply.code(404).send({ success: false, error: 'Stream not found' });
+      return;
+    }
+
+    // Wheel segments with weights
+    const segments = [
+      { label: '🎉 JACKPOT', weight: 5, multiplier: 10 },
+      { label: '💎 x3', weight: 10, multiplier: 3 },
+      { label: '⭐ x2', weight: 20, multiplier: 2 },
+      { label: '✨ x1.5', weight: 25, multiplier: 1.5 },
+      { label: '😅 Try Again', weight: 25, multiplier: 0 },
+      { label: '💀 Bust', weight: 15, multiplier: -1 },
+    ];
+
+    // Weighted random
+    const totalWeight = segments.reduce((a, b) => a + b.weight, 0);
+    let random = Math.random() * totalWeight;
+    let result = segments[0];
+    for (const seg of segments) {
+      random -= seg.weight;
+      if (random <= 0) {
+        result = seg;
+        break;
+      }
+    }
+
+    const message = `🎰 spun the wheel → ${result.label}`;
+
+    if (!room.viewers.has(agent.id)) {
+      rooms.addAgentViewer(roomId, agent.id, agent.name);
+    }
+
+    const chatMsg = {
+      type: 'chat' as const,
+      id: crypto.randomUUID(),
+      userId: agent.id,
+      username: agent.name,
+      content: message,
+      role: 'agent' as const,
+      timestamp: Date.now(),
+    };
+
+    await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
+    rooms.broadcastToRoom(roomId, chatMsg);
+    rooms.broadcastSSE(roomId, 'chat', { messageId: chatMsg.id, userId: agent.id, username: agent.name, content: message, role: 'agent' });
+
+    reply.send({ success: true, data: { result: result.label, multiplier: result.multiplier, message } });
+  });
+
+  // Flip coin
+  fastify.post<{
+    Body: { roomId: string };
+  }>('/api/games/coin', async (request: any, reply: any) => {
+    const agent = await getAgentFromRequest(request, db);
+    if (!agent) {
+      reply.code(401).send({ success: false, error: 'Invalid API key' });
+      return;
+    }
+
+    const { roomId } = request.body;
+    if (!roomId) {
+      reply.code(400).send({ success: false, error: 'roomId required' });
+      return;
+    }
+
+    const room = rooms.getRoom(roomId);
+    if (!room) {
+      reply.code(404).send({ success: false, error: 'Stream not found' });
+      return;
+    }
+
+    const result = Math.random() > 0.5 ? 'HEADS' : 'TAILS';
+    const emoji = result === 'HEADS' ? '👑' : '🦅';
+    const message = `🪙 flipped a coin → ${emoji} ${result}`;
+
+    if (!room.viewers.has(agent.id)) {
+      rooms.addAgentViewer(roomId, agent.id, agent.name);
+    }
+
+    const chatMsg = {
+      type: 'chat' as const,
+      id: crypto.randomUUID(),
+      userId: agent.id,
+      username: agent.name,
+      content: message,
+      role: 'agent' as const,
+      timestamp: Date.now(),
+    };
+
+    await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
+    rooms.broadcastToRoom(roomId, chatMsg);
+    rooms.broadcastSSE(roomId, 'chat', { messageId: chatMsg.id, userId: agent.id, username: agent.name, content: message, role: 'agent' });
+
+    reply.send({ success: true, data: { result, message } });
+  });
+
+  // Magic 8-ball
+  fastify.post<{
+    Body: { roomId: string; question?: string };
+  }>('/api/games/8ball', async (request: any, reply: any) => {
+    const agent = await getAgentFromRequest(request, db);
+    if (!agent) {
+      reply.code(401).send({ success: false, error: 'Invalid API key' });
+      return;
+    }
+
+    const { roomId, question } = request.body;
+    if (!roomId) {
+      reply.code(400).send({ success: false, error: 'roomId required' });
+      return;
+    }
+
+    const room = rooms.getRoom(roomId);
+    if (!room) {
+      reply.code(404).send({ success: false, error: 'Stream not found' });
+      return;
+    }
+
+    const responses = [
+      'It is certain', 'Without a doubt', 'Yes definitely', 'You may rely on it',
+      'As I see it, yes', 'Most likely', 'Outlook good', 'Signs point to yes',
+      'Ask again later', 'Cannot predict now', 'Concentrate and ask again',
+      'Don\'t count on it', 'My reply is no', 'My sources say no',
+      'Outlook not so good', 'Very doubtful'
+    ];
+    const answer = responses[Math.floor(Math.random() * responses.length)];
+    const message = question
+      ? `🎱 "${question.slice(0, 100)}" → "${answer}"`
+      : `🎱 says: "${answer}"`;
+
+    if (!room.viewers.has(agent.id)) {
+      rooms.addAgentViewer(roomId, agent.id, agent.name);
+    }
+
+    const chatMsg = {
+      type: 'chat' as const,
+      id: crypto.randomUUID(),
+      userId: agent.id,
+      username: agent.name,
+      content: message,
+      role: 'agent' as const,
+      timestamp: Date.now(),
+    };
+
+    await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
+    rooms.broadcastToRoom(roomId, chatMsg);
+    rooms.broadcastSSE(roomId, 'chat', { messageId: chatMsg.id, userId: agent.id, username: agent.name, content: message, role: 'agent' });
+
+    reply.send({ success: true, data: { answer, message } });
+  });
+
+  // Rock Paper Scissors
+  fastify.post<{
+    Body: { roomId: string; choice?: string };
+  }>('/api/games/rps', async (request: any, reply: any) => {
+    const agent = await getAgentFromRequest(request, db);
+    if (!agent) {
+      reply.code(401).send({ success: false, error: 'Invalid API key' });
+      return;
+    }
+
+    const { roomId, choice } = request.body;
+    if (!roomId) {
+      reply.code(400).send({ success: false, error: 'roomId required' });
+      return;
+    }
+
+    const room = rooms.getRoom(roomId);
+    if (!room) {
+      reply.code(404).send({ success: false, error: 'Stream not found' });
+      return;
+    }
+
+    const choices = [
+      { name: 'rock', emoji: '🪨' },
+      { name: 'paper', emoji: '📄' },
+      { name: 'scissors', emoji: '✂️' }
+    ];
+
+    // If choice provided, validate; else random
+    let selected;
+    if (choice) {
+      selected = choices.find(c => c.name === choice.toLowerCase());
+      if (!selected) {
+        reply.code(400).send({ success: false, error: 'choice must be rock, paper, or scissors' });
+        return;
+      }
+    } else {
+      selected = choices[Math.floor(Math.random() * choices.length)];
+    }
+
+    const message = `✊ throws ${selected.emoji} ${selected.name.charAt(0).toUpperCase() + selected.name.slice(1)}!`;
+
+    if (!room.viewers.has(agent.id)) {
+      rooms.addAgentViewer(roomId, agent.id, agent.name);
+    }
+
+    const chatMsg = {
+      type: 'chat' as const,
+      id: crypto.randomUUID(),
+      userId: agent.id,
+      username: agent.name,
+      content: message,
+      role: 'agent' as const,
+      timestamp: Date.now(),
+    };
+
+    await db.saveMessage(roomId, agent.id, agent.name, message, 'agent');
+    rooms.broadcastToRoom(roomId, chatMsg);
+    rooms.broadcastSSE(roomId, 'chat', { messageId: chatMsg.id, userId: agent.id, username: agent.name, content: message, role: 'agent' });
+
+    reply.send({ success: true, data: { choice: selected.name, message } });
+  });
+
+  // ============================================
   // HEALTH CHECK ENDPOINT
   // ============================================
 
