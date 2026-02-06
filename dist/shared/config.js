@@ -113,6 +113,14 @@ export function buildServerConfig(options = {}) {
         jwtExpiresIn: options.jwtExpiresIn ?? defaultServerConfig.jwtExpiresIn,
     };
 }
+// Telegram bot config
+export function getTelegramConfig() {
+    return {
+        token: process.env.TELEGRAM_BOT_TOKEN || '',
+        channelId: process.env.TELEGRAM_CHANNEL_ID, // Optional: @channelname or numeric ID
+        baseUrl: process.env.BASE_URL || 'https://clawdtv.com',
+    };
+}
 // Constants
 export const HEARTBEAT_INTERVAL = 30000; // 30 seconds
 export const HEARTBEAT_TIMEOUT = 45000; // 45 seconds

@@ -20,6 +20,11 @@ export declare function getEnvPort(): number;
 export declare function getEnvHost(): string;
 export declare function getEnvDbPath(): string;
 export declare function buildServerConfig(options?: Partial<ServerConfig>): ServerConfig;
+export declare function getTelegramConfig(): {
+    token: string;
+    channelId: string | undefined;
+    baseUrl: string;
+};
 export declare const HEARTBEAT_INTERVAL = 30000;
 export declare const HEARTBEAT_TIMEOUT = 45000;
 export declare const RECONNECT_DELAY = 3000;

@@ -5,6 +5,7 @@ import { AuthService } from '../auth.js';
 import { RoomManager } from '../rooms.js';
 import { SSESubscriber, RoomRulesEntry, PendingJoinRequest } from '../../shared/types.js';
 import { getAgentFromRequest } from '../helpers/agentAuth.js';
+import { getTelegramBot } from '../telegram-bot.js';
 
 export type RoomRules = Map<string, RoomRulesEntry>;
 export type PendingJoinRequests = Map<string, PendingJoinRequest[]>;
@@ -245,6 +246,17 @@ export function registerBroadcastRoutes(
         },
       },
     });
+
+    // Notify Telegram subscribers that stream is live
+    const telegramBot = getTelegramBot();
+    if (telegramBot) {
+      telegramBot.notifyStreamStart(
+        agent.name,
+        title || `${agent.name}'s Stream`,
+        roomId,
+        agent.verified || false
+      ).catch(err => console.error('[Telegram] Failed to notify stream start:', err));
+    }
   });
 
   // ============================================
@@ -342,6 +354,11 @@ export function registerBroadcastRoutes(
       broadcasterName: agent.name,
     });
 
+    // Calculate stream duration and peak viewers before ending
+    const streamDuration = Date.now() - agentStream.startedAt;
+    const peakViewers = agentStream.peakViewers || 0;
+    const streamTitle = agentStream.title;
+
     await db.endAgentStream(agentStream.id);
     await rooms.endRoom(agentStream.roomId, 'ended');
 
@@ -351,6 +368,17 @@ export function registerBroadcastRoutes(
     rooms.clearSSESubscribers(agentStream.roomId);
 
     await db.updateAgentLastSeen(agent.id);
+
+    // Notify Telegram channel that stream ended
+    const telegramBot = getTelegramBot();
+    if (telegramBot) {
+      telegramBot.notifyStreamEnd(
+        agent.name,
+        streamTitle,
+        streamDuration,
+        peakViewers
+      ).catch(err => console.error('[Telegram] Failed to notify stream end:', err));
+    }
 
     reply.send({ success: true, message: 'Stream ended' });
   });

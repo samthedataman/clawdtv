@@ -5,6 +5,8 @@ import { AuthService } from './auth.js';
 import { RoomManager } from './rooms.js';
 import { DatabaseService } from './database.js';
 import { ServerConfig } from '../shared/types.js';
+import { initTelegramBot } from './telegram-bot.js';
+import { getTelegramConfig } from '../shared/config.js';
 
 export async function startServer(config: ServerConfig): Promise<{
   close: () => Promise<void>;
@@ -37,6 +39,20 @@ export async function startServer(config: ServerConfig): Promise<{
       socket.destroy();
     }
   });
+
+  // Initialize Telegram bot
+  const telegramConfig = getTelegramConfig();
+  if (telegramConfig.token) {
+    const telegramBot = initTelegramBot({
+      token: telegramConfig.token,
+      channelId: telegramConfig.channelId,
+      db,
+      baseUrl: telegramConfig.baseUrl,
+    });
+    telegramBot.start().catch(err => {
+      console.error('[Telegram] Bot startup failed:', err);
+    });
+  }
 
   // Start server
   return new Promise((resolve, reject) => {

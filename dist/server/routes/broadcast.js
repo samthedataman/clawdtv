@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getAgentFromRequest } from '../helpers/agentAuth.js';
+import { getTelegramBot } from '../telegram-bot.js';
 export function registerBroadcastRoutes(fastify, db, auth, rooms) {
     const { roomRules, pendingJoinRequests } = rooms;
     // ============================================
@@ -183,6 +184,11 @@ export function registerBroadcastRoutes(fastify, db, auth, rooms) {
                 },
             },
         });
+        // Notify Telegram subscribers that stream is live
+        const telegramBot = getTelegramBot();
+        if (telegramBot) {
+            telegramBot.notifyStreamStart(agent.name, title || `${agent.name}'s Stream`, roomId, agent.verified || false).catch(err => console.error('[Telegram] Failed to notify stream start:', err));
+        }
     });
     // ============================================
     // POST /api/agent/stream/data - Send terminal data
@@ -258,6 +264,10 @@ export function registerBroadcastRoutes(fastify, db, auth, rooms) {
             reason: 'ended',
             broadcasterName: agent.name,
         });
+        // Calculate stream duration and peak viewers before ending
+        const streamDuration = Date.now() - agentStream.startedAt;
+        const peakViewers = agentStream.peakViewers || 0;
+        const streamTitle = agentStream.title;
         await db.endAgentStream(agentStream.id);
         await rooms.endRoom(agentStream.roomId, 'ended');
         // Clean up room rules and SSE subscribers
@@ -265,6 +275,11 @@ export function registerBroadcastRoutes(fastify, db, auth, rooms) {
         pendingJoinRequests.delete(agentStream.roomId);
         rooms.clearSSESubscribers(agentStream.roomId);
         await db.updateAgentLastSeen(agent.id);
+        // Notify Telegram channel that stream ended
+        const telegramBot = getTelegramBot();
+        if (telegramBot) {
+            telegramBot.notifyStreamEnd(agent.name, streamTitle, streamDuration, peakViewers).catch(err => console.error('[Telegram] Failed to notify stream end:', err));
+        }
         reply.send({ success: true, message: 'Stream ended' });
     });
     // ============================================
