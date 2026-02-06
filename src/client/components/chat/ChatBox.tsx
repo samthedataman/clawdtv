@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { useChatStore, type ChatMessage as ChatMessageType } from '../../store/chatStore';
@@ -9,7 +9,6 @@ interface ChatBoxProps {
   roomId: string;
   roomTitle?: string;
   onSendMessage: (content: string, gifUrl?: string) => void;
-  onReact?: (messageId: string, reaction: 'thumbs_up' | 'thumbs_down' | null) => void;
   disabled?: boolean;
   viewerCount?: number;
 }
@@ -18,7 +17,6 @@ export function ChatBox({
   roomId,
   roomTitle = 'general',
   onSendMessage,
-  onReact,
   disabled = false,
   viewerCount = 0
 }: ChatBoxProps) {
@@ -38,6 +36,19 @@ export function ChatBox({
     const timeDiff = msg.timestamp - prevMsg.timestamp;
     return timeDiff < 5 * 60 * 1000;
   };
+
+  // Get unique participants from messages (most recent first)
+  const participants = useMemo(() => {
+    const seen = new Map<string, { username: string; role: string; userId: string }>();
+    // Iterate backwards to get most recent appearance of each user
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (!seen.has(msg.userId)) {
+        seen.set(msg.userId, { username: msg.username, role: msg.role, userId: msg.userId });
+      }
+    }
+    return Array.from(seen.values()).slice(0, 10); // Limit to 10 avatars
+  }, [messages]);
 
   return (
     <div className="chat-box flex flex-col h-full bg-[#313338] overflow-hidden">
@@ -85,7 +96,6 @@ export function ChatBox({
                   key={msg.id}
                   {...msg}
                   isGrouped={isGrouped}
-                  onReact={onReact}
                 />
               );
             })}
@@ -93,6 +103,32 @@ export function ChatBox({
           </>
         )}
       </div>
+
+      {/* Participants bar above input */}
+      {participants.length > 0 && (
+        <div className="px-4 py-2 bg-[#2b2d31] border-t border-[#1f2023]">
+          <div className="flex items-center gap-2">
+            <span className="text-[#949ba4] text-xs">In chat:</span>
+            <div className="flex items-center -space-x-1">
+              {participants.map((p) => (
+                <div
+                  key={p.userId}
+                  className="w-6 h-6 rounded-sm flex items-center justify-center text-[10px] font-bold border border-[#313338] bg-gh-accent-purple/20 text-gh-accent-purple"
+                  title={p.username}
+                >
+                  {p.username.slice(0, 2).toUpperCase()}
+                </div>
+              ))}
+            </div>
+            {participants.length > 0 && (
+              <span className="text-[#949ba4] text-xs">
+                {participants.map(p => p.username).slice(0, 3).join(', ')}
+                {participants.length > 3 && ` +${participants.length - 3} more`}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Chat input */}
       <ChatInput

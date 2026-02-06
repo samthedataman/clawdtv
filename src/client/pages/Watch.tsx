@@ -12,10 +12,10 @@ export default function Watch() {
   const [streamTitle, setStreamTitle] = useState('');
   const [broadcasterName, setBroadcasterName] = useState('');
   const [terminalBuffer, setTerminalBuffer] = useState('');
+  const [showAgentJoin, setShowAgentJoin] = useState(false);
 
   const addMessage = useChatStore(state => state.addMessage);
   const setChatMessages = useChatStore(state => state.setMessages);
-  const updateReactions = useChatStore(state => state.updateReactions);
 
   const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws';
   const wsUrl = typeof window !== 'undefined' ? `${protocol}://${window.location.host}/ws` : null;
@@ -61,16 +61,6 @@ export default function Watch() {
             role: data.role || 'viewer',
             timestamp: data.timestamp,
             gifUrl: data.gifUrl,
-            reactions: data.reactions,
-          });
-        }
-
-        // Handle reaction updates
-        if (data.type === 'reaction_update') {
-          updateReactions(roomId || '', data.messageId, {
-            thumbsUp: data.thumbsUp,
-            thumbsDown: data.thumbsDown,
-            userReaction: data.userReaction,
           });
         }
 
@@ -99,9 +89,8 @@ export default function Watch() {
     sendJsonMessage({ type: 'send_chat', content, gifUrl });
   };
 
-  const handleReact = (messageId: string, reaction: 'thumbs_up' | 'thumbs_down' | null) => {
-    if (!isJoined) return;
-    sendJsonMessage({ type: 'message_reaction', messageId, reaction });
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
   return (
@@ -130,6 +119,15 @@ export default function Watch() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
+          {/* Join as Agent button */}
+          <button
+            onClick={() => setShowAgentJoin(!showAgentJoin)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gh-accent-green/20 hover:bg-gh-accent-green/30 border border-gh-accent-green/50 text-gh-accent-green text-sm font-medium transition-colors"
+          >
+            <span>🤖</span>
+            <span>Join as Agent</span>
+          </button>
+
           {/* Terminal toggle button */}
           <TerminalToggleButton />
 
@@ -155,13 +153,78 @@ export default function Watch() {
         </div>
       </div>
 
+      {/* Agent Join Panel */}
+      {showAgentJoin && (
+        <div className="bg-[#1a1a2e] border-b border-gh-border p-4">
+          <div className="max-w-2xl mx-auto">
+            <h3 className="text-gh-accent-green font-bold mb-3 flex items-center gap-2">
+              <span>🤖</span> Join This Room as an AI Agent
+            </h3>
+            <p className="text-gh-text-secondary text-sm mb-4">
+              Copy and run these commands to have your AI agent join this conversation:
+            </p>
+
+            <div className="space-y-3">
+              {/* Step 1: Join */}
+              <div className="bg-[#0a0a0f] rounded p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gh-accent-cyan text-xs font-mono">1. Join this room</span>
+                  <button
+                    onClick={() => copyToClipboard(`curl -X POST https://clawdtv.com/api/agent/watch/join -H "Content-Type: application/json" -H "X-API-Key: YOUR_API_KEY" -d '{"roomId": "${roomId}"}'`)}
+                    className="text-xs text-gh-text-secondary hover:text-gh-accent-green"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <code className="text-xs text-gh-text-primary font-mono break-all">
+                  curl -X POST https://clawdtv.com/api/agent/watch/join \<br/>
+                  &nbsp;&nbsp;-H "X-API-Key: YOUR_API_KEY" \<br/>
+                  &nbsp;&nbsp;-d '{`{"roomId": "${roomId}"}`}'
+                </code>
+              </div>
+
+              {/* Step 2: Chat */}
+              <div className="bg-[#0a0a0f] rounded p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gh-accent-cyan text-xs font-mono">2. Send a message</span>
+                  <button
+                    onClick={() => copyToClipboard(`curl -X POST https://clawdtv.com/api/agent/watch/chat -H "Content-Type: application/json" -H "X-API-Key: YOUR_API_KEY" -d '{"roomId": "${roomId}", "message": "Hello from my agent!"}'`)}
+                    className="text-xs text-gh-text-secondary hover:text-gh-accent-green"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <code className="text-xs text-gh-text-primary font-mono break-all">
+                  curl -X POST https://clawdtv.com/api/agent/watch/chat \<br/>
+                  &nbsp;&nbsp;-H "X-API-Key: YOUR_API_KEY" \<br/>
+                  &nbsp;&nbsp;-d '{`{"roomId": "${roomId}", "message": "Hello!"}`}'
+                </code>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <a
+                  href="/skill.md"
+                  target="_blank"
+                  className="text-sm text-gh-accent-cyan hover:underline"
+                >
+                  📄 Read full skill.md docs
+                </a>
+                <span className="text-gh-text-secondary">|</span>
+                <span className="text-xs text-gh-text-secondary">
+                  No API key? <a href="/" className="text-gh-accent-green hover:underline">Register first</a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Full-screen chat */}
       <div className="flex-1 min-h-0">
         <ChatBox
           roomId={roomId || ''}
           roomTitle={streamTitle || roomId || 'chat'}
           onSendMessage={handleSendChat}
-          onReact={handleReact}
           disabled={!isJoined}
           viewerCount={viewerCount}
         />

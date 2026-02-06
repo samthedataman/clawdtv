@@ -1,9 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { ChatMessage as Message, MessageReactions } from '../../store/chatStore';
+import { ChatMessage as Message } from '../../store/chatStore';
 
 interface ChatMessageProps extends Message {
   isGrouped?: boolean;
-  onReact?: (messageId: string, reaction: 'thumbs_up' | 'thumbs_down' | null) => void;
 }
 
 export function ChatMessage({
@@ -14,9 +13,7 @@ export function ChatMessage({
   role,
   timestamp,
   gifUrl,
-  reactions,
   isGrouped = false,
-  onReact,
 }: ChatMessageProps) {
   const navigate = useNavigate();
 
@@ -67,80 +64,6 @@ export function ChatMessage({
     day: 'numeric',
   });
 
-  const handleReaction = (reaction: 'thumbs_up' | 'thumbs_down') => {
-    if (!onReact) return;
-    if (reactions?.userReaction === reaction) {
-      onReact(id, null);
-    } else {
-      onReact(id, reaction);
-    }
-  };
-
-  // Discord-style reaction pills
-  const ReactionPills = () => {
-    const thumbsUp = reactions?.thumbsUp || 0;
-    const thumbsDown = reactions?.thumbsDown || 0;
-    const userReaction = reactions?.userReaction;
-    const hasReactions = thumbsUp > 0 || thumbsDown > 0;
-
-    if (!hasReactions && !onReact) return null;
-
-    return (
-      <div className="flex items-center gap-1 mt-1.5">
-        {(thumbsUp > 0 || onReact) && (
-          <button
-            onClick={() => handleReaction('thumbs_up')}
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all ${
-              userReaction === 'thumbs_up'
-                ? 'bg-[#5865f2]/30 text-[#dee0fc] border border-[#5865f2]'
-                : thumbsUp > 0
-                  ? 'bg-[#2b2d31] text-[#b5bac1] border border-[#3f4147] hover:border-[#5865f2]/50'
-                  : 'bg-[#2b2d31]/50 text-[#b5bac1]/50 border border-transparent opacity-0 group-hover:opacity-100 hover:bg-[#2b2d31] hover:text-[#b5bac1]'
-            }`}
-          >
-            <span className="text-sm">👍</span>
-            {thumbsUp > 0 && <span className="font-medium">{thumbsUp}</span>}
-          </button>
-        )}
-        {(thumbsDown > 0 || onReact) && (
-          <button
-            onClick={() => handleReaction('thumbs_down')}
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all ${
-              userReaction === 'thumbs_down'
-                ? 'bg-[#f23f42]/30 text-[#fcd4d4] border border-[#f23f42]'
-                : thumbsDown > 0
-                  ? 'bg-[#2b2d31] text-[#b5bac1] border border-[#3f4147] hover:border-[#f23f42]/50'
-                  : 'bg-[#2b2d31]/50 text-[#b5bac1]/50 border border-transparent opacity-0 group-hover:opacity-100 hover:bg-[#2b2d31] hover:text-[#b5bac1]'
-            }`}
-          >
-            <span className="text-sm">👎</span>
-            {thumbsDown > 0 && <span className="font-medium">{thumbsDown}</span>}
-          </button>
-        )}
-      </div>
-    );
-  };
-
-  // Hover action buttons (Discord-style)
-  const ActionButtons = () => (
-    <div className="absolute -top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1e1f22] border border-[#3f4147] rounded shadow-lg flex">
-      <button
-        onClick={() => handleReaction('thumbs_up')}
-        className="p-1.5 hover:bg-[#35373c] text-[#b5bac1] hover:text-white transition-colors"
-        title="Add reaction"
-      >
-        <span className="text-lg">👍</span>
-      </button>
-      <button
-        onClick={() => handleReaction('thumbs_down')}
-        className="p-1.5 hover:bg-[#35373c] text-[#b5bac1] hover:text-white transition-colors"
-        title="Add reaction"
-      >
-        <span className="text-lg">👎</span>
-      </button>
-    </div>
-  );
-
   // Grouped message (compact)
   if (isGrouped) {
     return (
@@ -160,9 +83,7 @@ export function ChatMessage({
               loading="lazy"
             />
           )}
-          <ReactionPills />
         </div>
-        {onReact && <ActionButtons />}
       </div>
     );
   }
@@ -211,13 +132,7 @@ export function ChatMessage({
             loading="lazy"
           />
         )}
-
-        {/* Reactions */}
-        <ReactionPills />
       </div>
-
-      {/* Hover actions */}
-      {onReact && <ActionButtons />}
     </div>
   );
 }
