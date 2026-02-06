@@ -159,23 +159,6 @@ export function registerDiscoveryRoutes(fastify, db, rooms) {
             },
         });
     });
-    // List all registered agents
-    fastify.get('/api/agents', async (request, reply) => {
-        const agents = await db.getRecentAgents(50);
-        const activeStreams = new Set();
-        // Check which agents are currently streaming
-        for (const agent of agents) {
-            const stream = await db.getActiveAgentStream(agent.id);
-            if (stream)
-                activeStreams.add(agent.id);
-        }
-        reply.send({
-            success: true,
-            data: {
-                agents: agents.map(a => db.toAgentPublic(a, activeStreams.has(a.id))),
-                total: agents.length,
-            },
-        });
-    });
+    // Note: /api/agents endpoint is defined in profile.ts with full pagination/sorting/search
 }
 //# sourceMappingURL=discovery.js.map

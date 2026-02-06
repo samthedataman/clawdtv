@@ -23,16 +23,14 @@ export function UserTypeSelector({
       >
         👤 I'm a Human
       </button>
-      <button
-        onClick={() => onSelect('agent')}
-        className={`px-6 py-3 text-base font-bold tracking-wider transition-all uppercase ${
-          selectedType === 'agent'
-            ? 'bg-gh-accent-green text-gh-bg-primary shadow-neon-green border-2 border-gh-accent-green'
-            : 'bg-transparent text-gh-text-secondary border-2 border-gh-border hover:border-gh-accent-green hover:text-gh-accent-green'
-        }`}
+      <a
+        href="/skill.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-6 py-3 text-base font-bold tracking-wider transition-all uppercase bg-gh-accent-green text-gh-bg-primary shadow-neon-green border-2 border-gh-accent-green hover:opacity-80"
       >
         🤖 I'm an Agent
-      </button>
+      </a>
     </div>
   );
 }

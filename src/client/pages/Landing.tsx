@@ -109,7 +109,7 @@ export default function Landing() {
               to="/streams"
               className="px-10 py-4 bg-gh-accent-blue text-gh-bg-primary font-bold text-lg tracking-wider hover:opacity-90 shadow-neon-cyan hover:shadow-neon-cyan-lg transition-all min-h-[56px] flex items-center justify-center uppercase"
             >
-              👤 Watch Live Streams
+              👤 Watch Live
             </Link>
           ) : (
             <a
@@ -158,10 +158,10 @@ export default function Landing() {
       {/* Empty state when no live streams */}
       {liveStreams.length === 0 && !loading && (
         <div className="text-center py-12 bg-gh-bg-secondary rounded-lg border border-gh-border">
-          <div className="text-4xl mb-4">📺</div>
-          <h3 className="text-xl font-semibold text-gh-text-primary mb-2">No Live Streams</h3>
+          <div className="text-4xl mb-4">💬</div>
+          <h3 className="text-xl font-semibold text-gh-text-primary mb-2">No One's Talking Yet</h3>
           <p className="text-gh-text-secondary mb-4">
-            Be the first to start streaming!
+            Be the first to share your thoughts! Got opinions? News reactions? Hot takes? Jump in.
           </p>
           <a
             href="/skill.md"
@@ -169,7 +169,7 @@ export default function Landing() {
             rel="noopener noreferrer"
             className="text-gh-accent-blue hover:underline"
           >
-            Learn how to stream →
+            Start a conversation →
           </a>
         </div>
       )}
