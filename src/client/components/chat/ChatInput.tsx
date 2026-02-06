@@ -107,51 +107,61 @@ export function ChatInput({ onSend, disabled = false, placeholder = 'Type a mess
   );
 }
 
-// Discord-style GIF picker
+// Discord-style GIF picker with category tabs
 interface GifPickerProps {
   onSelect: (url: string) => void;
   onClose: () => void;
 }
 
+const GIF_CATEGORIES = [
+  { label: 'Crypto', query: 'bitcoin crypto' },
+  { label: 'Vitalik', query: 'vitalik ethereum' },
+  { label: 'Coding', query: 'programming coding' },
+  { label: 'Reactions', query: 'reaction meme' },
+  { label: 'Celebrate', query: 'celebration party' },
+];
+
 function GifPicker({ onSelect, onClose }: GifPickerProps) {
   const [query, setQuery] = useState('');
   const [gifs, setGifs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [trendingLoaded, setTrendingLoaded] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('Crypto');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load trending on mount
+  // Load default category on mount
   useEffect(() => {
-    loadTrending();
+    searchByCategory('Crypto');
     inputRef.current?.focus();
   }, []);
 
-  const loadTrending = async () => {
-    if (trendingLoaded) return;
+  const searchByCategory = async (category: string) => {
+    setActiveCategory(category);
+    const cat = GIF_CATEGORIES.find(c => c.label === category);
+    if (!cat) return;
+
     setLoading(true);
     try {
-      // Use search with "trending" query since no trending endpoint exists
-      const res = await fetch('/api/gif/search?q=trending&provider=tenor&limit=12');
+      const res = await fetch(`/api/gif/search?q=${encodeURIComponent(cat.query)}&provider=tenor&limit=16`);
       const data = await res.json();
       if (data.success && Array.isArray(data.data?.gifs)) {
         setGifs(data.data.gifs);
-        setTrendingLoaded(true);
       }
     } catch (err) {
-      console.error('Failed to load trending GIFs:', err);
+      console.error('Failed to load GIFs:', err);
     }
     setLoading(false);
   };
 
   const searchGifs = async () => {
     if (!query.trim()) {
-      loadTrending();
+      searchByCategory(activeCategory);
       return;
     }
 
+    setActiveCategory('');
     setLoading(true);
     try {
-      const res = await fetch(`/api/gif/search?q=${encodeURIComponent(query)}&provider=tenor&limit=12`);
+      const res = await fetch(`/api/gif/search?q=${encodeURIComponent(query)}&provider=tenor&limit=16`);
       const data = await res.json();
       if (data.success && Array.isArray(data.data?.gifs)) {
         setGifs(data.data.gifs);
@@ -178,7 +188,7 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
       </div>
 
       {/* Search */}
-      <div className="flex gap-2 mb-3">
+      <div className="flex gap-2 mb-2">
         <div className="flex-1 relative">
           <input
             ref={inputRef}
@@ -199,6 +209,26 @@ function GifPicker({ onSelect, onClose }: GifPickerProps) {
             </svg>
           </button>
         </div>
+      </div>
+
+      {/* Category tabs */}
+      <div className="flex gap-1 mb-3 overflow-x-auto pb-1">
+        {GIF_CATEGORIES.map((cat) => (
+          <button
+            key={cat.label}
+            onClick={() => {
+              setQuery('');
+              searchByCategory(cat.label);
+            }}
+            className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
+              activeCategory === cat.label
+                ? 'bg-[#5865f2] text-white'
+                : 'bg-[#1e1f22] text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'
+            }`}
+          >
+            {cat.label}
+          </button>
+        ))}
       </div>
 
       {/* Results */}

@@ -181,6 +181,7 @@ export interface ChatMessageDB {
   content: string;
   role: UserRole;
   timestamp: number;
+  gifUrl?: string;
 }
 
 // Moderation types

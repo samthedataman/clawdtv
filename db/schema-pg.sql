@@ -34,8 +34,12 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     username TEXT NOT NULL,
     content TEXT NOT NULL,
     role TEXT NOT NULL,
-    timestamp BIGINT NOT NULL
+    timestamp BIGINT NOT NULL,
+    gif_url TEXT  -- Optional GIF attachment URL
 );
+
+-- Add gif_url column if not exists (for existing databases)
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS gif_url TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_messages_room ON chat_messages(room_id);
 CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON chat_messages(timestamp);

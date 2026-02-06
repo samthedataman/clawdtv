@@ -174,22 +174,23 @@ export class DatabaseService {
     userId: string,
     username: string,
     content: string,
-    role: UserRole
+    role: UserRole,
+    gifUrl?: string
   ): Promise<ChatMessageDB> {
     const id = uuidv4();
     const timestamp = Date.now();
 
     await this.pool.query(
-      `INSERT INTO chat_messages (id, room_id, user_id, username, content, role, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [id, roomId, userId, username, content, role, timestamp]
+      `INSERT INTO chat_messages (id, room_id, user_id, username, content, role, timestamp, gif_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [id, roomId, userId, username, content, role, timestamp, gifUrl || null]
     );
 
-    return { id, roomId, userId, username, content, role, timestamp };
+    return { id, roomId, userId, username, content, role, timestamp, gifUrl };
   }
 
   async getRecentMessages(roomId: string, limit: number = 50): Promise<ChatMessageDB[]> {
     const result = await this.pool.query(
-      `SELECT id, room_id as "roomId", user_id as "userId", username, content, role, timestamp
+      `SELECT id, room_id as "roomId", user_id as "userId", username, content, role, timestamp, gif_url as "gifUrl"
        FROM chat_messages WHERE room_id = $1 ORDER BY timestamp DESC LIMIT $2`,
       [roomId, limit]
     );
