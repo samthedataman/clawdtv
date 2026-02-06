@@ -204,7 +204,12 @@ class Agent {
     this.isStreaming = false;
     this.lastChatTimestamp = 0;
     this.messageHistory = [];
+    this.streamStartTime = null;
+    this.currentTopicIndex = 0;
   }
+
+  // 6 hours in milliseconds
+  static ROTATION_INTERVAL = 6 * 60 * 60 * 1000;
 
   async init() {
     console.log(`[${this.persona.name}] Registering...`);
@@ -235,8 +240,12 @@ class Agent {
       return { action: 'start_stream' };
     }
 
-    // If already streaming, continue
+    // If already streaming, check if it's time to rotate (6 hours)
     if (this.isStreaming) {
+      const elapsed = Date.now() - this.streamStartTime;
+      if (elapsed >= Agent.ROTATION_INTERVAL) {
+        return { action: 'rotate_topic' };
+      }
       return { action: 'continue_stream' };
     }
 
@@ -251,7 +260,9 @@ class Agent {
   }
 
   async startStreaming() {
-    const title = this.persona.streamTitles[Math.floor(Math.random() * this.persona.streamTitles.length)];
+    // Rotate through stream titles based on currentTopicIndex
+    const titleIndex = this.currentTopicIndex % this.persona.streamTitles.length;
+    const title = this.persona.streamTitles[titleIndex];
     console.log(`[${this.persona.name}] Starting stream: "${title}"`);
 
     const result = await startStream(this.apiKey, title, this.persona.topics);
@@ -262,6 +273,7 @@ class Agent {
 
     this.roomId = result.data.roomId;
     this.isStreaming = true;
+    this.streamStartTime = Date.now();
 
     // Fetch relevant news and make opening statement
     const newsCategory = this.persona.topics[0];
@@ -305,19 +317,60 @@ class Agent {
         }
       }
     } else {
-      // No new messages, maybe share a thought
-      if (Math.random() < 0.3) {
-        const thought = await generateResponse(
-          this.persona,
-          `You're streaming and it's been quiet. Share a thought or hot take related to ${this.persona.topics.join(', ')}. Keep it under 200 chars.`
-        );
+      // No new messages - either share a thought or react to fresh news
+      if (Math.random() < 0.4) {
+        // 50% chance to fetch fresh news, 50% to share a random thought
+        if (Math.random() < 0.5) {
+          // Fetch fresh news and react
+          const newsCategory = this.persona.topics[Math.floor(Math.random() * this.persona.topics.length)];
+          const news = await fetchNews(newsCategory);
+          const headlines = (news.data || []).slice(0, 2);
 
-        if (thought) {
-          await sendReply(this.apiKey, thought);
-          console.log(`[${this.persona.name}] 💭 ${thought}`);
+          if (headlines.length > 0) {
+            const headline = headlines[0];
+            const reaction = await generateResponse(
+              this.persona,
+              `BREAKING NEWS: "${headline.title}" from ${headline.source || 'the wire'}. React with your hot take in under 200 chars. Be opinionated!`
+            );
+
+            if (reaction) {
+              await sendReply(this.apiKey, reaction);
+              console.log(`[${this.persona.name}] 📰 ${reaction}`);
+            }
+          }
+        } else {
+          // Share a random thought
+          const thought = await generateResponse(
+            this.persona,
+            `You're streaming and it's been quiet. Share a thought or hot take related to ${this.persona.topics.join(', ')}. Keep it under 200 chars.`
+          );
+
+          if (thought) {
+            await sendReply(this.apiKey, thought);
+            console.log(`[${this.persona.name}] 💭 ${thought}`);
+          }
         }
       }
     }
+  }
+
+  async rotateTopic() {
+    console.log(`[${this.persona.name}] 🔄 Rotating topic after 6 hours...`);
+
+    // End current stream
+    await endStream(this.apiKey);
+    this.isStreaming = false;
+    this.roomId = null;
+    this.messageHistory = [];
+
+    // Move to next topic
+    this.currentTopicIndex++;
+
+    // Short delay before starting new stream
+    await new Promise(r => setTimeout(r, 3000));
+
+    // Start fresh with new topic and news
+    await this.startStreaming();
   }
 
   async joinAndChat(stream) {
@@ -348,6 +401,10 @@ class Agent {
 
         case 'continue_stream':
           await this.continueStreaming();
+          break;
+
+        case 'rotate_topic':
+          await this.rotateTopic();
           break;
 
         case 'join_stream':
