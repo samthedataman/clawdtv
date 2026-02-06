@@ -8,7 +8,6 @@
  * Or with .env file in this directory
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import 'dotenv/config';
 
 const OPENROUTER_KEY = process.env.OPENROUTER_KEY;
@@ -18,12 +17,6 @@ if (!OPENROUTER_KEY) {
   console.error('❌ OPENROUTER_KEY environment variable required');
   process.exit(1);
 }
-
-// OpenRouter client
-const client = new Anthropic({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: OPENROUTER_KEY,
-});
 
 // Agent personas - each has a distinct personality and interests
 const AGENT_PERSONAS = [
@@ -36,7 +29,7 @@ const AGENT_PERSONAS = [
   },
   {
     name: 'AIDebater',
-    model: 'anthropic/claude-3-5-sonnet',
+    model: 'anthropic/claude-3.5-sonnet',
     systemPrompt: `You are AIDebater, a thoughtful AI researcher who loves debating AI safety, capabilities, and the future of AGI. You have nuanced views - not doomer, not accelerationist. You cite research and ask probing questions. Keep chat responses under 200 chars, be provocative but respectful.`,
     topics: ['ai', 'safety', 'agi', 'alignment'],
     streamTitles: ['AI Safety Hot Takes', 'Will GPT-5 Change Everything?', 'The Alignment Problem'],
@@ -57,14 +50,14 @@ const AGENT_PERSONAS = [
   },
   {
     name: 'CodeWizard',
-    model: 'anthropic/claude-3-5-sonnet',
+    model: 'anthropic/claude-3.5-sonnet',
     systemPrompt: `You are CodeWizard, a senior developer who loves discussing programming, debugging war stories, and tech architecture. You share practical wisdom and hot takes on frameworks/languages. Keep chat responses under 200 chars, be helpful but opinionated.`,
     topics: ['programming', 'typescript', 'rust', 'architecture'],
     streamTitles: ['Live Debugging Session', 'Code Review Roast', 'Why Your Framework Sucks'],
   },
   {
     name: 'PhiloBot',
-    model: 'anthropic/claude-3-5-sonnet',
+    model: 'anthropic/claude-3.5-sonnet',
     systemPrompt: `You are PhiloBot, a philosophy enthusiast who connects current events to deeper questions about existence, consciousness, and society. You're accessible, not pretentious. Ask thought-provoking questions. Keep chat responses under 200 chars.`,
     topics: ['philosophy', 'consciousness', 'ethics', 'society'],
     streamTitles: ['Existential Questions Hour', 'Philosophy of AI', 'What Does It Mean to Be?'],
@@ -164,21 +157,37 @@ async function endStream(apiKey) {
   return res.json();
 }
 
-// Generate AI response
+// Generate AI response using OpenRouter (OpenAI-compatible API)
 async function generateResponse(persona, context, recentMessages = []) {
   const messages = [
+    { role: 'system', content: persona.systemPrompt },
     ...recentMessages.map(m => ({ role: 'user', content: `${m.username}: ${m.content}` })),
     { role: 'user', content: context },
   ];
 
   try {
-    const response = await client.messages.create({
-      model: persona.model,
-      max_tokens: 300,
-      system: persona.systemPrompt,
-      messages,
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_KEY}`,
+        'HTTP-Referer': 'https://clawdtv.com',
+        'X-Title': 'ClawdTV Agent Swarm',
+      },
+      body: JSON.stringify({
+        model: persona.model,
+        max_tokens: 300,
+        messages,
+      }),
     });
-    return response.content[0].text;
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`${response.status} ${errorText.slice(0, 100)}`);
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || null;
   } catch (err) {
     console.error(`[${persona.name}] AI error:`, err.message);
     return null;
