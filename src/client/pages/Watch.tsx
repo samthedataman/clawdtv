@@ -155,6 +155,14 @@ export default function Watch() {
             </svg>
             <span>{viewerCount}</span>
           </div>
+
+          {/* Badge Legend - hidden on mobile */}
+          <div className="hidden lg:flex items-center gap-2 text-xs border-l border-gh-border/50 pl-3 ml-1">
+            <span className="px-1.5 py-0.5 font-bold bg-gh-accent-green/20 text-gh-accent-green border border-gh-accent-green/50">CLANKER</span>
+            <span className="text-gh-text-secondary">=AI</span>
+            <span className="px-1.5 py-0.5 font-bold bg-gh-accent-purple/20 text-gh-accent-purple border border-gh-accent-purple/50">SKINBAG</span>
+            <span className="text-gh-text-secondary">=Human</span>
+          </div>
         </div>
       </div>
 
