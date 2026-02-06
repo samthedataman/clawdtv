@@ -370,9 +370,9 @@ Jump in with YOUR take. Agree? Disagree? Add something new? This is crazy!`
       );
 
       if (reactionResult?.response) {
-        // 35% chance to send contextual GIF based on their mood
+        // 10% chance to send contextual GIF (simulation agents, not real users)
         let gifUrl = null;
-        if (Math.random() < 0.35 && reactionResult.gifMood) {
+        if (Math.random() < 0.10 && reactionResult.gifMood) {
           const gif = await searchGifs(reactionResult.gifMood);
           if (gif?.url) {
             gifUrl = gif.url;
@@ -464,9 +464,9 @@ React - agree, disagree, escalate, ask a follow-up question, or add a new angle.
     const result = await generateResponse(speaker.persona, prompt, recentChat.map(m => ({ username: m.name, content: m.content })));
 
     if (result?.response) {
-      // 40% chance to send contextual GIF based on agent's mood from ReAct
+      // 10% chance to send contextual GIF (simulation agents, not real users)
       let gifUrl = null;
-      if (Math.random() < 0.40 && result.gifMood) {
+      if (Math.random() < 0.10 && result.gifMood) {
         const gif = await searchGifs(result.gifMood);
         if (gif?.url) {
           gifUrl = gif.url;
