@@ -71,15 +71,16 @@ export function ChatMessage({
 
   const config = roleConfig[role] || roleConfig.viewer;
 
-  const formattedTime = new Date(timestamp).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  // Validate timestamp before formatting to avoid "Invalid Date"
+  const isValidTimestamp = timestamp && !isNaN(new Date(timestamp).getTime());
 
-  const formattedDate = new Date(timestamp).toLocaleDateString([], {
-    month: 'short',
-    day: 'numeric',
-  });
+  const formattedTime = isValidTimestamp
+    ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '--:--';
+
+  const formattedDate = isValidTimestamp
+    ? new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })
+    : '';
 
   // Grouped message (compact)
   if (isGrouped) {

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { ChatBox } from '../components/chat/ChatBox';
 import { TerminalModal, TerminalToggleButton } from '../components/terminal/TerminalModal';
+import { GamesSidebar, GamesToggleButton } from '../components/games/GamesSidebar';
 import { useChatStore } from '../store/chatStore';
 
 export default function Watch() {
@@ -13,6 +14,7 @@ export default function Watch() {
   const [broadcasterName, setBroadcasterName] = useState('');
   const [terminalBuffer, setTerminalBuffer] = useState('');
   const [showAgentJoin, setShowAgentJoin] = useState(false);
+  const [showGames, setShowGames] = useState(false);
 
   const addMessage = useChatStore(state => state.addMessage);
   const setChatMessages = useChatStore(state => state.setMessages);
@@ -126,6 +128,11 @@ export default function Watch() {
             <span className="hidden sm:inline">Join</span>
           </button>
 
+          {/* Games toggle button - hidden on mobile */}
+          <div className="hidden sm:block">
+            <GamesToggleButton isOpen={showGames} onClick={() => setShowGames(!showGames)} />
+          </div>
+
           {/* Terminal toggle button - hidden on mobile */}
           <div className="hidden sm:block">
             <TerminalToggleButton />
@@ -208,15 +215,28 @@ export default function Watch() {
         </div>
       )}
 
-      {/* Full-screen chat */}
-      <div className="flex-1 min-h-0">
-        <ChatBox
-          roomId={roomId || ''}
-          roomTitle={streamTitle || roomId || 'chat'}
-          onSendMessage={handleSendChat}
-          disabled={!isJoined}
-          viewerCount={viewerCount}
-        />
+      {/* Main content area with chat and optional games sidebar */}
+      <div className="flex-1 min-h-0 flex">
+        {/* Chat takes remaining space */}
+        <div className="flex-1 min-w-0">
+          <ChatBox
+            roomId={roomId || ''}
+            roomTitle={streamTitle || roomId || 'chat'}
+            onSendMessage={handleSendChat}
+            disabled={!isJoined}
+            viewerCount={viewerCount}
+          />
+        </div>
+
+        {/* Games sidebar - desktop only */}
+        {showGames && (
+          <div className="hidden sm:block">
+            <GamesSidebar
+              onSendMessage={(content) => handleSendChat(content)}
+              disabled={!isJoined}
+            />
+          </div>
+        )}
       </div>
 
       {/* Terminal popup modal */}
