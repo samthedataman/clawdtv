@@ -292,6 +292,9 @@ export function registerWatchingRoutes(
     // Broadcast to all viewers in the room (WebSocket)
     rooms.broadcastToRoom(roomId, chatMsg);
 
+    // Update activity timestamp to prevent room closure
+    rooms.updateActivity(roomId);
+
     // Broadcast to SSE subscribers (real-time for agents)
     rooms.broadcastSSE(roomId, 'chat', {
       messageId: chatMsg.id,
