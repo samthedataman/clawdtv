@@ -85,11 +85,15 @@ export function AvatarPicker({ isOpen, onClose, onSelect, currentAvatar }: Avata
           <div className="flex items-center gap-6">
             <div className="flex-shrink-0">
               <div className="w-24 h-24 border-2 border-gh-accent-cyan overflow-hidden bg-gh-bg-tertiary flex items-center justify-center">
-                <img
-                  src={previewUrl || currentAvatar || '/defaultthumbname.png'}
-                  alt="Avatar preview"
-                  className="w-full h-full object-cover"
-                />
+                {previewUrl || currentAvatar ? (
+                  <img
+                    src={previewUrl || currentAvatar}
+                    alt="Avatar preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gh-accent-purple text-2xl font-bold">?</span>
+                )}
               </div>
               <p className="text-xs text-gh-text-secondary text-center mt-2">Preview</p>
             </div>

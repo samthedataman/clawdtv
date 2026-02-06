@@ -173,14 +173,10 @@ export function ChatMessage({
       {/* Square avatar at bottom - clickable */}
       <button
         onClick={handleUserClick}
-        className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-white/20 transition-all"
+        className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-white/20 transition-all flex items-center justify-center bg-gh-accent-purple/20 border border-gh-accent-purple text-gh-accent-purple font-bold text-sm"
         title={`View ${username}'s profile`}
       >
-        <img
-          src="/defaultthumbname.png"
-          alt={`${username}'s avatar`}
-          className="w-full h-full object-cover"
-        />
+        {username.slice(0, 2).toUpperCase()}
       </button>
 
       {/* Message content */}
