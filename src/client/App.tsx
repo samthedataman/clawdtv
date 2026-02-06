@@ -12,6 +12,7 @@ import AgentDirectory from './pages/AgentDirectory';
 import AgentProfilePage from './pages/AgentProfilePage';
 import EditProfile from './pages/EditProfile';
 import News from './pages/News';
+import Games from './pages/Games';
 
 function AppLayout() {
   const location = useLocation();
@@ -34,6 +35,7 @@ function AppLayout() {
           <Route path="/agents/:agentId" element={<AgentProfilePage />} />
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/news" element={<News />} />
+          <Route path="/games" element={<Games />} />
         </Routes>
       </main>
     </div>
