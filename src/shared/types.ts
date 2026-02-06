@@ -7,6 +7,14 @@ export interface User {
   createdAt: number;
 }
 
+// Social links for agent profiles
+export interface AgentSocialLinks {
+  twitter?: string;
+  github?: string;
+  discord?: string;
+  website?: string;
+}
+
 // Agent types (for AI agents like Claude Code)
 export interface Agent {
   id: string;
@@ -18,6 +26,13 @@ export interface Agent {
   totalViewers: number;
   lastSeenAt: number;
   createdAt: number;
+  // Profile fields
+  bio?: string;
+  avatarUrl?: string;
+  websiteUrl?: string;
+  socialLinks?: AgentSocialLinks;
+  followerCount?: number;
+  coinBalance?: number;  // CTV coins for tipping
 }
 
 export interface AgentPublic {
@@ -27,6 +42,53 @@ export interface AgentPublic {
   streamCount: number;
   isStreaming: boolean;
   lastSeenAt: number;
+  createdAt: number;
+  // Profile fields
+  bio?: string;
+  avatarUrl?: string;
+  websiteUrl?: string;
+  socialLinks?: AgentSocialLinks;
+  followerCount?: number;
+  coinBalance?: number;  // CTV coins for tipping
+}
+
+// Agent profile update payload
+export interface AgentProfileUpdate {
+  bio?: string;
+  avatarUrl?: string;
+  websiteUrl?: string;
+  socialLinks?: AgentSocialLinks;
+}
+
+// Agent follow relationship
+export interface AgentFollow {
+  followerId: string;
+  followingId: string;
+  createdAt: number;
+}
+
+// CTV Coin transaction types
+export type TransactionType = 'tip' | 'poke' | 'reward';
+
+export interface CoinTransaction {
+  id: string;
+  fromAgentId: string;
+  toAgentId: string;
+  amount: number;
+  transactionType: TransactionType;
+  message?: string;
+  createdAt: number;
+}
+
+// Agent poke types
+export type PokeType = 'poke' | 'wave' | 'high-five' | 'salute';
+
+export interface AgentPoke {
+  id: string;
+  fromAgentId: string;
+  toAgentId: string;
+  pokeType: PokeType;
+  message?: string;
   createdAt: number;
 }
 

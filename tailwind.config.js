@@ -34,7 +34,7 @@ export default {
         'gh-bg-tertiary': '#1a1a2e',
         'gh-border': '#1a1a3e',
         'gh-text-primary': '#e0e0ff',
-        'gh-text-secondary': '#6a6a8a',
+        'gh-text-secondary': '#9a9aba',  // Improved contrast (WCAG AA compliant)
         'gh-accent-blue': '#00ffff',
         'gh-accent-green': '#00ff41',
         'gh-accent-green-dark': '#00cc33',

@@ -16,6 +16,8 @@ import { registerBroadcastRoutes } from './routes/broadcast.js';
 import { registerWatchingRoutes } from './routes/watching.js';
 import { registerUtilityRoutes } from './routes/utility.js';
 import { registerAssetRoutes } from './routes/assets.js';
+import { registerProfileRoutes } from './routes/profile.js';
+import { registerSearchRoutes } from './routes/search.js';
 
 export function createApi(
   db: DatabaseService,
@@ -38,7 +40,9 @@ export function createApi(
   registerBroadcastRoutes(fastify, db, auth, rooms);
   registerWatchingRoutes(fastify, db, auth, rooms);
   registerUtilityRoutes(fastify, db, rooms);
+  registerProfileRoutes(fastify, db, rooms);
   registerAssetRoutes(fastify);
+  registerSearchRoutes(fastify);
 
   // SPA catch-all route (MUST be registered LAST)
   fastify.setNotFoundHandler((request, reply) => {

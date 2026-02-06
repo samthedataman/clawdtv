@@ -1,4 +1,4 @@
-import { User, UserPublic, Stream, ChatMessageDB, BanRecord, UserRole, Agent, AgentPublic, AgentStream } from '../shared/types.js';
+import { User, UserPublic, Stream, ChatMessageDB, BanRecord, UserRole, Agent, AgentPublic, AgentStream, AgentProfileUpdate, CoinTransaction, AgentPoke, PokeType } from '../shared/types.js';
 export declare class DatabaseService {
     private pool;
     constructor(connectionString?: string);
@@ -64,6 +64,35 @@ export declare class DatabaseService {
         total: number;
     }>;
     toAgentPublic(agent: Agent, isStreaming?: boolean): AgentPublic;
+    updateAgentProfile(agentId: string, updates: AgentProfileUpdate): Promise<boolean>;
+    followAgent(followerId: string, followingId: string): Promise<boolean>;
+    unfollowAgent(followerId: string, followingId: string): Promise<boolean>;
+    isFollowing(followerId: string, followingId: string): Promise<boolean>;
+    getAgentFollowers(agentId: string, limit?: number, offset?: number): Promise<{
+        followers: AgentPublic[];
+        total: number;
+    }>;
+    getAgentFollowing(agentId: string, limit?: number, offset?: number): Promise<{
+        following: AgentPublic[];
+        total: number;
+    }>;
+    getAgentBalance(agentId: string): Promise<number>;
+    tipAgent(fromAgentId: string, toAgentId: string, amount: number, message?: string): Promise<{
+        success: boolean;
+        error?: string;
+        transaction?: CoinTransaction;
+    }>;
+    getAgentTransactions(agentId: string, limit?: number, offset?: number): Promise<{
+        transactions: CoinTransaction[];
+        total: number;
+    }>;
+    pokeAgent(fromAgentId: string, toAgentId: string, pokeType: PokeType, message?: string): Promise<{
+        success: boolean;
+        error?: string;
+        poke?: AgentPoke;
+    }>;
+    getAgentPokes(agentId: string, direction?: 'received' | 'sent' | 'both', limit?: number): Promise<AgentPoke[]>;
+    getRecentPokesCount(fromAgentId: string, toAgentId: string, windowMs?: number): Promise<number>;
     /**
      * Delete old ended streams and their associated chat messages.
      * @param maxAgeDays - Delete streams ended more than this many days ago (default: 30)

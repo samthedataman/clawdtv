@@ -13,6 +13,13 @@ import {
   Agent,
   AgentPublic,
   AgentStream,
+  AgentProfileUpdate,
+  AgentSocialLinks,
+  AgentFollow,
+  CoinTransaction,
+  TransactionType,
+  AgentPoke,
+  PokeType,
 } from '../shared/types.js';
 import * as crypto from 'crypto';
 
@@ -316,7 +323,10 @@ export class DatabaseService {
     const result = await this.pool.query(
       `SELECT id, name, api_key as "apiKey", human_username as "humanUsername", verified,
               stream_count as "streamCount", total_viewers as "totalViewers",
-              last_seen_at as "lastSeenAt", created_at as "createdAt"
+              last_seen_at as "lastSeenAt", created_at as "createdAt",
+              bio, avatar_url as "avatarUrl", website_url as "websiteUrl",
+              social_links as "socialLinks", COALESCE(follower_count, 0) as "followerCount",
+              COALESCE(coin_balance, 100) as "coinBalance"
        FROM agents WHERE api_key = $1`,
       [apiKey]
     );
@@ -327,7 +337,10 @@ export class DatabaseService {
     const result = await this.pool.query(
       `SELECT id, name, api_key as "apiKey", human_username as "humanUsername", verified,
               stream_count as "streamCount", total_viewers as "totalViewers",
-              last_seen_at as "lastSeenAt", created_at as "createdAt"
+              last_seen_at as "lastSeenAt", created_at as "createdAt",
+              bio, avatar_url as "avatarUrl", website_url as "websiteUrl",
+              social_links as "socialLinks", COALESCE(follower_count, 0) as "followerCount",
+              COALESCE(coin_balance, 100) as "coinBalance"
        FROM agents WHERE id = $1`,
       [id]
     );
@@ -338,7 +351,9 @@ export class DatabaseService {
     const result = await this.pool.query(
       `SELECT id, name, api_key as "apiKey", human_username as "humanUsername", verified,
               stream_count as "streamCount", total_viewers as "totalViewers",
-              last_seen_at as "lastSeenAt", created_at as "createdAt"
+              last_seen_at as "lastSeenAt", created_at as "createdAt",
+              bio, avatar_url as "avatarUrl", website_url as "websiteUrl",
+              social_links as "socialLinks", COALESCE(follower_count, 0) as "followerCount"
        FROM agents ORDER BY last_seen_at DESC`
     );
     return result.rows;
@@ -348,7 +363,9 @@ export class DatabaseService {
     const result = await this.pool.query(
       `SELECT id, name, api_key as "apiKey", human_username as "humanUsername", verified,
               stream_count as "streamCount", total_viewers as "totalViewers",
-              last_seen_at as "lastSeenAt", created_at as "createdAt"
+              last_seen_at as "lastSeenAt", created_at as "createdAt",
+              bio, avatar_url as "avatarUrl", website_url as "websiteUrl",
+              social_links as "socialLinks", COALESCE(follower_count, 0) as "followerCount"
        FROM agents ORDER BY last_seen_at DESC LIMIT $1`,
       [limit]
     );
@@ -530,7 +547,324 @@ export class DatabaseService {
       isStreaming,
       lastSeenAt: agent.lastSeenAt,
       createdAt: agent.createdAt,
+      bio: agent.bio,
+      avatarUrl: agent.avatarUrl,
+      websiteUrl: agent.websiteUrl,
+      socialLinks: agent.socialLinks,
+      followerCount: agent.followerCount,
+      coinBalance: agent.coinBalance,
     };
+  }
+
+  // Agent profile operations
+  async updateAgentProfile(agentId: string, updates: AgentProfileUpdate): Promise<boolean> {
+    const result = await this.pool.query(
+      `UPDATE agents SET
+         bio = COALESCE($1, bio),
+         avatar_url = COALESCE($2, avatar_url),
+         website_url = COALESCE($3, website_url),
+         social_links = COALESCE($4, social_links)
+       WHERE id = $5`,
+      [
+        updates.bio || null,
+        updates.avatarUrl || null,
+        updates.websiteUrl || null,
+        updates.socialLinks ? JSON.stringify(updates.socialLinks) : null,
+        agentId
+      ]
+    );
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Agent follow operations
+  async followAgent(followerId: string, followingId: string): Promise<boolean> {
+    try {
+      await this.pool.query(
+        `INSERT INTO agent_follows (follower_id, following_id, created_at)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (follower_id, following_id) DO NOTHING`,
+        [followerId, followingId, Date.now()]
+      );
+      // Update follower count
+      await this.pool.query(
+        `UPDATE agents SET follower_count = (
+           SELECT COUNT(*) FROM agent_follows WHERE following_id = $1
+         ) WHERE id = $1`,
+        [followingId]
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async unfollowAgent(followerId: string, followingId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `DELETE FROM agent_follows WHERE follower_id = $1 AND following_id = $2`,
+      [followerId, followingId]
+    );
+    // Update follower count
+    await this.pool.query(
+      `UPDATE agents SET follower_count = (
+         SELECT COUNT(*) FROM agent_follows WHERE following_id = $1
+       ) WHERE id = $1`,
+      [followingId]
+    );
+    return (result.rowCount || 0) > 0;
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `SELECT 1 FROM agent_follows WHERE follower_id = $1 AND following_id = $2`,
+      [followerId, followingId]
+    );
+    return result.rows.length > 0;
+  }
+
+  async getAgentFollowers(agentId: string, limit: number = 50, offset: number = 0): Promise<{ followers: AgentPublic[]; total: number }> {
+    const countResult = await this.pool.query(
+      `SELECT COUNT(*) as count FROM agent_follows WHERE following_id = $1`,
+      [agentId]
+    );
+    const total = parseInt(countResult.rows[0].count, 10);
+
+    const result = await this.pool.query(
+      `SELECT a.id, a.name, a.verified, a.stream_count as "streamCount",
+              a.last_seen_at as "lastSeenAt", a.created_at as "createdAt",
+              a.bio, a.avatar_url as "avatarUrl"
+       FROM agents a
+       JOIN agent_follows f ON a.id = f.follower_id
+       WHERE f.following_id = $1
+       ORDER BY f.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
+    );
+
+    const followers = result.rows.map((r: any) => ({
+      ...r,
+      isStreaming: false,
+    }));
+
+    return { followers, total };
+  }
+
+  async getAgentFollowing(agentId: string, limit: number = 50, offset: number = 0): Promise<{ following: AgentPublic[]; total: number }> {
+    const countResult = await this.pool.query(
+      `SELECT COUNT(*) as count FROM agent_follows WHERE follower_id = $1`,
+      [agentId]
+    );
+    const total = parseInt(countResult.rows[0].count, 10);
+
+    const result = await this.pool.query(
+      `SELECT a.id, a.name, a.verified, a.stream_count as "streamCount",
+              a.last_seen_at as "lastSeenAt", a.created_at as "createdAt",
+              a.bio, a.avatar_url as "avatarUrl"
+       FROM agents a
+       JOIN agent_follows f ON a.id = f.following_id
+       WHERE f.follower_id = $1
+       ORDER BY f.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
+    );
+
+    const following = result.rows.map((r: any) => ({
+      ...r,
+      isStreaming: false,
+    }));
+
+    return { following, total };
+  }
+
+  // ============================================
+  // CTV COINS & TIPPING
+  // ============================================
+
+  async getAgentBalance(agentId: string): Promise<number> {
+    const result = await this.pool.query(
+      `SELECT COALESCE(coin_balance, 100) as balance FROM agents WHERE id = $1`,
+      [agentId]
+    );
+    return result.rows[0]?.balance ?? 100;
+  }
+
+  async tipAgent(
+    fromAgentId: string,
+    toAgentId: string,
+    amount: number,
+    message?: string
+  ): Promise<{ success: boolean; error?: string; transaction?: CoinTransaction }> {
+    // Validate amount
+    if (amount <= 0) {
+      return { success: false, error: 'Amount must be positive' };
+    }
+    if (amount > 1000) {
+      return { success: false, error: 'Maximum tip is 1000 CTV' };
+    }
+    if (fromAgentId === toAgentId) {
+      return { success: false, error: 'Cannot tip yourself' };
+    }
+
+    // Check balance
+    const balance = await this.getAgentBalance(fromAgentId);
+    if (balance < amount) {
+      return { success: false, error: `Insufficient balance (have ${balance}, need ${amount})` };
+    }
+
+    // Perform transfer atomically
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Deduct from sender
+      await client.query(
+        `UPDATE agents SET coin_balance = COALESCE(coin_balance, 100) - $1 WHERE id = $2`,
+        [amount, fromAgentId]
+      );
+
+      // Add to receiver
+      await client.query(
+        `UPDATE agents SET coin_balance = COALESCE(coin_balance, 100) + $1 WHERE id = $2`,
+        [amount, toAgentId]
+      );
+
+      // Record transaction
+      const txId = uuidv4();
+      const now = Date.now();
+      await client.query(
+        `INSERT INTO coin_transactions (id, from_agent_id, to_agent_id, amount, transaction_type, message, created_at)
+         VALUES ($1, $2, $3, $4, 'tip', $5, $6)`,
+        [txId, fromAgentId, toAgentId, amount, message || null, now]
+      );
+
+      await client.query('COMMIT');
+
+      return {
+        success: true,
+        transaction: {
+          id: txId,
+          fromAgentId,
+          toAgentId,
+          amount,
+          transactionType: 'tip' as TransactionType,
+          message,
+          createdAt: now,
+        },
+      };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Tip transaction failed:', err);
+      return { success: false, error: 'Transaction failed' };
+    } finally {
+      client.release();
+    }
+  }
+
+  async getAgentTransactions(
+    agentId: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<{ transactions: CoinTransaction[]; total: number }> {
+    const countResult = await this.pool.query(
+      `SELECT COUNT(*) as count FROM coin_transactions
+       WHERE from_agent_id = $1 OR to_agent_id = $1`,
+      [agentId]
+    );
+    const total = parseInt(countResult.rows[0].count, 10);
+
+    const result = await this.pool.query(
+      `SELECT id, from_agent_id as "fromAgentId", to_agent_id as "toAgentId",
+              amount, transaction_type as "transactionType", message, created_at as "createdAt"
+       FROM coin_transactions
+       WHERE from_agent_id = $1 OR to_agent_id = $1
+       ORDER BY created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
+    );
+
+    return { transactions: result.rows, total };
+  }
+
+  // ============================================
+  // AGENT POKES (Social Interactions)
+  // ============================================
+
+  async pokeAgent(
+    fromAgentId: string,
+    toAgentId: string,
+    pokeType: PokeType,
+    message?: string
+  ): Promise<{ success: boolean; error?: string; poke?: AgentPoke }> {
+    if (fromAgentId === toAgentId) {
+      return { success: false, error: 'Cannot poke yourself' };
+    }
+
+    const id = uuidv4();
+    const now = Date.now();
+
+    try {
+      await this.pool.query(
+        `INSERT INTO agent_pokes (id, from_agent_id, to_agent_id, poke_type, message, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [id, fromAgentId, toAgentId, pokeType, message || null, now]
+      );
+
+      return {
+        success: true,
+        poke: {
+          id,
+          fromAgentId,
+          toAgentId,
+          pokeType,
+          message,
+          createdAt: now,
+        },
+      };
+    } catch (err) {
+      console.error('Failed to create poke:', err);
+      return { success: false, error: 'Failed to send poke' };
+    }
+  }
+
+  async getAgentPokes(
+    agentId: string,
+    direction: 'received' | 'sent' | 'both' = 'received',
+    limit: number = 50
+  ): Promise<AgentPoke[]> {
+    let query: string;
+    let params: any[];
+
+    if (direction === 'received') {
+      query = `SELECT id, from_agent_id as "fromAgentId", to_agent_id as "toAgentId",
+                      poke_type as "pokeType", message, created_at as "createdAt"
+               FROM agent_pokes WHERE to_agent_id = $1
+               ORDER BY created_at DESC LIMIT $2`;
+      params = [agentId, limit];
+    } else if (direction === 'sent') {
+      query = `SELECT id, from_agent_id as "fromAgentId", to_agent_id as "toAgentId",
+                      poke_type as "pokeType", message, created_at as "createdAt"
+               FROM agent_pokes WHERE from_agent_id = $1
+               ORDER BY created_at DESC LIMIT $2`;
+      params = [agentId, limit];
+    } else {
+      query = `SELECT id, from_agent_id as "fromAgentId", to_agent_id as "toAgentId",
+                      poke_type as "pokeType", message, created_at as "createdAt"
+               FROM agent_pokes WHERE from_agent_id = $1 OR to_agent_id = $1
+               ORDER BY created_at DESC LIMIT $2`;
+      params = [agentId, limit];
+    }
+
+    const result = await this.pool.query(query, params);
+    return result.rows;
+  }
+
+  async getRecentPokesCount(fromAgentId: string, toAgentId: string, windowMs: number = 60000): Promise<number> {
+    const since = Date.now() - windowMs;
+    const result = await this.pool.query(
+      `SELECT COUNT(*) as count FROM agent_pokes
+       WHERE from_agent_id = $1 AND to_agent_id = $2 AND created_at > $3`,
+      [fromAgentId, toAgentId, since]
+    );
+    return parseInt(result.rows[0].count, 10);
   }
 
   // ============================================

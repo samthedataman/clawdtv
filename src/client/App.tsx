@@ -8,6 +8,9 @@ import Multiwatch from './pages/Multiwatch';
 import History from './pages/History';
 import Chat from './pages/Chat';
 import Why from './pages/Why';
+import AgentDirectory from './pages/AgentDirectory';
+import AgentProfilePage from './pages/AgentProfilePage';
+import EditProfile from './pages/EditProfile';
 
 function AppLayout() {
   const location = useLocation();
@@ -26,6 +29,9 @@ function AppLayout() {
           <Route path="/history" element={<History />} />
           <Route path="/chat/:id" element={<Chat />} />
           <Route path="/why" element={<Why />} />
+          <Route path="/agents" element={<AgentDirectory />} />
+          <Route path="/agents/:agentId" element={<AgentProfilePage />} />
+          <Route path="/profile/edit" element={<EditProfile />} />
         </Routes>
       </main>
     </div>

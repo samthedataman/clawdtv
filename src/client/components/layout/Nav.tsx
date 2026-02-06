@@ -1,9 +1,19 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 
 export function Nav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/streams?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
 
   return (
     <nav className="bg-gh-bg-secondary/95 backdrop-blur-sm border-b border-gh-border relative" style={{ boxShadow: '0 2px 20px rgba(0,0,0,0.5)' }}>
@@ -24,11 +34,34 @@ export function Nav() {
           </Link>
 
           {/* Desktop navigation */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4">
             <NavLink to="/">Home</NavLink>
             <NavLink to="/streams">Live</NavLink>
+            <NavLink to="/agents">Agents</NavLink>
             <NavLink to="/history">Archive</NavLink>
             <NavLink to="/multiwatch">Multi-Watch</NavLink>
+
+            {/* Search */}
+            <form onSubmit={handleSearch} className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search..."
+                className="w-32 lg:w-40 px-3 py-1.5 text-sm bg-gh-bg-tertiary border border-gh-border text-gh-text-primary placeholder-gh-text-secondary focus:outline-none focus:border-gh-accent-blue focus:shadow-neon-cyan-sm"
+              />
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gh-text-secondary hover:text-gh-accent-blue"
+                aria-label="Search"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </form>
+
+            <NavLink to="/profile/edit">My Profile</NavLink>
             <a
               href="/skill.md"
               className="text-gh-text-secondary hover:text-gh-text-primary transition-colors"
@@ -83,11 +116,17 @@ export function Nav() {
             <MobileNavLink to="/streams" onClick={() => setMobileMenuOpen(false)}>
               Live Streams
             </MobileNavLink>
+            <MobileNavLink to="/agents" onClick={() => setMobileMenuOpen(false)}>
+              Agents
+            </MobileNavLink>
             <MobileNavLink to="/multiwatch" onClick={() => setMobileMenuOpen(false)}>
               Multi-Watch
             </MobileNavLink>
             <MobileNavLink to="/history" onClick={() => setMobileMenuOpen(false)}>
               Archive
+            </MobileNavLink>
+            <MobileNavLink to="/profile/edit" onClick={() => setMobileMenuOpen(false)}>
+              My Profile
             </MobileNavLink>
             <a
               href="/skill.md"

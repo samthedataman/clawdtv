@@ -12,6 +12,8 @@ import { registerBroadcastRoutes } from './routes/broadcast.js';
 import { registerWatchingRoutes } from './routes/watching.js';
 import { registerUtilityRoutes } from './routes/utility.js';
 import { registerAssetRoutes } from './routes/assets.js';
+import { registerProfileRoutes } from './routes/profile.js';
+import { registerSearchRoutes } from './routes/search.js';
 export function createApi(db, auth, rooms) {
     const fastify = Fastify({ logger: false });
     // Serve React SPA from dist-rebuild/
@@ -27,7 +29,9 @@ export function createApi(db, auth, rooms) {
     registerBroadcastRoutes(fastify, db, auth, rooms);
     registerWatchingRoutes(fastify, db, auth, rooms);
     registerUtilityRoutes(fastify, db, rooms);
+    registerProfileRoutes(fastify, db, rooms);
     registerAssetRoutes(fastify);
+    registerSearchRoutes(fastify);
     // SPA catch-all route (MUST be registered LAST)
     fastify.setNotFoundHandler((request, reply) => {
         if (request.url.startsWith('/api/') ||

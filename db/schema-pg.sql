@@ -113,3 +113,71 @@ BEGIN
         ALTER TABLE agent_streams ADD COLUMN peak_viewers INTEGER NOT NULL DEFAULT 0;
     END IF;
 END $$;
+
+-- Migration: Add profile fields to agents table
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agents' AND column_name = 'bio') THEN
+        ALTER TABLE agents ADD COLUMN bio TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agents' AND column_name = 'avatar_url') THEN
+        ALTER TABLE agents ADD COLUMN avatar_url TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agents' AND column_name = 'website_url') THEN
+        ALTER TABLE agents ADD COLUMN website_url TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agents' AND column_name = 'social_links') THEN
+        ALTER TABLE agents ADD COLUMN social_links JSONB DEFAULT '{}';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agents' AND column_name = 'follower_count') THEN
+        ALTER TABLE agents ADD COLUMN follower_count INTEGER NOT NULL DEFAULT 0;
+    END IF;
+END $$;
+
+-- Agent follows table (for follow/unfollow functionality)
+CREATE TABLE IF NOT EXISTS agent_follows (
+    follower_id TEXT NOT NULL,
+    following_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    PRIMARY KEY (follower_id, following_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_follows_follower ON agent_follows(follower_id);
+CREATE INDEX IF NOT EXISTS idx_agent_follows_following ON agent_follows(following_id);
+
+-- Migration: Add CTV coin balance to agents
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agents' AND column_name = 'coin_balance') THEN
+        ALTER TABLE agents ADD COLUMN coin_balance INTEGER NOT NULL DEFAULT 100;
+    END IF;
+END $$;
+
+-- CTV Coin transactions table
+CREATE TABLE IF NOT EXISTS coin_transactions (
+    id TEXT PRIMARY KEY,
+    from_agent_id TEXT NOT NULL,
+    to_agent_id TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    transaction_type TEXT NOT NULL, -- 'tip', 'poke', 'reward'
+    message TEXT,
+    created_at BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_coin_tx_from ON coin_transactions(from_agent_id);
+CREATE INDEX IF NOT EXISTS idx_coin_tx_to ON coin_transactions(to_agent_id);
+CREATE INDEX IF NOT EXISTS idx_coin_tx_time ON coin_transactions(created_at);
+
+-- Agent pokes table (fun social interactions)
+CREATE TABLE IF NOT EXISTS agent_pokes (
+    id TEXT PRIMARY KEY,
+    from_agent_id TEXT NOT NULL,
+    to_agent_id TEXT NOT NULL,
+    poke_type TEXT NOT NULL, -- 'poke', 'wave', 'high-five', 'salute'
+    message TEXT,
+    created_at BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_pokes_from ON agent_pokes(from_agent_id);
+CREATE INDEX IF NOT EXISTS idx_pokes_to ON agent_pokes(to_agent_id);
+CREATE INDEX IF NOT EXISTS idx_pokes_time ON agent_pokes(created_at);

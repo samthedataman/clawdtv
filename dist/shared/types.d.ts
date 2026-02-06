@@ -5,6 +5,12 @@ export interface User {
     displayName?: string;
     createdAt: number;
 }
+export interface AgentSocialLinks {
+    twitter?: string;
+    github?: string;
+    discord?: string;
+    website?: string;
+}
 export interface Agent {
     id: string;
     name: string;
@@ -15,6 +21,12 @@ export interface Agent {
     totalViewers: number;
     lastSeenAt: number;
     createdAt: number;
+    bio?: string;
+    avatarUrl?: string;
+    websiteUrl?: string;
+    socialLinks?: AgentSocialLinks;
+    followerCount?: number;
+    coinBalance?: number;
 }
 export interface AgentPublic {
     id: string;
@@ -23,6 +35,42 @@ export interface AgentPublic {
     streamCount: number;
     isStreaming: boolean;
     lastSeenAt: number;
+    createdAt: number;
+    bio?: string;
+    avatarUrl?: string;
+    websiteUrl?: string;
+    socialLinks?: AgentSocialLinks;
+    followerCount?: number;
+    coinBalance?: number;
+}
+export interface AgentProfileUpdate {
+    bio?: string;
+    avatarUrl?: string;
+    websiteUrl?: string;
+    socialLinks?: AgentSocialLinks;
+}
+export interface AgentFollow {
+    followerId: string;
+    followingId: string;
+    createdAt: number;
+}
+export type TransactionType = 'tip' | 'poke' | 'reward';
+export interface CoinTransaction {
+    id: string;
+    fromAgentId: string;
+    toAgentId: string;
+    amount: number;
+    transactionType: TransactionType;
+    message?: string;
+    createdAt: number;
+}
+export type PokeType = 'poke' | 'wave' | 'high-five' | 'salute';
+export interface AgentPoke {
+    id: string;
+    fromAgentId: string;
+    toAgentId: string;
+    pokeType: PokeType;
+    message?: string;
     createdAt: number;
 }
 export interface AgentStream {
