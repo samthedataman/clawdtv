@@ -157,6 +157,18 @@ async function fetchNews(category) {
   }
 }
 
+// Search Google News for specific topics (agents can use this as a "tool")
+async function searchNews(query) {
+  try {
+    const res = await fetch(`${BASE_URL}/api/search/news?q=${encodeURIComponent(query)}&limit=3`);
+    const data = await res.json();
+    return data.data || [];
+  } catch (err) {
+    console.error(`Failed to search news for "${query}":`, err.message);
+    return [];
+  }
+}
+
 async function endStream(apiKey) {
   const res = await fetch(`${BASE_URL}/api/agent/stream/end`, {
     method: 'POST',
@@ -249,23 +261,30 @@ class NewsRoom {
       this.messageHistory.push({ name: host.name, content: opening });
     }
 
-    // Other agents jump in
-    await new Promise(r => setTimeout(r, 2000));
+    // Other agents jump in with staggered delays to avoid rate limits
+    await new Promise(r => setTimeout(r, 3000));
 
     for (let i = 1; i < this.agents.length; i++) {
       const agent = this.agents[i];
+      const prevMessages = this.messageHistory.slice(-3).map(m => m.content).join(' | ');
+
       const reaction = await generateResponse(
         agent.persona,
-        `BREAKING: "${this.headline.title}". Another agent just said: "${opening}". Jump in with YOUR take. Agree? Disagree? This is crazy! Under 200 chars.`
+        `BREAKING: "${this.headline.title}".
+
+Previous comments: ${prevMessages}
+
+Jump in with YOUR take. Agree? Disagree? Add something new? This is crazy! Under 200 chars.`
       );
 
       if (reaction) {
         await sendRoomChat(agent.apiKey, this.roomId, reaction);
         console.log(`  [${agent.name}] 💬 ${reaction}`);
-        this.messageHistory.push({ name: agent.name, content: reaction });
+        this.messageHistory.push({ name: agent.name, content: reaction, isHuman: false });
       }
 
-      await new Promise(r => setTimeout(r, 2000));
+      // Longer delay between agents to avoid rate limits
+      await new Promise(r => setTimeout(r, 4000));
     }
   }
 
@@ -304,12 +323,25 @@ class NewsRoom {
       : '';
 
     let prompt;
+    let extraContext = '';
+
+    // 20% chance to search for related news and bring it into conversation
+    if (Math.random() < 0.2) {
+      const keywords = this.headline.title.split(' ').slice(0, 3).join(' ');
+      const relatedNews = await searchNews(keywords);
+      if (relatedNews.length > 0) {
+        const related = relatedNews[0];
+        extraContext = `\n\n🔍 RELATED NEWS you just found: "${related.title}" - Use this to add context or connect dots!`;
+        console.log(`  [${speaker.name}] 🔍 Found related: "${related.title.slice(0, 50)}..."`);
+      }
+    }
+
     if (externalMessages.length > 0) {
       // PRIORITIZE responding to humans!
       const humanMsg = externalMessages[externalMessages.length - 1];
       prompt = `BREAKING NEWS: "${this.headline.title}"
 
-${chatContext}
+${chatContext}${extraContext}
 
 A HUMAN VIEWER "${humanMsg.username}" just asked/said: "${humanMsg.content}"
 
@@ -318,13 +350,13 @@ RESPOND DIRECTLY TO THEM! Address them by name. Answer their question or react t
       const lastMsg = recentChat[recentChat.length - 1];
       prompt = `BREAKING NEWS: "${this.headline.title}"
 
-${chatContext}
+${chatContext}${extraContext}
 
 ${lastMsg.name} just said: "${lastMsg.content}".
 
 React - agree, disagree, escalate, ask a follow-up question, or add a new angle. Be dramatic! Under 200 chars.`;
     } else {
-      prompt = `Keep discussing: "${this.headline.title}". Share another shocking angle, conspiracy theory, or hot take. Under 200 chars.`;
+      prompt = `Keep discussing: "${this.headline.title}".${extraContext} Share another shocking angle, conspiracy theory, or hot take. Under 200 chars.`;
     }
 
     const response = await generateResponse(speaker.persona, prompt, recentChat.map(m => ({ username: m.name, content: m.content })));
