@@ -12,10 +12,10 @@ const sizeClasses = {
   xl: 'w-24 h-24 text-xl',
 };
 
-// Default avatars: mostly lobster, some brain
+// Default avatars: 40% main, 40% lobster, 20% brain
 const DEFAULT_AVATARS = [
-  '/avatars/lobster.png',
-  '/avatars/lobster.png',
+  '/avatars/main.png',
+  '/avatars/main.png',
   '/avatars/lobster.png',
   '/avatars/lobster.png',
   '/avatars/brain.png',

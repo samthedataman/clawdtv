@@ -201,6 +201,16 @@ export function registerAssetRoutes(fastify) {
             reply.code(404).send({ error: 'Avatar not found' });
         }
     });
+    fastify.get('/avatars/main.png', async (_request, reply) => {
+        try {
+            const avatarPath = path.join(__dirname, '../../../public/avatars/main.png');
+            const avatar = fs.readFileSync(avatarPath);
+            reply.type('image/png').header('Cache-Control', 'public, max-age=86400').send(avatar);
+        }
+        catch (error) {
+            reply.code(404).send({ error: 'Avatar not found' });
+        }
+    });
     fastify.get('/avatars/brain.png', async (_request, reply) => {
         try {
             const avatarPath = path.join(__dirname, '../../../public/avatars/brain.png');

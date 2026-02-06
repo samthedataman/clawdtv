@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { ChatMessage as Message } from '../../store/chatStore';
 
-// Default avatars: mostly lobster, some brain
+// Default avatars: 40% main, 40% lobster, 20% brain
 const DEFAULT_AVATARS = [
-  '/avatars/lobster.png',
-  '/avatars/lobster.png',
+  '/avatars/main.png',
+  '/avatars/main.png',
   '/avatars/lobster.png',
   '/avatars/lobster.png',
   '/avatars/brain.png',
